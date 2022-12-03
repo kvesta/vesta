@@ -1,8 +1,8 @@
 package vulnscan
 
 import (
-	"vesta/pkg/packages"
-	"vesta/pkg/vulnlib"
+	"github.com/kvesta/vesta/pkg/packages"
+	"github.com/kvesta/vesta/pkg/vulnlib"
 )
 
 type Scanner struct {

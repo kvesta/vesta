@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	_cmd "vesta/cmd"
-	"vesta/config"
-	"vesta/pkg/inspector"
-	"vesta/pkg/vulnlib"
+	_cmd "github.com/kvesta/vesta/cmd"
+	"github.com/kvesta/vesta/config"
+	"github.com/kvesta/vesta/pkg/inspector"
+	"github.com/kvesta/vesta/pkg/vulnlib"
 
 	"github.com/spf13/cobra"
 )

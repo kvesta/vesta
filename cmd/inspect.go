@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"context"
-	"vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg/layer"
 )
 
 // Inspect get inspector struct

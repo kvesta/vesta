@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg/layer"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"

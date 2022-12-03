@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"vesta/config"
-	"vesta/internal/analyzer"
-	"vesta/internal/vulnscan"
+	"github.com/kvesta/vesta/config"
+	"github.com/kvesta/vesta/internal/analyzer"
+	"github.com/kvesta/vesta/internal/vulnscan"
 
 	"github.com/olekukonko/tablewriter"
 )

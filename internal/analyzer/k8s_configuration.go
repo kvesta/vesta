@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"vesta/pkg/inspector"
-	"vesta/pkg/vulnlib"
+	"github.com/kvesta/vesta/pkg/inspector"
+	"github.com/kvesta/vesta/pkg/vulnlib"
 
 	"github.com/docker/docker/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

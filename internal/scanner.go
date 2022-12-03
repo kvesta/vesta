@@ -1,11 +1,11 @@
 package internal
 
 import (
-	"vesta/internal/analyzer"
-	"vesta/internal/vulnscan"
-	"vesta/pkg/layer"
-	"vesta/pkg/osrelease"
-	"vesta/pkg/packages"
+	"github.com/kvesta/vesta/internal/analyzer"
+	"github.com/kvesta/vesta/internal/vulnscan"
+	"github.com/kvesta/vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg/osrelease"
+	"github.com/kvesta/vesta/pkg/packages"
 )
 
 type Vuln struct {

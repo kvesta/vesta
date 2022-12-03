@@ -3,13 +3,13 @@ package vulnscan
 import (
 	"context"
 	"fmt"
+	"github.com/kvesta/vesta/config"
 	"log"
 	"strings"
-	"vesta/config"
 
-	"vesta/pkg/layer"
-	"vesta/pkg/packages"
-	"vesta/pkg/vulnlib"
+	"github.com/kvesta/vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg/packages"
+	"github.com/kvesta/vesta/pkg/vulnlib"
 
 	version "github.com/hashicorp/go-version"
 	rpmversion "github.com/knqyf263/go-rpm-version"

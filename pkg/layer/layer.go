@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"vesta/pkg"
+	"github.com/kvesta/vesta/pkg"
 )
 
 type Layer struct {
