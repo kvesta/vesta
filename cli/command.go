@@ -64,7 +64,7 @@ func Execute() error {
 				log.Printf("Upgrading vulnerability database failed, error: %v", err)
 			}
 
-			log.Printf("Upgrading vulnerability database success")
+			log.Printf(config.Green("Upgrading vulnerability database success"))
 		},
 	}
 
