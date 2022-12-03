@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"vesta/pkg/vulnlib"
+	"github.com/kvesta/vesta/pkg/vulnlib"
 
 	"github.com/docker/docker/api/types"
 	version2 "github.com/hashicorp/go-version"

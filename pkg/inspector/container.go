@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"vesta/config"
+	"github.com/kvesta/vesta/config"
 
 	"github.com/docker/docker/api/types"
 )

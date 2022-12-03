@@ -3,15 +3,15 @@ package report
 import (
 	"context"
 	"fmt"
+	"github.com/kvesta/vesta/config"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
-	"vesta/config"
 
-	"vesta/internal/analyzer"
-	"vesta/internal/vulnscan"
+	"github.com/kvesta/vesta/internal/analyzer"
+	"github.com/kvesta/vesta/internal/vulnscan"
 
 	"k8s.io/apimachinery/pkg/util/json"
 )

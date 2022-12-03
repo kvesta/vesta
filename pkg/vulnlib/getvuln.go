@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"time"
 
-	"vesta/config"
+	"github.com/kvesta/vesta/config"
 )
 
 // Fetch get cvss data from Internet

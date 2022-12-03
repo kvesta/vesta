@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"vesta/pkg"
-	"vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg"
+	"github.com/kvesta/vesta/pkg/layer"
 )
 
 func exists(path string) bool {

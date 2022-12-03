@@ -1,8 +1,8 @@
 package packages
 
 import (
-	"vesta/pkg/layer"
-	"vesta/pkg/osrelease"
+	"github.com/kvesta/vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg/osrelease"
 )
 
 type Packages struct {

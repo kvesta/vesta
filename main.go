@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"vesta/cli"
+	"github.com/kvesta/vesta/cli"
 )
 
 func main() {
