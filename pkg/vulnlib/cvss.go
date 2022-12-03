@@ -251,6 +251,19 @@ func cpeParse(cpe []interface{}) []*cpes {
 			} else {
 				if i > -1 && cs[i].MinVersion == "0.0" {
 					cs[i].MaxVersion = cpe23Split[5]
+
+					if c["versionStartIncluding"] != nil {
+						cs[i].MinVersion = "=" + c["versionStartIncluding"].(string)
+					} else if c["versionStartExcluding"] != nil {
+						cs[i].MinVersion = c["versionStartExcluding"].(string)
+					}
+
+					if c["versionEndIncluding"] != nil {
+						cs[i].MaxVersion = "=" + c["versionEndIncluding"].(string)
+					} else if c["versionEndExcluding"] != nil {
+						cs[i].MaxVersion = c["versionEndExcluding"].(string)
+					}
+
 					continue
 				}
 			}

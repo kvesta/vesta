@@ -17,7 +17,7 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
-func (ks *KScanner) dockershimcheck(ctx context.Context) error {
+func (ks *KScanner) dockershimCheck(ctx context.Context) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func (ks *KScanner) dockershimcheck(ctx context.Context) error {
 	vulnCli := vulnlib.Client{}
 	err = vulnCli.Init()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	serverVersion, _ := c.GetDockerServerVersion(ctx)

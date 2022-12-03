@@ -42,7 +42,7 @@ func Fetch(ctx context.Context) error {
 		store = filepath.Join(dir, ".vesta")
 	}
 
-	if ctx.Value("reset").(bool) {
+	if ctx.Value("reset") != nil && ctx.Value("reset").(bool) {
 		dataFile := filepath.Join(store, "date.txt")
 		dbFile := filepath.Join(store, "vesta.db")
 

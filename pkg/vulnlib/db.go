@@ -30,6 +30,15 @@ func (cli *Client) Init() error {
 		homedir = filepath.Join(dir, ".vesta")
 	}
 
+	if !exists(homedir) {
+		err = mkFolder(homedir)
+
+		if err != nil {
+			log.Printf("failed to create folder, error: %v", err)
+			return err
+		}
+	}
+
 	dbPath := filepath.Join(homedir, "vesta.db")
 
 	var db *sql.DB

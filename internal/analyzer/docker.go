@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -20,7 +21,9 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []types.ImageSu
 	cli := vulnlib.Client{}
 	err := cli.Init()
 
-	if err == nil {
+	if err != nil {
+		log.Printf("failed to init database, error: %v", err)
+	} else {
 		defer cli.DB.Close()
 	}
 
