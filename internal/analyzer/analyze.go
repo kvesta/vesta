@@ -280,7 +280,8 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 	var vulnKernelVersion = map[string]string{
 		"CVE-2016-5195": "Dirty Cow",
 		"CVE-2022-0847": "Dirty Pipe",
-		"CVE-2022-0185": "CVE-2022-0185 with CAP_SYS_ADMIN"}
+		"CVE-2022-0185": "CVE-2022-0185 with CAP_SYS_ADMIN",
+		"CVE-2022-0492": "CVE-2022-0492 with CAP_SYS_ADMIN and v1 architecture of cgroups"}
 
 	kernelVersion, err := osrelease.GetKernelVersion(context.Background())
 	if err != nil {
