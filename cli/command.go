@@ -61,10 +61,10 @@ func Execute() error {
 
 			err := vulnlib.Fetch(ctx)
 			if err != nil {
-				log.Printf("Upgrading vulnerability database failed, error: %v", err)
+				log.Printf("Updating vulnerability database failed, error: %v", err)
 			}
 
-			log.Printf(config.Green("Upgrading vulnerability database success"))
+			log.Printf(config.Green("Updating vulnerability database success"))
 		},
 	}
 

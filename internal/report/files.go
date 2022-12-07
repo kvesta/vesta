@@ -3,13 +3,13 @@ package report
 import (
 	"context"
 	"fmt"
-	"github.com/kvesta/vesta/config"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/internal/analyzer"
 	"github.com/kvesta/vesta/internal/vulnscan"
 
