@@ -1,5 +1,5 @@
 <p align="center">
-  A static analysis of vulnerabilities, Docker and Kubernetes configuration detect toolkit
+  A static analysis of vulnerabilities, Docker and Kubernetes cluster configuration detect toolkit
 </p>
 
 <div align="center">
@@ -14,7 +14,7 @@
 
 ## Overview
 
-Vesta is a static analysis of vulnerabilities, Docker and Kubernetes configuration detect toolkit. It inspects Kubernetes and Docker configures,
+Vesta is a static analysis of vulnerabilities, Docker and Kubernetes cluster configuration detect toolkit. It inspects Kubernetes and Docker configures,
 cluster pods, and containers with safe practices. It also analyses image or container components with an extra python module and node npm scan.
 <br/>
 <br/>
@@ -177,40 +177,41 @@ Configures:
 
 > Docker
 
-| Supported | Check Item            | Description                                                        | Severity                 |
-|-----------|-----------------------|--------------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed      | Privileged module is allowed.                                      | critical                 |
-| ✔         | Capabilities          | Dangerous capabilities are opening.                                | critical                 |
-| ✔         | Volume Mount          | Mount dangerous location.                                          | critical                 |
-| ✔         | Docker Unauthorized   | 2375 port is opening and unauthorized.                             | critical                 |
-| ✔         | Kernel version        | Kernel version is under the escape version.                        | critical                 |
-| ✔         | Network Module        | Net Module is `host` and containerd version less than 1.41.        | critical                 |
-| ✔         | Docker Server version | Server version is included the vulnerable version                  | critical/high/medium/low |
-| ✔         | Image tag check       | Image is not tagged or `latest`.                                   | low                      |
-| Pending   | docker-compose        | Some dangerous configuration.                                      | -                        |
-| Pending   | Container env         | Check Unauthorized database, such as `MySQL`, `Redis`, `Memcache` etc. | -                        | 
+| Supported | Check Item            | Description                                                                              | Severity                 |
+|-----------|-----------------------|------------------------------------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed      | Privileged module is allowed.                                                            | critical                 |
+| ✔         | Capabilities          | Dangerous capabilities are opening.                                                      | critical                 |
+| ✔         | Volume Mount          | Mount dangerous location.                                                                | critical                 |
+| ✔         | Docker Unauthorized   | 2375 port is opening and unauthorized.                                                   | critical                 |
+| ✔         | Kernel version        | Kernel version is under the escape version.                                              | critical                 |
+| ✔         | Network Module        | Net Module is `host` and containerd version less than 1.41.                              | critical                 |
+| ✔         | Docker Server version | Server version is included the vulnerable version                                        | critical/high/medium/low |
+| ✔         | Image tag check       | Image is not tagged or `latest`.                                                         | low                      |
+| Pending   | docker-compose        | Some dangerous configuration.                                                            | -                        |
+| Pending   | Container env         | Check Unauthorized database and weak password, such as `MySQL`, `Redis`, `Memcache` etc. | -                        | 
 
 ---
 
 
 > Kubernetes
 
-| Supported | Check Item                                              | Description                                                  | Severity                 |
-|-----------|---------------------------------------------------------|--------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed                                        | Privileged module is allowed.                                | critical                 |
-| ✔         | Capabilities                                            | Dangerous capabilities are opening.                          | critical                 |
-| ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.         | critical/medium          |
-| ✔         | ClusterRoleBinding                                      | Permissions with default server account.                     | high/medium              |
-| ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.        | critical/high/low        |
-| ✔         | Kernel version (k8s verions is less than v1.24)         | Kernel version is under the escape version.                  | critical                 |
+| Supported | Check Item                                             | Description                                                  | Severity                |
+|-----------|--------------------------------------------------------|--------------------------------------------------------------|-------------------------|
+| ✔         | PrivilegeAllowed                                       | Privileged module is allowed.                                | critical                |
+| ✔         | Capabilities                                           | Dangerous capabilities are opening.                          | critical                |
+| ✔         | PV and PVC                                             | PV is mounted the dangerous location and is actived.         | critical/medium         |
+| ✔         | ClusterRoleBinding                                     | Permissions with default server account.                     | high/medium             |
+| ✔         | Kubernetes-dashborad                                   | Checking `-enable-skip-login` and account permission.        | critical/high/low       |
+| ✔         | Kernel version (k8s verions is less than v1.24)        | Kernel version is under the escape version.                  | critical                |
 | ✔         | Docker Server version  (k8s verions is less than v1.24) | Server version is included the vulnerable version            | critical/high/medium/low |
-| ✔         | Kubernetes certification expiration                     | Certification is expired after 30 days.                      | medium                   |
-| ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
-| ✔         | NoResourceLimits                                        | No resource limits are set.                                  | low                      |
-| ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.             | low                      |
-| Pending   | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.              | -                        |
-| Pending   | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.           | -                        |
-| Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                     | -                        |
+| ✔         | Kubernetes certification expiration                    | Certification is expired after 30 days.                      | medium                  |
+| ✔         | Auto Mount ServiceAccount Token                        | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                     |
+| ✔         | NoResourceLimits                                       | No resource limits are set.                                  | low                     |
+| ✔         | Job and Cronjob                                        | No seccomp or seLinux are set in Job or CronJob.             | low                     |
+| Pending   | CVE-2022-29179                                         | CVE-2022-29179 with cilium installed                                                             | critical                |
+| Pending   | Envoy admin                                            | Envoy admin is opening and listen to `0.0.0.0`.              | -                       |
+| Pending   | Kubelet 10255 and Kubectl proxy                        | 10255 port is opening or Kubectl proxy is opening.           | -                       |
+| Pending   | Trampoline attack                                      | RBAC is vulnerable to Trampoline attack.                     | -                       |
 
 
 ## Help information

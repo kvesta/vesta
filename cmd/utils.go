@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"context"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/internal"
 	"github.com/kvesta/vesta/internal/report"
@@ -9,10 +14,6 @@ import (
 	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/packages"
 	"github.com/kvesta/vesta/pkg/vulnlib"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/docker/docker/client"
 	"k8s.io/client-go/kubernetes"

@@ -15,7 +15,7 @@ import (
 
 // Fetch get cvss data from Internet
 func Fetch(ctx context.Context) error {
-	log.Printf(config.Green("Begin upgrading vulnerability database"))
+	log.Printf(config.Green("Begin updating vulnerability database"))
 
 	tr := &http.Transport{
 		IdleConnTimeout:    60 * time.Second,
@@ -62,6 +62,8 @@ func Fetch(ctx context.Context) error {
 	if !checkExpired(store) {
 		log.Printf("Vulnerability Database is already initialized")
 		return nil
+	} else {
+		log.Printf("Vulnerability Data expired, updating database")
 	}
 
 	cli.Store = store
@@ -166,8 +168,6 @@ func checkExpired(path string) bool {
 	}
 
 	if expire := today.After(logDate.AddDate(0, 0, 3)); expire {
-		log.Printf("Vulnerability Data expired")
-
 		return true
 	}
 

@@ -3,15 +3,15 @@ package vulnscan
 import (
 	"context"
 	"fmt"
-	"github.com/kvesta/vesta/config"
 	"log"
 	"strings"
 
+	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/layer"
 	"github.com/kvesta/vesta/pkg/packages"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 
-	version "github.com/hashicorp/go-version"
+	version2 "github.com/hashicorp/go-version"
 	rpmversion "github.com/knqyf263/go-rpm-version"
 )
 
@@ -73,7 +73,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, boo
 			}
 		}
 
-		currentVersion, err := version.NewVersion(cv)
+		currentVersion, err := version2.NewVersion(cv)
 		if err != nil {
 			continue
 		}
@@ -83,12 +83,12 @@ func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, boo
 		}
 
 		if strings.Contains(row.MaxVersion, "=") {
-			vulnMaxVersion, err := version.NewVersion(row.MaxVersion[1:])
+			vulnMaxVersion, err := version2.NewVersion(row.MaxVersion[1:])
 			if err != nil {
 				continue
 			}
 			if strings.Contains(row.MinVersion, "=") {
-				vulnMinVersion, err := version.NewVersion(row.MinVersion[1:])
+				vulnMinVersion, err := version2.NewVersion(row.MinVersion[1:])
 				if err != nil {
 					continue
 				}
@@ -101,7 +101,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, boo
 				}
 
 			} else {
-				vulnMinVersion, err := version.NewVersion(row.MinVersion)
+				vulnMinVersion, err := version2.NewVersion(row.MinVersion)
 				if err != nil {
 					continue
 				}
@@ -115,12 +115,12 @@ func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, boo
 			}
 
 		} else {
-			vulnMaxVersion, err := version.NewVersion(row.MaxVersion)
+			vulnMaxVersion, err := version2.NewVersion(row.MaxVersion)
 			if err != nil {
 				continue
 			}
 			if strings.Contains(row.MinVersion, "=") {
-				vulnMinVersion, err := version.NewVersion(row.MinVersion[1:])
+				vulnMinVersion, err := version2.NewVersion(row.MinVersion[1:])
 				if err != nil {
 					continue
 				}
@@ -133,7 +133,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, boo
 				}
 
 			} else {
-				vulnMinVersion, err := version.NewVersion(row.MinVersion)
+				vulnMinVersion, err := version2.NewVersion(row.MinVersion)
 				if err != nil {
 					continue
 				}
