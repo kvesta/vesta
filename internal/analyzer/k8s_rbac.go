@@ -3,6 +3,7 @@ package analyzer
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	rv1 "k8s.io/api/rbac/v1"
@@ -112,4 +113,114 @@ func checkMatchingRole(clr []rv1.ClusterRole, ruleName string) (bool, []*threat)
 		}
 	}
 	return vuln, tlist
+}
+
+func (ks *KScanner) checkConfigMap(ns string) error {
+
+	var password string
+
+	cfs, err := ks.KClient.CoreV1().ConfigMaps(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, cf := range cfs.Items {
+		data := cf.Data
+		for k, v := range data {
+			needCheck := false
+
+			passKey := regexp.MustCompile(`(?i)password`)
+			if passKey.MatchString(k) {
+				password = v
+				needCheck = true
+			}
+
+			passUrlMatch := regexp.MustCompile(`\w+\+\w+\://\w+\:(.*)?\@`)
+			pass := passUrlMatch.FindStringSubmatch(v)
+			if len(pass) > 1 {
+				password = pass[1]
+				needCheck = true
+			}
+
+			if needCheck {
+				switch checkWeakPassword(password) {
+				case "Weak":
+					th := &threat{
+						Param:    fmt.Sprintf("data: %s", k),
+						Value:    fmt.Sprintf("%s:%s", k, v),
+						Type:     "ConfigMap",
+						Describe: fmt.Sprintf("ConfigMap has found weak password: '%s'.", password),
+						Severity: "high",
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
+
+				case "Medium":
+					th := &threat{
+						Param: fmt.Sprintf("data: %s", k),
+						Value: fmt.Sprintf("%s:%s", k, v),
+						Type:  "ConfigMap",
+						Describe: fmt.Sprintf("ConfigMap has found password '%s' "+
+							"need to be reinforeced.", password),
+						Severity: "medium",
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
+				}
+			}
+
+		}
+	}
+
+	return nil
+}
+
+func (ks *KScanner) checkSecret(ns string) error {
+
+	var password string
+
+	ses, err := ks.KClient.CoreV1().Secrets(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, se := range ses.Items {
+		data := se.Data
+
+		for k, v := range data {
+			passKey := regexp.MustCompile(`(?i)password`)
+			if passKey.MatchString(k) {
+				password = string(v)
+
+				switch checkWeakPassword(password) {
+				case "Weak":
+					th := &threat{
+						Param:    fmt.Sprintf("data: %s", k),
+						Value:    fmt.Sprintf("%s:%s", k, v),
+						Type:     "Secret",
+						Describe: fmt.Sprintf("Secret has found weak password: '%s'.", password),
+						Severity: "high",
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
+
+				case "Medium":
+					th := &threat{
+						Param: fmt.Sprintf("data: %s", k),
+						Value: fmt.Sprintf("%s:%s", k, v),
+						Type:  "Secret",
+						Describe: fmt.Sprintf("Secret has found password '%s' "+
+							"need to be reinforeced.", password),
+						Severity: "medium",
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
+				}
+
+			}
+
+		}
+	}
+
+	return nil
 }

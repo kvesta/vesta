@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	version2 "github.com/hashicorp/go-version"
 	"github.com/tidwall/gjson"
 )
 
@@ -289,6 +290,25 @@ func cpeParse(cpe []interface{}) []*cpes {
 				scpe.MaxVersion = "=" + c["versionEndIncluding"].(string)
 			} else if c["versionEndExcluding"] != nil {
 				scpe.MaxVersion = c["versionEndExcluding"].(string)
+			}
+
+			// Distinguish between Python 2 and Python 3
+			if scpe.Name == "python" {
+				var pyv string
+
+				if strings.Contains(scpe.MaxVersion, "=") {
+					pyv = scpe.MaxVersion[1:]
+				} else {
+					pyv = scpe.MaxVersion
+				}
+				pyVersion, err := version2.NewVersion(pyv)
+				if err == nil {
+					py3, _ := version2.NewVersion("3.0.0")
+					if pyVersion.Compare(py3) >= 0 && scpe.MinVersion == "0.0" {
+						scpe.MinVersion = "=3.0"
+					}
+				}
+
 			}
 
 			cs = append(cs, scpe)

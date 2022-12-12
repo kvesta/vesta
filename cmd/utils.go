@@ -24,9 +24,11 @@ import (
 func DoScan(ctx context.Context, tarFile string) {
 
 	// Get vulnerability database
-	err := vulnlib.Fetch(ctx)
-	if err != nil {
-		log.Printf("failed to get vulnerability database")
+	if !ctx.Value("skip").(bool) {
+		err := vulnlib.Fetch(ctx)
+		if err != nil {
+			log.Printf("failed to get vulnerability database")
+		}
 	}
 
 	log.Printf(config.Green("Begin to analyze the layer"))

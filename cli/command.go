@@ -28,6 +28,7 @@ var (
 	kubeconfig string
 	outfile    string
 	upgradeall bool
+	skipUpdate bool
 )
 
 func Execute() error {
@@ -99,6 +100,7 @@ func Execute() error {
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "tarType", "image")
 			ctx = context.WithValue(ctx, "output", outfile)
+			ctx = context.WithValue(ctx, "skip", skipUpdate)
 
 			if tarFile == "" {
 				var err error
@@ -137,6 +139,7 @@ func Execute() error {
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "tarType", "container")
 			ctx = context.WithValue(ctx, "output", outfile)
+			ctx = context.WithValue(ctx, "skip", skipUpdate)
 
 			if tarFile == "" {
 				var err error
@@ -169,9 +172,11 @@ func Execute() error {
 
 	imageCheck.Flags().StringVarP(&tarFile, "file", "f", "", "path of tar file")
 	imageCheck.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
+	imageCheck.Flags().BoolVar(&skipUpdate, "skip", false, "skip the updating")
 
 	containerCheck.Flags().StringVarP(&tarFile, "file", "f", "", "path of tar file")
 	containerCheck.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
+	containerCheck.Flags().BoolVar(&skipUpdate, "skip", false, "skip the updating")
 
 	kubernetesAnalyze.Flags().StringVarP(&nameSpace, "ns", "n", "all", "specific namespace")
 	kubernetesAnalyze.Flags().StringVar(&kubeconfig, "kubeconfig", "default", "specific configure file")

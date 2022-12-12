@@ -43,7 +43,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 ```bash
 $./vesta scan image -f example.tar
 
-2022/11/29 22:50:00 Searching image
+2022/11/29 22:50:00 Searching for image
 2022/11/29 22:50:19 Begin upgrading vulnerability database
 2022/11/29 22:50:19 Vulnerability Database is already initialized
 2022/11/29 22:50:19 Begin to analyze the layer
@@ -144,20 +144,26 @@ Pods:
 +----+--------------------+------------------------------+-------------------+-----------------------+----------+--------------------------------+
 
 Configures:
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
-| ID |            TYPEL            |             PARAM              |             VALUE              | SEVERITY |          DESCRIPTION           |
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
-|  1 | K8s version less than v1.24 | kernel version                 | 5.10.104-linuxkit              | critical | Kernel version is suffering    |
-|    |                             |                                |                                |          | the CVE-2022-0185 with         |
-|    |                             |                                |                                |          | CAP_SYS_ADMIN vulnerablility,  |
-|    |                             |                                |                                |          | has a potential container      |
-|    |                             |                                |                                |          | escape.                        |
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
-|  2 | ClusterRoleBinding          | binding name:                  | verbs:                         | high     | Key permission are given to    |
-|    |                             | vuln-clusterrolebinding |      | get,watch,list,create,update | |          | the default service account    |
-|    |                             | rolename: vuln-clusterrole |   | resources: pods,services       |          | which will cause a potential   |
-|    |                             | namespace: default             |                                |          | container escape.              |
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+| ID |            TYPEL            |             PARAM              |                         VALUE                          | SEVERITY |          DESCRIPTION           |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  1 | K8s version less than v1.24 | kernel version                 | 5.10.104-linuxkit                                      | critical | Kernel version is suffering    |
+|    |                             |                                |                                                        |          | the CVE-2022-0185 with         |
+|    |                             |                                |                                                        |          | CAP_SYS_ADMIN vulnerablility,  |
+|    |                             |                                |                                                        |          | has a potential container      |
+|    |                             |                                |                                                        |          | escape.                        |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  2 | ConfigMap                   | data: db.string                | db.string:mysql+pymysql://dbapp:Password123@db:3306/db | high     | ConfigMap has found weak       |
+|    |                             |                                |                                                        |          | password: 'Password123'.       |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  3 | Secret                      | data: password                 | password:Password123                                   | high     | Secret has found weak          |
+|    |                             |                                |                                                        |          | password: 'Password123'.       |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  4 | ClusterRoleBinding          | binding name:                  | verbs:                                                 | high     | Key permission are given to    |
+|    |                             | vuln-clusterrolebinding |      | get,watch,list,create,update |                         |          | the default service account    |
+|    |                             | rolename: vuln-clusterrole |   | resources: pods,services                               |          | which will cause a potential   |
+|    |                             | namespace: default             |                                                        |          | container escape.              |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
 ```
 
 ## 检查项
@@ -174,9 +180,10 @@ Configures:
 | ✔         | Kernel version        | 当前内核版本存在逃逸漏洞                                             | critical                 |
 | ✔         | Network Module        | Net模式为`host`模式并且在特定containerd版本下                         | critical                 |
 | ✔         | Docker Server version | Docker Server版本存在漏洞                                      | critical/high/medium/low |
+| ✔         | Docker env password check | Docker env是否存在弱密码                                     | high/medium |
 | ✔         | Image tag check       | Image没有被打tag或为默认latest                                   | low                      |
 | 待定        | docker-compose        | 检查一些危险的配置                                                | -                        |
-| 待定   | Container env         | 检查数据库是否未设置密码或者设置为弱密码, 包括但不限于`MySQL`, `Redis`, `Memcache` | -                        | 
+| 待定   | Container env         | 检查数据库是否未设置密码, 包括但不限于`MySQL`, `Redis`, `Memcache` | -                        | 
 
 ---
 
@@ -193,6 +200,7 @@ Configures:
 | ✔        | Kernel version (k8s verions is less than v1.24)            | 当前内核版本存在逃逸漏洞                                                    | critical                 |
 | ✔        | Docker Server version  (k8s verions is less than v1.24)    | Docker Server版本存在漏洞                                             | critical/high/medium/low |
 | ✔        | Kubernetes certification expiration                        | 证书到期时间小于30天                                                     | medium                   |
+| ✔         | ConfigMap and Secret check                                | ConfigMap 或者 Secret是否存在弱密码                                     | high/medium              |
 | ✔        | Auto Mount ServiceAccount Token                            | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
 | ✔        | NoResourceLimits                                           | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
 | ✔        | Job and Cronjob                                            | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |

@@ -164,10 +164,15 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 		selinuxProfile := job.Spec.Template.Spec.SecurityContext.SELinuxOptions
 		if job.Status.Active == 1 &&
 			seccompProfile == nil && selinuxProfile == nil {
+			command := strings.Join(job.Spec.Template.Spec.Containers[0].Command, " ")
+			if len(command) > 50 {
+				command = command[:50] + "..."
+			}
+
 			th := &threat{
 				Type:     "Job",
 				Param:    fmt.Sprintf("Job Name: %s\nNamespace: %s", job.Name, ns),
-				Value:    fmt.Sprintf("Command: %s", job.Spec.Template.Spec.Containers[0].Command),
+				Value:    fmt.Sprintf("Command: %s", command),
 				Describe: fmt.Sprintf("Active job %s is not setting any security policy.", job.Name),
 				Severity: "low",
 			}
@@ -180,11 +185,17 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 		seccompProfile := cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.SeccompProfile
 		selinuxProfile := cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.SELinuxOptions
 		if seccompProfile == nil && selinuxProfile == nil {
+
+			command := strings.Join(cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Command, " ")
+			if len(command) > 50 {
+				command = command[:50] + "..."
+			}
+
 			th := &threat{
 				Type: "CronJob",
 				Param: fmt.Sprintf("CronJob Name: %s\nNamespace: %s\n"+
 					"Schedule: %s", cronjob.Name, ns, cronjob.Spec.Schedule),
-				Value:    fmt.Sprintf("Command: %s", cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Command),
+				Value:    fmt.Sprintf("Command: %s", command),
 				Describe: fmt.Sprintf("Active Cronjob %s is not setting any security policy.", cronjob.Name),
 				Severity: "low",
 			}

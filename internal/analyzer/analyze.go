@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/kvesta/vesta/pkg/osrelease"
@@ -55,25 +56,25 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 
 	// Checking privileged
 	if ok, tlist := checkPrivileged(config); ok {
-		for _, t := range tlist {
-			ths = append(ths, t)
-		}
+		ths = append(ths, tlist...)
 		isVulnerable = true
 	}
 
 	// Checking mount volumes
 	if ok, tlist := checkMount(config); ok {
-		for _, t := range tlist {
-			ths = append(ths, t)
-		}
+		ths = append(ths, tlist...)
+		isVulnerable = true
+	}
+
+	// Check the strength of password
+	if ok, tlist := checkEnvPassword(config); ok {
+		ths = append(ths, tlist...)
 		isVulnerable = true
 	}
 
 	// Checking network model
 	if ok, tlist := checkNetworkModel(config, s.EngineVersion); ok {
-		for _, t := range tlist {
-			ths = append(ths, t)
-		}
+		ths = append(ths, tlist...)
 		isVulnerable = true
 	}
 
@@ -131,6 +132,16 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			log.Printf("check job failed, %v", err)
 		}
 
+		err = ks.checkConfigMap(ns.(string))
+		if err != nil {
+			log.Printf("check config map failed, %v", err)
+		}
+
+		err = ks.checkSecret(ns.(string))
+		if err != nil {
+			log.Printf("check secret failed, %v", err)
+		}
+
 	} else {
 		for _, ns := range nsList.Items {
 
@@ -153,6 +164,17 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 				if err != nil {
 					log.Printf("check job failed, %v", err)
 				}
+
+				err = ks.checkConfigMap(ns.Name)
+				if err != nil {
+					log.Printf("check config map failed, %v", err)
+				}
+
+				err = ks.checkSecret(ns.Name)
+				if err != nil {
+					log.Printf("check secret failed, %v", err)
+				}
+
 			}
 		}
 	}
@@ -332,4 +354,67 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 	}
 
 	return vuln, tlist
+}
+
+func checkWeakPassword(pass string) string {
+	countCase := 0
+
+	// Particularly checking the keyword
+	keyWords := []string{"password", "admin", "qwerty", "1q2w3e"}
+	for _, keyword := range keyWords {
+		replmatch := regexp.MustCompile(fmt.Sprintf(`(?i)%s`, keyword))
+		pass = replmatch.ReplaceAllString(pass, "")
+	}
+
+	length := len(pass)
+
+	lowerCase := regexp.MustCompile(`[a-z]`)
+	lowerMatch := lowerCase.FindStringSubmatch(pass)
+	if len(lowerMatch) > 0 {
+		countCase += 1
+	}
+
+	upperCase := regexp.MustCompile(`[A-Z]`)
+	upperMatch := upperCase.FindStringSubmatch(pass)
+	if len(upperMatch) > 0 {
+		countCase += 1
+	}
+
+	numberCase := regexp.MustCompile(`[\d]`)
+	numberMatch := numberCase.FindStringSubmatch(pass)
+	if len(numberMatch) > 0 {
+		countCase += 1
+	}
+
+	characterCase := regexp.MustCompile(`[^\w]`)
+	characterMatch := characterCase.FindStringSubmatch(pass)
+	if len(characterMatch) > 0 {
+		countCase += 1
+	}
+
+	if length <= 6 {
+		switch countCase {
+		case 4:
+			return "Medium"
+		default:
+			return "Weak"
+		}
+
+	} else if length > 6 && length <= 10 {
+		switch countCase {
+		case 4, 3:
+			return "Strong"
+		case 2:
+			return "Medium"
+		case 1, 0:
+			return "Weak"
+
+		}
+	} else {
+		if countCase < 2 {
+			return "Medium"
+		}
+	}
+
+	return "Strong"
 }

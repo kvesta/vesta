@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/kvesta/vesta/pkg/vulnlib"
@@ -144,6 +145,96 @@ func checkMount(config *types.ContainerJSON) (bool, []*threat) {
 		}
 
 	}
+	return vuln, tlist
+}
+
+func checkEnvPassword(config *types.ContainerJSON) (bool, []*threat) {
+	var vuln = false
+	var password string
+
+	tlist := []*threat{}
+	imageVersion := config.Config.Image
+
+	// Check weakness password
+	if strings.Contains(imageVersion, "mysql") ||
+		strings.Contains(imageVersion, "postgres") {
+
+		mysqlReg := regexp.MustCompile(`MYSQL_ROOT_PASSWORD=(.*)`)
+		postgReqs := regexp.MustCompile(`POSTGRES_PASSWORD=(.*)`)
+
+		env := config.Config.Env
+		for _, e := range env {
+			mysqlPass := mysqlReg.FindStringSubmatch(e)
+			postPass := postgReqs.FindStringSubmatch(e)
+			if len(mysqlPass) > 1 {
+				password = mysqlPass[1]
+			} else if len(postPass) > 1 {
+				password = postPass[1]
+			} else {
+				continue
+			}
+
+			switch checkWeakPassword(password) {
+			case "Weak":
+				th := &threat{
+					Param:    "Weak Password",
+					Value:    fmt.Sprintf("Password: '%s'", password),
+					Describe: fmt.Sprintf("%s has weak password: '%s'.", imageVersion, password),
+					Severity: "high",
+				}
+				tlist = append(tlist, th)
+				vuln = true
+			case "Medium":
+				th := &threat{
+					Param: "Password need to be reinforced",
+					Value: fmt.Sprintf("Password: '%s'", password),
+					Describe: fmt.Sprintf("%s password '%s' "+
+						"need to be reinforced.", imageVersion, password),
+					Severity: "low",
+				}
+				tlist = append(tlist, th)
+				vuln = true
+			}
+		}
+
+	} else if strings.Contains(imageVersion, "redis") {
+		args := config.Args
+
+		requirepass := false
+		for _, arg := range args {
+
+			if strings.Contains(arg, "--requirepass") {
+				requirepass = true
+			}
+
+			if requirepass {
+				password := arg
+				switch checkWeakPassword(password) {
+				case "Weak":
+					th := &threat{
+						Param:    "Weak Password",
+						Value:    fmt.Sprintf("Password: '%s'", password),
+						Describe: fmt.Sprintf("Redis has weak password: '%s'.", password),
+						Severity: "high",
+					}
+					tlist = append(tlist, th)
+					vuln = true
+				case "Medium":
+					th := &threat{
+						Param: "Password need to be reinforced",
+						Value: fmt.Sprintf("Password: '%s'", password),
+						Describe: fmt.Sprintf("Redis password '%s' "+
+							"need to be reinforced.", password),
+						Severity: "medium",
+					}
+					tlist = append(tlist, th)
+					vuln = true
+				}
+			}
+
+		}
+	}
+
 	return vuln, tlist
 }
 
