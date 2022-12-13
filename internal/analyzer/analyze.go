@@ -79,6 +79,9 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 	}
 
 	if isVulnerable {
+		
+		sortSeverity(ths)
+
 		con := &container{
 			ContainerID:   config.ID[:12],
 			ContainerName: config.Name[1:],
@@ -196,6 +199,8 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	if err != nil {
 		log.Printf("check certification expiration failed, %v", err)
 	}
+
+	sortSeverity(ks.VulnConfigures)
 
 	return nil
 }
