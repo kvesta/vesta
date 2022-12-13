@@ -209,8 +209,8 @@ Configures:
 | ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.            | critical/medium          |
 | ✔         | ClusterRoleBinding                                      | Permissions with default server account.                        | high/medium              |
 | ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.           | critical/high/low        |
-| ✔         | Kernel version (k8s verions is less than v1.24)         | Kernel version is under the escape version.                     | critical                 |
-| ✔         | Docker Server version  (k8s verions is less than v1.24) | Server version is included the vulnerable version.              | critical/high/medium/low |
+| ✔         | Kernel version (k8s versions is less than v1.24)         | Kernel version is under the escape version.                     | critical                 |
+| ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.              | critical/high/medium/low |
 | ✔         | Kubernetes certification expiration                     | Certification is expired after 30 days.                         | medium                   |
 | ✔         | ConfigMap and Secret check                              | Check weak password in ConfigMap or Secret.                     | high/medium              |
 | ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
