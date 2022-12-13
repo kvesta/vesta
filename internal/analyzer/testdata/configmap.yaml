@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vulnconfig
+  labels:
+    app: configmap
+data:
+  POSTGRES_PASSWORD: postgres
+  db.string: "mysql+pymysql://dbapp:Password123@db:3306/db"
+
+

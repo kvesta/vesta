@@ -37,7 +37,7 @@ func (da *DockerApi) GetContainerName(containerID string) (string, error) {
 		}
 	}
 
-	log.Printf(config.Green("Searching container"))
+	log.Printf(config.Green("Searching for container"))
 	fileio, err := da.DCli.ContainerExport(ctx, containerID)
 
 	if err != nil {

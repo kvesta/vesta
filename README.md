@@ -48,7 +48,7 @@ vesta scan container -f example.tar
 Ouput:
 
 ```bash
-2022/11/29 22:50:00 Searching image
+2022/11/29 22:50:00 Searching for image
 2022/11/29 22:50:19 Begin upgrading vulnerability database
 2022/11/29 22:50:19 Vulnerability Database is already initialized
 2022/11/29 22:50:19 Begin to analyze the layer
@@ -157,61 +157,69 @@ Pods:
 +----+--------------------+------------------------------+-------------------+-----------------------+----------+--------------------------------+
 
 Configures:
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
-| ID |            TYPEL            |             PARAM              |             VALUE              | SEVERITY |          DESCRIPTION           |
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
-|  1 | K8s version less than v1.24 | kernel version                 | 5.10.104-linuxkit              | critical | Kernel version is suffering    |
-|    |                             |                                |                                |          | the CVE-2022-0185 with         |
-|    |                             |                                |                                |          | CAP_SYS_ADMIN vulnerablility,  |
-|    |                             |                                |                                |          | has a potential container      |
-|    |                             |                                |                                |          | escape.                        |
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
-|  2 | ClusterRoleBinding          | binding name:                  | verbs:                         | high     | Key permission are given to    |
-|    |                             | vuln-clusterrolebinding |      | get,watch,list,create,update | |          | the default service account    |
-|    |                             | rolename: vuln-clusterrole |   | resources: pods,services       |          | which will cause a potential   |
-|    |                             | namespace: default             |                                |          | container escape.              |
-+----+-----------------------------+--------------------------------+--------------------------------+----------+--------------------------------+
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+| ID |            TYPEL            |             PARAM              |                         VALUE                          | SEVERITY |          DESCRIPTION           |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  1 | K8s version less than v1.24 | kernel version                 | 5.10.104-linuxkit                                      | critical | Kernel version is suffering    |
+|    |                             |                                |                                                        |          | the CVE-2022-0185 with         |
+|    |                             |                                |                                                        |          | CAP_SYS_ADMIN vulnerablility,  |
+|    |                             |                                |                                                        |          | has a potential container      |
+|    |                             |                                |                                                        |          | escape.                        |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  2 | ConfigMap                   | data: db.string                | db.string:mysql+pymysql://dbapp:Password123@db:3306/db | high     | ConfigMap has found weak       |
+|    |                             |                                |                                                        |          | password: 'Password123'.       |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  3 | Secret                      | data: password                 | password:Password123                                   | high     | Secret has found weak          |
+|    |                             |                                |                                                        |          | password: 'Password123'.       |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  4 | ClusterRoleBinding          | binding name:                  | verbs:                                                 | high     | Key permission are given to    |
+|    |                             | vuln-clusterrolebinding |      | get,watch,list,create,update |                         |          | the default service account    |
+|    |                             | rolename: vuln-clusterrole |   | resources: pods,services                               |          | which will cause a potential   |
+|    |                             | namespace: default             |                                                        |          | container escape.              |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
 ```
 
 ## Checklist
 
 > Docker
 
-| Supported | Check Item            | Description                                                                              | Severity                 |
-|-----------|-----------------------|------------------------------------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed      | Privileged module is allowed.                                                            | critical                 |
-| ✔         | Capabilities          | Dangerous capabilities are opening.                                                      | critical                 |
-| ✔         | Volume Mount          | Mount dangerous location.                                                                | critical                 |
-| ✔         | Docker Unauthorized   | 2375 port is opening and unauthorized.                                                   | critical                 |
-| ✔         | Kernel version        | Kernel version is under the escape version.                                              | critical                 |
-| ✔         | Network Module        | Net Module is `host` and containerd version less than 1.41.                              | critical                 |
-| ✔         | Docker Server version | Server version is included the vulnerable version                                        | critical/high/medium/low |
-| ✔         | Image tag check       | Image is not tagged or `latest`.                                                         | low                      |
-| Pending   | docker-compose        | Some dangerous configuration.                                                            | -                        |
-| Pending   | Container env         | Check Unauthorized database and weak password, such as `MySQL`, `Redis`, `Memcache` etc. | -                        | 
+| Supported | Check Item                | Description                                                            | Severity                 |
+|-----------|---------------------------|------------------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                          | critical                 |
+| ✔         | Capabilities              | Dangerous capabilities are opening.                                    | critical                 |
+| ✔         | Volume Mount              | Mount dangerous location.                                              | critical                 |
+| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                 | critical                 |
+| ✔         | Kernel version            | Kernel version is under the escape version.                            | critical                 |
+| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.            | critical                 |
+| ✔         | Docker Server version     | Server version is included the vulnerable version                      | critical/high/medium/low |
+| ✔         | Docker env password check | Check weak password in database.                                       | high/medium              |
+| ✔         | Image tag check           | Image is not tagged or `latest`.                                       | low                      |
+| Pending   | docker-compose            | Some dangerous configuration.                                          | -                        |
+| Pending   | Container env             | Check Unauthorized database, such as `MySQL`, `Redis`, `Memcache` etc. | -                        | 
 
 ---
 
 
 > Kubernetes
 
-| Supported | Check Item                                             | Description                                                  | Severity                |
-|-----------|--------------------------------------------------------|--------------------------------------------------------------|-------------------------|
-| ✔         | PrivilegeAllowed                                       | Privileged module is allowed.                                | critical                |
-| ✔         | Capabilities                                           | Dangerous capabilities are opening.                          | critical                |
-| ✔         | PV and PVC                                             | PV is mounted the dangerous location and is actived.         | critical/medium         |
-| ✔         | ClusterRoleBinding                                     | Permissions with default server account.                     | high/medium             |
-| ✔         | Kubernetes-dashborad                                   | Checking `-enable-skip-login` and account permission.        | critical/high/low       |
-| ✔         | Kernel version (k8s verions is less than v1.24)        | Kernel version is under the escape version.                  | critical                |
-| ✔         | Docker Server version  (k8s verions is less than v1.24) | Server version is included the vulnerable version            | critical/high/medium/low |
-| ✔         | Kubernetes certification expiration                    | Certification is expired after 30 days.                      | medium                  |
-| ✔         | Auto Mount ServiceAccount Token                        | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                     |
-| ✔         | NoResourceLimits                                       | No resource limits are set.                                  | low                     |
-| ✔         | Job and Cronjob                                        | No seccomp or seLinux are set in Job or CronJob.             | low                     |
-| Pending   | CVE-2022-29179                                         | CVE-2022-29179 with cilium installed                                                             | critical                |
-| Pending   | Envoy admin                                            | Envoy admin is opening and listen to `0.0.0.0`.              | -                       |
-| Pending   | Kubelet 10255 and Kubectl proxy                        | 10255 port is opening or Kubectl proxy is opening.           | -                       |
-| Pending   | Trampoline attack                                      | RBAC is vulnerable to Trampoline attack.                     | -                       |
+| Supported | Check Item                                              | Description                                                     | Severity                 |
+|-----------|---------------------------------------------------------|-----------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed                                        | Privileged module is allowed.                                   | critical                 |
+| ✔         | Capabilities                                            | Dangerous capabilities are opening.                             | critical                 |
+| ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.            | critical/medium          |
+| ✔         | ClusterRoleBinding                                      | Permissions with default server account.                        | high/medium              |
+| ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.           | critical/high/low        |
+| ✔         | Kernel version (k8s verions is less than v1.24)         | Kernel version is under the escape version.                     | critical                 |
+| ✔         | Docker Server version  (k8s verions is less than v1.24) | Server version is included the vulnerable version.              | critical/high/medium/low |
+| ✔         | Kubernetes certification expiration                     | Certification is expired after 30 days.                         | medium                   |
+| ✔         | ConfigMap and Secret check                              | Check weak password in ConfigMap or Secret.                     | high/medium              |
+| ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
+| ✔         | NoResourceLimits                                        | No resource limits are set.                                     | low                      |
+| ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.                | low                      |
+| Pending   | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                            | critical                 |
+| Pending   | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | -                        |
+| Pending   | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | -                        |
+| Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                        | -                        |
 
 
 ## Help information

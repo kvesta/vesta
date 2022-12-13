@@ -280,9 +280,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 
 	if os == "centos" || os == "rhel" {
 		for _, p := range packs {
-			if p.Name == "python" && p.Version < "3.0" {
-				continue
-			}
+
 			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(p.Name))
 			if err != nil {
 				continue
@@ -305,10 +303,6 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 	for _, p := range packs {
 		rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(p.Name))
 		if err != nil {
-			continue
-		}
-
-		if p.Name == "python" && p.Version < "3.0" {
 			continue
 		}
 

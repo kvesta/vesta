@@ -48,7 +48,7 @@ func (da *DockerApi) GetImageName(imageID string) (string, error) {
 		}
 	}
 
-	log.Printf(config.Green("Searching image"))
+	log.Printf(config.Green("Searching for image"))
 	fileio, err := da.DCli.ImageSave(ctx, imageList)
 
 	if err != nil {
