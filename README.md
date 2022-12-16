@@ -183,19 +183,19 @@ Configures:
 
 > Docker
 
-| Supported | Check Item                | Description                                                            | Severity                 |
-|-----------|---------------------------|------------------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                          | critical                 |
-| ✔         | Capabilities              | Dangerous capabilities are opening.                                    | critical                 |
-| ✔         | Volume Mount              | Mount dangerous location.                                              | critical                 |
-| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                 | critical                 |
-| ✔         | Kernel version            | Kernel version is under the escape version.                            | critical                 |
-| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.            | critical                 |
-| ✔         | Docker Server version     | Server version is included the vulnerable version                      | critical/high/medium/low |
-| ✔         | Docker env password check | Check weak password in database.                                       | high/medium              |
-| ✔         | Image tag check           | Image is not tagged or `latest`.                                       | low                      |
-| Pending   | docker-compose            | Some dangerous configuration.                                          | -                        |
-| Pending   | Container env             | Check Unauthorized database, such as `MySQL`, `Redis`, `Memcache` etc. | -                        | 
+| Supported | Check Item                | Description                                                              | Severity                 |
+|-----------|---------------------------|--------------------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                            | critical                 |
+| ✔         | Capabilities              | Dangerous capabilities are opening.                                      | critical                 |
+| ✔         | Volume Mount              | Mount dangerous location.                                                | critical                 |
+| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                   | critical                 |
+| ✔         | Kernel version            | Kernel version is under the escape version.                              | critical                 |
+| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical                 |
+| ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/medium/low |
+| ✔         | Docker env password check | Check weak password in database.                                         | high/medium              |
+| ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                      |
+| Pending   | Container env             | Check Unauthorized database, such as `MySQL`, `Redis`, `PostgreSQL` etc. | -                        | 
+| Pending   | IaC scan                  | IaC scan                                                                 | -                        |
 
 ---
 
@@ -220,6 +220,7 @@ Configures:
 | Pending   | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | -                        |
 | Pending   | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | -                        |
 | Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                        | -                        |
+| Pending   | IaC scan                                                | IaC scan                                                        | -                        |
 
 
 ## Help information

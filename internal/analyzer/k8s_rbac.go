@@ -38,7 +38,7 @@ func (ks *KScanner) checkClusterBinding() error {
 				continue
 			}
 
-			if sub.Name == "anonymous" || sub.Name == "default" {
+			if sub.Name == "system:anonymous" || sub.Name == "default" {
 
 				ruleName := rb.RoleRef.Name
 				if ok, tlist := checkMatchingRole(clr.Items, ruleName); ok {

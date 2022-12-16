@@ -53,7 +53,7 @@ func ResolveDockerData(ctx context.Context, r analyzer.Scanner) error {
 	table.SetHeader([]string{"ID", "Container Detail", "Param",
 		"Value", "Severity", "Description"})
 	table.SetRowLine(true)
-	table.SetAutoMergeCellsByColumnIndex([]int{0})
+	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 
 	for i, c := range r.VulnContainers {
 
