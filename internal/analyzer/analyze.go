@@ -79,7 +79,6 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 	}
 
 	if isVulnerable {
-		
 		sortSeverity(ths)
 
 		con := &container{
@@ -198,6 +197,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	err = ks.checkCerts()
 	if err != nil {
 		log.Printf("check certification expiration failed, %v", err)
+	}
+
+	// Check envoy configuration
+	err = ks.checkEnvoy()
+	if err != nil {
+		log.Printf("check envoy configuration failed, %v", err)
 	}
 
 	sortSeverity(ks.VulnConfigures)

@@ -1,6 +1,7 @@
 package vulnlib
 
 import (
+	"bufio"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -124,7 +125,7 @@ func (c *Client) cvssToDB() error {
 	upToDateFile := filepath.Join(c.Store, fmt.Sprintf("nvdcve-1.1-%d.json", time.Now().Year()))
 	logFile := filepath.Join(c.Store, "date.txt")
 	if exists(logFile) {
-		return c.cvssparse(upToDateFile)
+		return readCVSS(upToDateFile, c.cvssParse)
 	}
 
 	for _, cf := range cvssFiles {
@@ -133,7 +134,7 @@ func (c *Client) cvssToDB() error {
 		}
 
 		cveFile := filepath.Join(c.Store, cf.Name())
-		err = c.cvssparse(cveFile)
+		err = readCVSS(cveFile, c.cvssParse)
 		if err != nil {
 			log.Printf("%s is stored failed", cf.Name())
 			continue
@@ -144,85 +145,110 @@ func (c *Client) cvssToDB() error {
 	return nil
 }
 
-func (c *Client) cvssparse(filename string) error {
-	cvFile, err := os.Open(filename)
+func readCVSS(filename string, handle func(filename string) error) error {
+	f, err := os.Open(filename)
+
+	defer f.Close()
 	if err != nil {
 		return err
 	}
 
-	defer cvFile.Close()
-	value, err := ioutil.ReadAll(cvFile)
-	if err != nil {
-		return err
-	}
+	buf := bufio.NewReader(f)
+	var lines string
+	for {
+		line, _, err := buf.ReadLine()
+		strline := strings.TrimSpace(string(line))
 
-	nvd := gjson.Get(string(value), "CVE_Items").Value()
-	if nvd == nil {
-		return nil
-	}
+		if strings.Contains(strline, `"cve" :`) {
 
-	cveList := nvd.([]interface{})
-
-	for _, cveitems := range cveList {
-		cve := cveitems.(map[string]interface{})["cve"].(map[string]interface{})
-		cveID := cve["CVE_data_meta"].(map[string]interface{})["ID"].(string)
-		if cveID == "" {
-			continue
-		}
-		publishDate := cveitems.(map[string]interface{})["publishedDate"].(string)
-		publishDate = strings.Replace(publishDate, "Z", "", -1)
-		pd, _ := time.Parse("2006-01-02T15:04", publishDate)
-		publishDate = pd.Format("2006-01-02")
-
-		var description string
-		descriptionData := cve["description"].(map[string]interface{})["description_data"]
-		if descriptionData == nil {
-			description = ""
-		} else {
-			description = descriptionData.([]interface{})[0].(map[string]interface{})["value"].(string)
-		}
-
-		cpe := cveitems.(map[string]interface{})["configurations"].(map[string]interface{})["nodes"].([]interface{})
-		cpeResult := cpeParse(cpe)
-
-		if len(cpeResult) < 1 {
-			continue
-		}
-
-		var score float64
-		var level string
-
-		if len(cveitems.(map[string]interface{})["impact"].(map[string]interface{})) < 1 {
-			continue
-		}
-
-		if cveitems.(map[string]interface{})["impact"].(map[string]interface{})["baseMetricV3"] == nil {
-			baseMetricV2 := cveitems.(map[string]interface{})["impact"].(map[string]interface{})["baseMetricV2"].(map[string]interface{})
-			score = baseMetricV2["cvssV2"].(map[string]interface{})["baseScore"].(float64)
-			level = baseMetricV2["severity"].(string)
-		} else {
-			cvssV3 := cveitems.(map[string]interface{})["impact"].(map[string]interface{})["baseMetricV3"].(map[string]interface{})["cvssV3"].(map[string]interface{})
-			score = cvssV3["baseScore"].(float64)
-			level = cvssV3["baseSeverity"].(string)
-		}
-
-		vulnes := &vuln{
-			cpe:         cpeResult,
-			score:       score,
-			level:       level,
-			desc:        description,
-			publishDate: publishDate,
-			cveID:       cveID,
-			source:      "CVSS",
-		}
-
-		if vulnes != nil {
-			err = c.update(vulnes)
+			err = handle(lines)
 			if err != nil {
 				return err
 			}
+
+			lines = strline
+
+		} else {
+			lines += strline
 		}
 
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+	}
+
+}
+
+func (c *Client) cvssParse(data string) error {
+
+	// Skip the headers
+	if !strings.Contains(data, `"cve"`) {
+		return nil
+	}
+
+	data = "{" + data[:len(data)-3]
+	cveitems := gjson.Parse(data).Value()
+
+	cve := cveitems.(map[string]interface{})["cve"].(map[string]interface{})
+	cveID := cve["CVE_data_meta"].(map[string]interface{})["ID"].(string)
+	if cveID == "" {
+		return nil
+	}
+	publishDate := cveitems.(map[string]interface{})["publishedDate"].(string)
+	publishDate = strings.Replace(publishDate, "Z", "", -1)
+	pd, _ := time.Parse("2006-01-02T15:04", publishDate)
+	publishDate = pd.Format("2006-01-02")
+
+	var description string
+	descriptionData := cve["description"].(map[string]interface{})["description_data"]
+	if descriptionData == nil {
+		description = ""
+	} else {
+		description = descriptionData.([]interface{})[0].(map[string]interface{})["value"].(string)
+	}
+
+	cpe := cveitems.(map[string]interface{})["configurations"].(map[string]interface{})["nodes"].([]interface{})
+	cpeResult := cpeParse(cpe)
+
+	if len(cpeResult) < 1 {
+		return nil
+	}
+
+	var score float64
+	var level string
+
+	if len(cveitems.(map[string]interface{})["impact"].(map[string]interface{})) < 1 {
+		return nil
+	}
+
+	if cveitems.(map[string]interface{})["impact"].(map[string]interface{})["baseMetricV3"] == nil {
+		baseMetricV2 := cveitems.(map[string]interface{})["impact"].(map[string]interface{})["baseMetricV2"].(map[string]interface{})
+		score = baseMetricV2["cvssV2"].(map[string]interface{})["baseScore"].(float64)
+		level = baseMetricV2["severity"].(string)
+	} else {
+		cvssV3 := cveitems.(map[string]interface{})["impact"].(map[string]interface{})["baseMetricV3"].(map[string]interface{})["cvssV3"].(map[string]interface{})
+		score = cvssV3["baseScore"].(float64)
+		level = cvssV3["baseSeverity"].(string)
+	}
+
+	vulnes := &vuln{
+		cpe:         cpeResult,
+		score:       score,
+		level:       level,
+		desc:        description,
+		publishDate: publishDate,
+		cveID:       cveID,
+		source:      "CVSS",
+	}
+
+	if vulnes != nil {
+		err := c.update(vulnes)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

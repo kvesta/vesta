@@ -2,7 +2,8 @@
 ## features
 - Add weak password checking in Configmap and Secret
 - Add weak password checking in Docker env
-- Add `--skip` parameter for image or container scaning
+- Add `--skip` parameter for image or container scanning
+- Add Envoy admin checking
 
 # 1.0.0 (2022.12.4)
 ## features

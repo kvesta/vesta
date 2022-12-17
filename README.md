@@ -22,7 +22,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 ## Build
 
-Vesta is built with Go 1.18. 
+Vesta is built with Go 1.16. 
 
 ```bash
 go build
@@ -183,19 +183,19 @@ Configures:
 
 > Docker
 
-| Supported | Check Item                | Description                                                            | Severity                 |
-|-----------|---------------------------|------------------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                          | critical                 |
-| ✔         | Capabilities              | Dangerous capabilities are opening.                                    | critical                 |
-| ✔         | Volume Mount              | Mount dangerous location.                                              | critical                 |
-| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                 | critical                 |
-| ✔         | Kernel version            | Kernel version is under the escape version.                            | critical                 |
-| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.            | critical                 |
-| ✔         | Docker Server version     | Server version is included the vulnerable version                      | critical/high/medium/low |
-| ✔         | Docker env password check | Check weak password in database.                                       | high/medium              |
-| ✔         | Image tag check           | Image is not tagged or `latest`.                                       | low                      |
-| Pending   | docker-compose            | Some dangerous configuration.                                          | -                        |
-| Pending   | Container env             | Check Unauthorized database, such as `MySQL`, `Redis`, `Memcache` etc. | -                        | 
+| Supported | Check Item                | Description                                                              | Severity                 |
+|-----------|---------------------------|--------------------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                            | critical                 |
+| ✔         | Capabilities              | Dangerous capabilities are opening.                                      | critical                 |
+| ✔         | Volume Mount              | Mount dangerous location.                                                | critical                 |
+| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                   | critical                 |
+| ✔         | Kernel version            | Kernel version is under the escape version.                              | critical                 |
+| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical                 |
+| ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/medium/low |
+| ✔         | Docker env password check | Check weak password in database.                                         | high/medium              |
+| ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                      |
+| Pending   | Container env             | Check Unauthorized database, such as `MySQL`, `Redis`, `PostgreSQL` etc. | -                        | 
+| Pending   | IaC scan                  | IaC scan                                                                 | -                        |
 
 ---
 
@@ -216,10 +216,11 @@ Configures:
 | ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
 | ✔         | NoResourceLimits                                        | No resource limits are set.                                     | low                      |
 | ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.                | low                      |
+| ✔         | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | high/medium              |
 | Pending   | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                            | critical                 |
-| Pending   | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | -                        |
 | Pending   | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | -                        |
 | Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                        | -                        |
+| Pending   | IaC scan                                                | IaC scan                                                        | -                        |
 
 
 ## Help information

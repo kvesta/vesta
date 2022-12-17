@@ -171,43 +171,44 @@ Configures:
 > Docker检查
 
 
-| Supported | Check Item            | Description                                              | Severity                 |
-|-----------|-----------------------|----------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed      | 危险的特权模式                                                  | critical                 |
-| ✔         | Capabilities          | 危险capabilities被设置                                        | critical                 |
-| ✔         | Volume Mount          | 敏感或危险目录被挂载                                               | critical                 |
-| ✔         | Docker Unauthorized   | 2375端口打开并且未授权                                            | critical                 |
-| ✔         | Kernel version        | 当前内核版本存在逃逸漏洞                                             | critical                 |
-| ✔         | Network Module        | Net模式为`host`模式并且在特定containerd版本下                         | critical                 |
-| ✔         | Docker Server version | Docker Server版本存在漏洞                                      | critical/high/medium/low |
-| ✔         | Docker env password check | Docker env是否存在弱密码                                     | high/medium |
-| ✔         | Image tag check       | Image没有被打tag或为默认latest                                   | low                      |
-| 待定        | docker-compose        | 检查一些危险的配置                                                | -                        |
-| 待定   | Container env         | 检查数据库是否未设置密码, 包括但不限于`MySQL`, `Redis`, `Memcache` | -                        | 
+| Supported | Check Item                | Description                                      | Severity                 |
+|-----------|---------------------------|--------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed          | 危险的特权模式                                          | critical                 |
+| ✔         | Capabilities              | 危险capabilities被设置                                | critical                 |
+| ✔         | Volume Mount              | 敏感或危险目录被挂载                                       | critical                 |
+| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                                    | critical                 |
+| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                                     | critical                 |
+| ✔         | Network Module            | Net模式为`host`模式并且在特定containerd版本下                 | critical                 |
+| ✔         | Docker Server version     | Docker Server版本存在漏洞                              | critical/high/medium/low |
+| ✔         | Docker env password check | Docker env是否存在弱密码                                | high/medium              |
+| ✔         | Image tag check           | Image没有被打tag或为默认latest                           | low                      |
+| 待定   | Container env             | 检查数据库是否未设置密码, 包括但不限于`MySQL`, `Redis`, `PostgreSQL` | -                        | 
+| 待定          | IaC scan                  | IaC 扫描                                           | -                        |
 
 ---
 
 > Kubernetes检查
 
 
-| Supported | Check Item                                                 | Description                                                     | Severity                 |
-|----------|------------------------------------------------------------|-----------------------------------------------------------------|--------------------------|
-| ✔        | PrivilegeAllowed                                           | 危险的特权模式                                                         | critical                 |
-| ✔        | Capabilities                                               | 危险capabilities被设置                                               | critical                 |
-| ✔        | PV and PVC                                                 | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
-| ✔        | ClusterRoleBinding                                         | 默认账户被赋予了权限                                                      | high/medium              |
-| ✔        | Kubernetes-dashborad                                       | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
-| ✔        | Kernel version (k8s verions is less than v1.24)            | 当前内核版本存在逃逸漏洞                                                    | critical                 |
-| ✔        | Docker Server version  (k8s verions is less than v1.24)    | Docker Server版本存在漏洞                                             | critical/high/medium/low |
-| ✔        | Kubernetes certification expiration                        | 证书到期时间小于30天                                                     | medium                   |
-| ✔         | ConfigMap and Secret check                                | ConfigMap 或者 Secret是否存在弱密码                                     | high/medium              |
-| ✔        | Auto Mount ServiceAccount Token                            | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
-| ✔        | NoResourceLimits                                           | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
-| ✔        | Job and Cronjob                                            | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
-| 待定       | CVE-2022-29179                                             | 检测CVE-2022-29179是否存在                                            | critical                 |
-| 待定       | Envoy admin                                                | Envoy admin被配置以及监听`0.0.0.0`.                                    | -                        |
-| 待定       | Kubelet 10255 and Kubectl proxy                            | 10255 port 打开或 Kubectl proxy开启                                  | -                        |
-| 待定       | Trampoline attack                                          | RBAC权限不安全，容易遭受Trampoline攻击                                      | -                        |
+| Supported | Check Item                                               | Description                                                     | Severity                 |
+|-----------|----------------------------------------------------------|-----------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed                                         | 危险的特权模式                                                         | critical                 |
+| ✔         | Capabilities                                             | 危险capabilities被设置                                               | critical                 |
+| ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
+| ✔         | ClusterRoleBinding                                       | 默认账户被赋予了权限                                                      | high/medium              |
+| ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
+| ✔         | Kernel version (k8s versions is less than v1.24)         | 当前内核版本存在逃逸漏洞                                                    | critical                 |
+| ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                                             | critical/high/medium/low |
+| ✔         | Kubernetes certification expiration                      | 证书到期时间小于30天                                                     | medium                   |
+| ✔         | ConfigMap and Secret check                               | ConfigMap 或者 Secret是否存在弱密码                                      | high/medium              |
+| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
+| ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
+| ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
+| ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
+| 待定        | CVE-2022-29179                                           | 检测CVE-2022-29179是否存在                                            | critical                 |
+| 待定        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | -                        |
+| 待定        | Trampoline attack                                        | RBAC权限不安全，容易遭受Trampoline攻击                                      | -                        |
+| 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
 
 
 ## 使用方法
