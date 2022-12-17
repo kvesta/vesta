@@ -204,8 +204,8 @@ Configures:
 | ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
 | ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
 | ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
+| ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
 | 待定        | CVE-2022-29179                                           | 检测CVE-2022-29179是否存在                                            | critical                 |
-| 待定        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | -                        |
 | 待定        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | -                        |
 | 待定        | Trampoline attack                                        | RBAC权限不安全，容易遭受Trampoline攻击                                      | -                        |
 | 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |

@@ -22,7 +22,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 ## Build
 
-Vesta is built with Go 1.18. 
+Vesta is built with Go 1.16. 
 
 ```bash
 go build
@@ -216,8 +216,8 @@ Configures:
 | ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
 | ✔         | NoResourceLimits                                        | No resource limits are set.                                     | low                      |
 | ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.                | low                      |
+| ✔         | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | high/medium              |
 | Pending   | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                            | critical                 |
-| Pending   | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | -                        |
 | Pending   | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | -                        |
 | Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                        | -                        |
 | Pending   | IaC scan                                                | IaC scan                                                        | -                        |
