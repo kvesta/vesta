@@ -36,8 +36,10 @@ require (
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.3.0 // indirect
 	k8s.io/api v0.21.3
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 )
+
+replace golang.org/x/sys => golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab
