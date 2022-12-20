@@ -18,7 +18,7 @@ import (
 var dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
 	"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
 
-var dangerFullPaths = []string{"/", "/etc", "/proc", "/sys", "/root"}
+var dangerFullPaths = []string{"/", "/etc", "/proc", "/sys", "/root", "/var/log"}
 
 var namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 	"kubesphere-router-gateway", "kubesphere-system"}
@@ -126,22 +126,22 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		ns := ctx.Value("nameSpace")
 		err := ks.checkPod(ns.(string))
 		if err != nil {
-			log.Printf("check pod failed, %v", err)
+			log.Printf("check pod failed in namespace: %s, %v", ns.(string), err)
 		}
 
 		err = ks.checkJobsOrCornJob(ns.(string))
 		if err != nil {
-			log.Printf("check job failed, %v", err)
+			log.Printf("check job failed in namespace: %s, %v", ns.(string), err)
 		}
 
 		err = ks.checkConfigMap(ns.(string))
 		if err != nil {
-			log.Printf("check config map failed, %v", err)
+			log.Printf("check config map failed in namespace: %s, %v", ns.(string), err)
 		}
 
 		err = ks.checkSecret(ns.(string))
 		if err != nil {
-			log.Printf("check secret failed, %v", err)
+			log.Printf("check secret failed in namespace: %s, %v", ns.(string), err)
 		}
 
 	} else {
@@ -159,22 +159,22 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			if isNecessary {
 				err := ks.checkPod(ns.Name)
 				if err != nil {
-					log.Printf("check pod failed, %v", err)
+					log.Printf("check pod failed in namespace: %s, %v", ns.Name, err)
 				}
 
 				err = ks.checkJobsOrCornJob(ns.Name)
 				if err != nil {
-					log.Printf("check job failed, %v", err)
+					log.Printf("check job failed in namespace: %s, %v", ns.Name, err)
 				}
 
 				err = ks.checkConfigMap(ns.Name)
 				if err != nil {
-					log.Printf("check config map failed, %v", err)
+					log.Printf("check config map failed in namespace: %s, %v", ns.Name, err)
 				}
 
 				err = ks.checkSecret(ns.Name)
 				if err != nil {
-					log.Printf("check secret failed, %v", err)
+					log.Printf("check secret failed in namespace, %v", ns.Name, err)
 				}
 
 			}

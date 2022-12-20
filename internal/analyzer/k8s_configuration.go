@@ -58,6 +58,12 @@ func (ks *KScanner) checkPersistentVolume() error {
 		return err
 	}
 	for _, pv := range pvs.Items {
+
+		// Check whether using the host mount
+		if pv.Spec.HostPath == nil {
+			continue
+		}
+
 		pvPath := filepath.Dir(pv.Spec.HostPath.Path)
 
 		if isVuln := checkMountPath(pvPath); isVuln {
