@@ -166,11 +166,11 @@ Configures:
 |    |                             |                                |                                                        |          | has a potential container      |
 |    |                             |                                |                                                        |          | escape.                        |
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
-|  2 | ConfigMap                   | data: db.string                | db.string:mysql+pymysql://dbapp:Password123@db:3306/db | high     | ConfigMap has found weak       |
-|    |                             |                                |                                                        |          | password: 'Password123'.       |
+|  2 | ConfigMap                   | ConfigMap Name: vulnconfig     | db.string:mysql+pymysql://dbapp:Password123@db:3306/db | high     | ConfigMap has found weak       |
+|    |                             | Namespace: default             |                                                        |          | password: 'Password123'.       |
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
-|  3 | Secret                      | data: password                 | password:Password123                                   | high     | Secret has found weak          |
-|    |                             |                                |                                                        |          | password: 'Password123'.       |
+|  3 | Secret                      | Secret Name: vulnsecret-auth   | password:Password123                                   | high     | Secret has found weak          |
+|    |                             | Namespace: default             |                                                        |          | password: 'Password123'.       |
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
 |  4 | ClusterRoleBinding          | binding name:                  | verbs:                                                 | high     | Key permission are given to    |
 |    |                             | vuln-clusterrolebinding |      | get,watch,list,create,update |                         |          | the default service account    |

@@ -130,7 +130,8 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 			needCheck := false
 
 			passKey := regexp.MustCompile(`(?i)password`)
-			if passKey.MatchString(k) {
+			passKey2 := regexp.MustCompile(`(?i)pwd`)
+			if passKey.MatchString(k) || passKey2.MatchString(k) {
 				password = v
 				needCheck = true
 			}
@@ -146,7 +147,7 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 				switch checkWeakPassword(password) {
 				case "Weak":
 					th := &threat{
-						Param:    fmt.Sprintf("data: %s", k),
+						Param:    fmt.Sprintf("ConfigMap Name: %s\nNamespace: %s", cf.Name, ns),
 						Value:    fmt.Sprintf("%s:%s", k, v),
 						Type:     "ConfigMap",
 						Describe: fmt.Sprintf("ConfigMap has found weak password: '%s'.", password),
@@ -157,7 +158,7 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 
 				case "Medium":
 					th := &threat{
-						Param: fmt.Sprintf("data: %s", k),
+						Param: fmt.Sprintf("ConfigMap Name: %s\nNamespace: %s", cf.Name, ns),
 						Value: fmt.Sprintf("%s:%s", k, v),
 						Type:  "ConfigMap",
 						Describe: fmt.Sprintf("ConfigMap has found password '%s' "+
@@ -189,13 +190,15 @@ func (ks *KScanner) checkSecret(ns string) error {
 
 		for k, v := range data {
 			passKey := regexp.MustCompile(`(?i)password`)
-			if passKey.MatchString(k) {
+			passKey2 := regexp.MustCompile(`(?i)pwd`)
+
+			if passKey.MatchString(k) || passKey2.MatchString(k) {
 				password = string(v)
 
 				switch checkWeakPassword(password) {
 				case "Weak":
 					th := &threat{
-						Param:    fmt.Sprintf("data: %s", k),
+						Param:    fmt.Sprintf("Secret Name: %s\nNamspace: %s", se.Name, ns),
 						Value:    fmt.Sprintf("%s:%s", k, v),
 						Type:     "Secret",
 						Describe: fmt.Sprintf("Secret has found weak password: '%s'.", password),
@@ -206,7 +209,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 
 				case "Medium":
 					th := &threat{
-						Param: fmt.Sprintf("data: %s", k),
+						Param: fmt.Sprintf("Secret Name: %s\nNamspace: %s", se.Name, ns),
 						Value: fmt.Sprintf("%s:%s", k, v),
 						Type:  "Secret",
 						Describe: fmt.Sprintf("Secret has found password '%s' "+
