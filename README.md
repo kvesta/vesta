@@ -209,7 +209,7 @@ Configures:
 | ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.            | critical/medium          |
 | ✔         | ClusterRoleBinding                                      | Permissions with default server account.                        | high/medium              |
 | ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.           | critical/high/low        |
-| ✔         | Kernel version (k8s versions is less than v1.24)         | Kernel version is under the escape version.                     | critical                 |
+| ✔         | Kernel version (k8s versions is less than v1.24)        | Kernel version is under the escape version.                     | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.              | critical/high/medium/low |
 | ✔         | Kubernetes certification expiration                     | Certification is expired after 30 days.                         | medium                   |
 | ✔         | ConfigMap and Secret check                              | Check weak password in ConfigMap or Secret.                     | high/medium              |
@@ -217,8 +217,9 @@ Configures:
 | ✔         | NoResourceLimits                                        | No resource limits are set.                                     | low                      |
 | ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.                | low                      |
 | ✔         | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                 | high/medium              |
-| Pending   | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                            | critical                 |
-| Pending   | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | -                        |
+| ✔         | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                            | high                     |
+| ✔         | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | high/medium/low          |
+| ✔         | Etcd configuration                                      | Etcd safe configuration checking                                | high/medium              |
 | Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                        | -                        |
 | Pending   | IaC scan                                                | IaC scan                                                        | -                        |
 
