@@ -23,6 +23,9 @@ var dangerFullPaths = []string{"/", "/etc", "/proc", "/sys", "/root", "/var/log"
 var namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 	"kubesphere-router-gateway", "kubesphere-system"}
 
+var dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
+	"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
+
 func (s *Scanner) Analyze(ctx context.Context, inspectors []*types.ContainerJSON, images []types.ImageSummary) error {
 
 	err := s.checkDockerContext(ctx, images)
@@ -174,7 +177,7 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 
 				err = ks.checkSecret(ns.Name)
 				if err != nil {
-					log.Printf("check secret failed in namespace, %v", ns.Name, err)
+					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
 				}
 
 			}
@@ -199,10 +202,10 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		log.Printf("check certification expiration failed, %v", err)
 	}
 
-	// Check envoy configuration
-	err = ks.checkEnvoy()
+	// Check Kubernetes CNI
+	err = ks.checkCNI()
 	if err != nil {
-		log.Printf("check envoy configuration failed, %v", err)
+		log.Printf("check CNI failed, %v", err)
 	}
 
 	sortSeverity(ks.VulnConfigures)
@@ -310,10 +313,11 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 	tlist := []*threat{}
 
 	var vulnKernelVersion = map[string]string{
-		"CVE-2016-5195": "Dirty Cow",
-		"CVE-2022-0847": "Dirty Pipe",
-		"CVE-2022-0185": "CVE-2022-0185 with CAP_SYS_ADMIN",
-		"CVE-2022-0492": "CVE-2022-0492 with CAP_SYS_ADMIN and v1 architecture of cgroups"}
+		"CVE-2016-5195":  "Dirty Cow",
+		"CVE-2021-22555": "CVE-2021-22555 kernel-netfilter",
+		"CVE-2022-0847":  "Dirty Pipe",
+		"CVE-2022-0185":  "CVE-2022-0185 with CAP_SYS_ADMIN",
+		"CVE-2022-0492":  "CVE-2022-0492 with CAP_SYS_ADMIN and v1 architecture of cgroups"}
 
 	kernelVersion, err := osrelease.GetKernelVersion(context.Background())
 	if err != nil {
@@ -332,20 +336,23 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 			break
 		}
 
-		row, err := cli.QueryVulnByCVEID(cve)
+		rows, err := cli.QueryVulnByCVEID(cve)
 		if err != nil {
 			log.Printf("faield to search database, error: %v", err)
 			break
 		}
 
-		// The data of CVE-2016-5195 is not correct
-		if cve == "CVE-2016-5195" {
-			row.MaxVersion = "4.8.3"
-		}
+		for _, row := range rows {
 
-		if compareVersion(kernelVersion, row.MaxVersion, row.MinVersion) {
+			// The data of CVE-2016-5195 is not correct
+			if cve == "CVE-2016-5195" {
+				row.MaxVersion = "4.8.3"
+			}
 
-			vuln, underVuln = true, true
+			if compareVersion(kernelVersion, row.MaxVersion, row.MinVersion) {
+
+				vuln, underVuln = true, true
+			}
 		}
 
 		if underVuln {

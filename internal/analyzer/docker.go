@@ -79,10 +79,9 @@ func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
 	var capList string
 
 	tlist := []*threat{}
-	var dangerCap = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_SYS_CHROOT", "SYS_PTRACE"}
 
 	for _, capadd := range config.HostConfig.CapAdd {
-		for _, c := range dangerCap {
+		for _, c := range dangerCaps {
 			if capadd == c {
 				capList += capadd + " "
 				vuln = true

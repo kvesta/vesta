@@ -134,21 +134,36 @@ func (cli *Client) QueryVulnByName(name string) ([]*DBRow, error) {
 	return dbRows, nil
 }
 
-func (cli *Client) QueryVulnByCVEID(cveid string) (*DBRow, error) {
+func (cli *Client) QueryVulnByCVEID(cveid string) ([]*DBRow, error) {
 
-	dbRow := &DBRow{}
+	dbRows := []*DBRow{}
 
 	sqlRow := `SELECT * FROM vulns WHERE cveid = ?`
-	row := cli.DB.QueryRow(sqlRow, cveid)
-
-	err := row.Scan(&dbRow.Id, &dbRow.Hash, &dbRow.VulnName,
-		&dbRow.MaxVersion, &dbRow.MinVersion, &dbRow.Description,
-		&dbRow.Level, &dbRow.CVEID, &dbRow.PublishDate,
-		&dbRow.Component, &dbRow.Score, &dbRow.Source)
+	rows, err := cli.DB.Query(sqlRow, cveid)
 
 	if err != nil {
-		return dbRow, err
+		return dbRows, err
 	}
 
-	return dbRow, nil
+	defer rows.Close()
+
+	for rows.Next() {
+		r := &DBRow{}
+		err = rows.Scan(&r.Id, &r.Hash, &r.VulnName,
+			&r.MaxVersion, &r.MinVersion, &r.Description,
+			&r.Level, &r.CVEID, &r.PublishDate,
+			&r.Component, &r.Score, &r.Source)
+
+		if err != nil {
+			continue
+		}
+
+		dbRows = append(dbRows, r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return dbRows, err
+	}
+
+	return dbRows, nil
 }

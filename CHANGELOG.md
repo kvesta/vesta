@@ -1,3 +1,9 @@
+# 1.0.2 (2022.12.24)
+## features
+- Add cilium checking
+- Add Kubelet `read-only-port` and `kubectl proxy` checking 
+- Add Etcd safe configuration checking
+
 # 1.0.1 (2022.12.13)
 ## features
 - Add weak password checking in Configmap and Secret

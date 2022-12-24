@@ -36,8 +36,6 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 	tlist := []*threat{}
 	var vuln = false
 
-	var dangerCap = []string{"CAP_SYS_ADMIN", "CAP_BPF"}
-
 	if config.SecurityContext != nil {
 
 		// check capabilities of pod
@@ -45,7 +43,7 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 		if config.SecurityContext.Capabilities != nil {
 			adds := config.SecurityContext.Capabilities.Add
 			for _, ad := range adds {
-				for _, c := range dangerCap {
+				for _, c := range dangerCaps {
 					if string(ad) == c {
 						capList += c + " "
 						vuln = true
