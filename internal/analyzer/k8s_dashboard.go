@@ -3,6 +3,7 @@ package analyzer
 import (
 	"context"
 
+	rv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -56,7 +57,7 @@ func (ks *KScanner) checkDashboardRBAC(th *threat) {
 				continue
 			}
 
-			if ok, tlist := checkMatchingRole(clr.Items, rb.RoleRef.Name); ok {
+			if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, rb.RoleRef.Name); ok {
 
 				// Check the clusterrole configuration
 				severity := tlist[0].Severity

@@ -220,7 +220,6 @@ Configures:
 | ✔         | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                            | high                     |
 | ✔         | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.              | high/medium/low          |
 | ✔         | Etcd configuration                                      | Etcd safe configuration checking                                | high/medium              |
-| Pending   | Trampoline attack                                       | RBAC is vulnerable to Trampoline attack.                        | -                        |
 | Pending   | IaC scan                                                | IaC scan                                                        | -                        |
 
 

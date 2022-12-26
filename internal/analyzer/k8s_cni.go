@@ -184,6 +184,10 @@ func (ks *KScanner) checkCilium() (bool, []*threat) {
 	// Get cilium deployment
 	dp, err := ks.KClient.AppsV1().Deployments("kube-system").Get(context.Background(), "cilium-operator", metav1.GetOptions{})
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return vuln, tlist
+		}
+
 		log.Printf("check envoy configuration failed, %v", err)
 		return vuln, tlist
 	}

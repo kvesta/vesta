@@ -21,7 +21,7 @@ var dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
 var dangerFullPaths = []string{"/", "/etc", "/proc", "/sys", "/root", "/var/log"}
 
 var namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
-	"kubesphere-router-gateway", "kubesphere-system"}
+	"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
 
 var dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
 	"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
@@ -147,6 +147,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			log.Printf("check secret failed in namespace: %s, %v", ns.(string), err)
 		}
 
+		err = ks.checkRoleBinding(ns.(string))
+		if err != nil {
+			log.Printf("check role binding failed in namespace: %s, %v", ns.(string), err)
+		}
+
 	} else {
 		for _, ns := range nsList.Items {
 
@@ -178,6 +183,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 				err = ks.checkSecret(ns.Name)
 				if err != nil {
 					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
+				}
+
+				err = ks.checkRoleBinding(ns.Name)
+				if err != nil {
+					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
 				}
 
 			}
@@ -350,7 +360,6 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 			}
 
 			if compareVersion(kernelVersion, row.MaxVersion, row.MinVersion) {
-
 				vuln, underVuln = true, true
 			}
 		}

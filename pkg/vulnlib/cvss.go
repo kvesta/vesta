@@ -334,7 +334,14 @@ func cpeParse(cpe []interface{}) []*cpes {
 						scpe.MinVersion = "=3.0"
 					}
 				}
+			}
 
+			// Filter the special character
+			if scpe.MaxVersion == "-" {
+				scpe.MaxVersion = "0.0"
+			}
+			if scpe.MinVersion == "-" {
+				scpe.MinVersion = "0.0"
 			}
 
 			cs = append(cs, scpe)

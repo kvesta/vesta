@@ -10,6 +10,78 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func (ks *KScanner) checkRoleBinding(ns string) error {
+	rbs, err := ks.KClient.RbacV1().RoleBindings(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	rls, err := ks.KClient.RbacV1().Roles(ns).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	clr, err := ks.KClient.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, rb := range rbs.Items {
+		for _, sub := range rb.Subjects {
+			// Ignore namespace in while list
+			isWhite := false
+
+			for _, wns := range namespaceWhileList {
+				if sub.Namespace == wns {
+					isWhite = true
+					break
+				}
+			}
+
+			if isWhite || sub.Kind != "ServiceAccount" {
+				continue
+			}
+
+			if sub.Name == "system:anonymous" || sub.Name == "default" {
+
+				ruleKind := rb.RoleRef.Kind
+				ruleName := rb.RoleRef.Name
+
+				switch ruleKind {
+				case "Role":
+					if ok, tlist := checkMatchingRole([]rv1.ClusterRole{}, rls.Items, ruleName); ok {
+
+						for _, th := range tlist {
+							th.Type = "RoleBinding"
+							th.Param = fmt.Sprintf("binding name: %s "+
+								"| rolename: %s | kind: Role | namespace: %s", rb.Name, ruleName, sub.Namespace)
+						}
+
+						ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+					}
+				case "ClusterRole":
+					if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
+
+						for _, th := range tlist {
+							th.Type = "RoleBinding"
+							th.Param = fmt.Sprintf("binding name: %s "+
+								"| rolename: %s | kind: ClusterRole | namespace: %s", rb.Name, ruleName, sub.Namespace)
+						}
+
+						ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+					}
+				default:
+					// ignore
+				}
+
+			}
+
+		}
+	}
+
+	return nil
+}
+
 func (ks *KScanner) checkClusterBinding() error {
 	clrb, err := ks.KClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -41,12 +113,12 @@ func (ks *KScanner) checkClusterBinding() error {
 			if sub.Name == "system:anonymous" || sub.Name == "default" {
 
 				ruleName := rb.RoleRef.Name
-				if ok, tlist := checkMatchingRole(clr.Items, ruleName); ok {
+				if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
 
 					for _, th := range tlist {
 						th.Type = "ClusterRoleBinding"
 						th.Param = fmt.Sprintf("binding name: %s "+
-							"| rolename: %s | namespace: %s", rb.Name, ruleName, sub.Namespace)
+							"| rolename: %s | kind: ClusterRole |namespace: %s", rb.Name, ruleName, sub.Namespace)
 					}
 
 					ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
@@ -58,17 +130,13 @@ func (ks *KScanner) checkClusterBinding() error {
 	return nil
 }
 
-func checkMatchingRole(clr []rv1.ClusterRole, ruleName string) (bool, []*threat) {
+func checkMatchingRole(clr []rv1.ClusterRole, rol []rv1.Role, ruleName string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
-	for _, r := range clr {
+	checkRule := func(rules []rv1.PolicyRule) bool {
 
-		if ruleName != r.Name {
-			continue
-		}
-
-		for _, rul := range r.Rules {
+		for _, rul := range rules {
 			if len(rul.Resources) < 1 {
 				continue
 			}
@@ -111,7 +179,31 @@ func checkMatchingRole(clr []rv1.ClusterRole, ruleName string) (bool, []*threat)
 				vuln = true
 			}
 		}
+
+		return vuln
 	}
+
+	// Check clusterrole
+	for _, r := range clr {
+
+		if ruleName != r.Name {
+			continue
+		}
+
+		vuln = checkRule(r.Rules)
+
+	}
+
+	// Check role
+	for _, r := range rol {
+
+		if ruleName != r.Name {
+			continue
+		}
+
+		vuln = checkRule(r.Rules)
+	}
+
 	return vuln, tlist
 }
 
