@@ -208,7 +208,6 @@ Configures:
 | ✔        | CVE-2022-29179                                           | 检测CVE-2022-29179是否存在                                            | high                     |
 | ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
 | ✔         | Etcd configuration                                      | Etcd 安全配置检查                                                     | high/medium              |
-| 待定        | Trampoline attack                                        | RBAC权限不安全，容易遭受Trampoline攻击                                      | -                        |
 | 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
 
 
