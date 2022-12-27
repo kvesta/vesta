@@ -26,6 +26,45 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 		return err
 	}
 
+	checkBindKing := func(ruleKind, ruleName, roleName, subKind, subName, ns string) {
+		switch ruleKind {
+		case "Role":
+			if ok, tlist := checkMatchingRole([]rv1.ClusterRole{}, rls.Items, ruleName); ok {
+
+				for _, th := range tlist {
+					th.Type = "RoleBinding"
+					th.Param = fmt.Sprintf("binding name: %s "+
+						"| rolename: %s | kind: Role "+
+						"| subject kind: %s | subject name: %s | namespace: %s", roleName, ruleName, subKind, subName, ns)
+
+					if strings.Contains(subName, "unauthenticated") {
+						th.Describe = "Key permission are given and every pod can access it, which will cause a potential container escape."
+					}
+				}
+
+				ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+			}
+		case "ClusterRole":
+			if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
+
+				for _, th := range tlist {
+					th.Type = "RoleBinding"
+					th.Param = fmt.Sprintf("binding name: %s "+
+						"| rolename: %s | kind: ClusterRole "+
+						"| subject kind: %s | subject name: %s |namespace: %s", roleName, ruleName, subKind, subName, ns)
+
+					if strings.Contains(subName, "unauthenticated") {
+						th.Describe = "Key permission are given and every pod can access it, which will cause a potential container escape."
+					}
+				}
+
+				ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+			}
+		default:
+			// ignore
+		}
+	}
+
 	for _, rb := range rbs.Items {
 		for _, sub := range rb.Subjects {
 			// Ignore namespace in while list
@@ -38,41 +77,32 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 				}
 			}
 
-			if isWhite || sub.Kind != "ServiceAccount" {
+			if isWhite {
 				continue
 			}
 
-			if sub.Name == "system:anonymous" || sub.Name == "default" {
+			ruleKind := rb.RoleRef.Kind
+			ruleName := rb.RoleRef.Name
+			if len(sub.Namespace) < 1 {
+				sub.Namespace = "all"
+			}
 
-				ruleKind := rb.RoleRef.Kind
-				ruleName := rb.RoleRef.Name
-
-				switch ruleKind {
-				case "Role":
-					if ok, tlist := checkMatchingRole([]rv1.ClusterRole{}, rls.Items, ruleName); ok {
-
-						for _, th := range tlist {
-							th.Type = "RoleBinding"
-							th.Param = fmt.Sprintf("binding name: %s "+
-								"| rolename: %s | kind: Role | namespace: %s", rb.Name, ruleName, sub.Namespace)
-						}
-
-						ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
-					}
-				case "ClusterRole":
-					if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
-
-						for _, th := range tlist {
-							th.Type = "RoleBinding"
-							th.Param = fmt.Sprintf("binding name: %s "+
-								"| rolename: %s | kind: ClusterRole | namespace: %s", rb.Name, ruleName, sub.Namespace)
-						}
-
-						ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
-					}
+			if sub.Kind == "Group" {
+				switch sub.Name {
+				case "system:serviceaccounts", "system:authenticated", "system:unauthenticated":
+					checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
 				default:
-					// ignore
+					// Case of system:serviceaccounts:<namespace>
+					if strings.Contains(sub.Name, "system:serviceaccounts:") {
+						checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
+					}
 				}
+			}
+
+			if sub.Kind == "ServiceAccount" &&
+				(sub.Name == "system:anonymous" || sub.Name == "default") {
+
+				checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
 
 			}
 
@@ -106,19 +136,83 @@ func (ks *KScanner) checkClusterBinding() error {
 				}
 			}
 
-			if isWhite || sub.Kind != "ServiceAccount" {
+			// Skip system:basic-user rolebinding name
+			if rb.Name == "system:basic-user" {
+				isWhite = true
+			}
+
+			if isWhite {
 				continue
 			}
 
-			if sub.Name == "system:anonymous" || sub.Name == "default" {
+			ruleName := rb.RoleRef.Name
 
-				ruleName := rb.RoleRef.Name
+			if len(sub.Namespace) < 1 {
+				sub.Namespace = "all"
+			}
+
+			if sub.Kind == "Group" {
+
+				switch sub.Name {
+				case "system:serviceaccounts", "system:authenticated":
+
+					if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
+
+						for _, th := range tlist {
+							th.Type = "ClusterRoleBinding"
+							th.Param = fmt.Sprintf("binding name: %s "+
+								"| rolename: %s | kind: ClusterRole "+
+								"| subject kind: %s | subject name: %s | namespace: %s", rb.Name, ruleName, sub.Kind, sub.Name, sub.Namespace)
+							th.Describe = "Key permission are given to all account, which will cause a potential container escape."
+						}
+
+						ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+					}
+
+				case "system:unauthenticated":
+					if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
+
+						for _, th := range tlist {
+							th.Type = "ClusterRoleBinding"
+							th.Param = fmt.Sprintf("binding name: %s "+
+								"| rolename: %s | kind: ClusterRole "+
+								"| subject kind: %s | subject name: %s | namespace: %s", rb.Name, ruleName, sub.Kind, sub.Name, sub.Namespace)
+							th.Describe = "Key permission are given and every pod can access it, which will cause a potential container escape."
+						}
+
+						ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+					}
+
+				default:
+					// Case of system:serviceaccounts:<namespace>
+					if strings.Contains(sub.Name, "system:serviceaccounts:") {
+						roleNs := strings.Split(sub.Name, ":")[2]
+
+						if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
+
+							for _, th := range tlist {
+								th.Type = "ClusterRoleBinding"
+								th.Param = fmt.Sprintf("binding name: %s "+
+									"| rolename: %s | kind: ClusterRole "+
+									"| subject kind: %s | subject name: %s | namespace: %s", rb.Name, ruleName, sub.Kind, sub.Name, roleNs)
+							}
+
+							ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+						}
+
+					}
+				}
+			}
+
+			if sub.Kind == "ServiceAccount" &&
+				(sub.Name == "system:anonymous" || sub.Name == "default") {
+
 				if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
 
 					for _, th := range tlist {
 						th.Type = "ClusterRoleBinding"
 						th.Param = fmt.Sprintf("binding name: %s "+
-							"| rolename: %s | kind: ClusterRole |namespace: %s", rb.Name, ruleName, sub.Namespace)
+							"| rolename: %s | subject kind: ClusterRole | subject name: ServiceAccount | namespace: %s", rb.Name, ruleName, sub.Namespace)
 					}
 
 					ks.VulnConfigures = append(ks.VulnConfigures, tlist...)

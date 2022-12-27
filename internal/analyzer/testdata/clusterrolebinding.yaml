@@ -16,6 +16,29 @@ subjects:
   - kind: ServiceAccount
     name: default
     namespace: default
+  - kind: Group
+    name: system:serviceaccounts:vuln
+    apiGroup: rbac.authorization.k8s.io
+  - kind: Group
+    name: system:unauthenticated
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: vuln-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: vuln-clusterrolebinding2
+subjects:
+  - kind: Group
+    name: system:serviceaccounts:vuln
+    apiGroup: rbac.authorization.k8s.io
+  - kind: Group
+    name: system:unauthenticated
+    apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
   name: vuln-clusterrole
