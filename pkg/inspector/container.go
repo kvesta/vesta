@@ -4,8 +4,6 @@ import (
 	"context"
 	"io"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/kvesta/vesta/config"
@@ -22,12 +20,12 @@ func (da DockerApi) getInspect(imageID string) (*types.ContainerJSON, error) {
 	return &ins, nil
 }
 
-func (da *DockerApi) GetContainerName(containerID string) (string, error) {
+func (da *DockerApi) GetContainerName(containerID string) (io.ReadCloser, error) {
 	var containerList []string
 
 	containers, err := da.DCli.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Do not use the `all` option temporary
@@ -41,18 +39,10 @@ func (da *DockerApi) GetContainerName(containerID string) (string, error) {
 	fileio, err := da.DCli.ContainerExport(ctx, containerID)
 
 	if err != nil {
-		return "", err
-	}
-	pwd, _ := os.Getwd()
-	tarFile := filepath.Join(pwd, "output.tar")
-	file, _ := os.OpenFile(tarFile, os.O_CREATE|os.O_RDWR, 0666)
-
-	_, err = io.Copy(file, fileio)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return tarFile, nil
+	return fileio, err
 }
 
 func (da DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {

@@ -3,23 +3,20 @@ package inspector
 import (
 	"io"
 	"log"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/kvesta/vesta/config"
-
 	"github.com/docker/docker/api/types"
+	"github.com/kvesta/vesta/config"
 )
 
-func (da *DockerApi) GetImageName(imageID string) (string, error) {
+func (da *DockerApi) GetImageName(imageID string) (io.ReadCloser, error) {
 
 	var imageList []string
 
 	images, err := da.DCli.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// Do not use the `all` option temporary
@@ -52,18 +49,10 @@ func (da *DockerApi) GetImageName(imageID string) (string, error) {
 	fileio, err := da.DCli.ImageSave(ctx, imageList)
 
 	if err != nil {
-		return "", err
-	}
-	pwd, _ := os.Getwd()
-	tarFile := filepath.Join(pwd, "output.tar")
-	file, _ := os.OpenFile(tarFile, os.O_CREATE|os.O_RDWR, 0666)
-
-	_, err = io.Copy(file, fileio)
-	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return tarFile, nil
+	return fileio, nil
 }
 
 func (da *DockerApi) GetAllImage() ([]types.ImageSummary, error) {

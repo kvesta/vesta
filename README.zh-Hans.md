@@ -41,9 +41,8 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 2. 使用vesta检查镜像过容器中的漏洞组件版本（使用镜像ID，镜像标签或使用`-f`文件输入均可）
 
 ```bash
-$./vesta scan image -f example.tar
+$./vesta scan container -f example.tar
 
-2022/11/29 22:50:00 Searching for image
 2022/11/29 22:50:19 Begin upgrading vulnerability database
 2022/11/29 22:50:19 Vulnerability Database is already initialized
 2022/11/29 22:50:19 Begin to analyze the layer
@@ -195,7 +194,7 @@ Configures:
 | ✔         | PrivilegeAllowed                                         | 危险的特权模式                                                         | critical                 |
 | ✔         | Capabilities                                             | 危险capabilities被设置                                               | critical                 |
 | ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
-| ✔         | ClusterRoleBinding                                       | 默认账户被赋予了权限                                                      | high/medium              |
+| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium              |
 | ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
 | ✔         | Kernel version (k8s versions is less than v1.24)         | 当前内核版本存在逃逸漏洞                                                    | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                                             | critical/high/medium/low |
@@ -207,7 +206,7 @@ Configures:
 | ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
 | ✔        | CVE-2022-29179                                           | 检测CVE-2022-29179是否存在                                            | high                     |
 | ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
-| ✔         | Etcd configuration                                      | Etcd 安全配置检查                                                     | high/medium              |
+| ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
 | 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
 
 

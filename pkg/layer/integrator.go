@@ -1,69 +1,67 @@
 package layer
 
 import (
-	"archive/tar"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"io"
-	"log"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/tidwall/gjson"
 )
 
-func getManifest(fd *os.File) string {
-	tarReader := tar.NewReader(fd)
-	for hdr, err := tarReader.Next(); err != io.EOF; hdr, err = tarReader.Next() {
-		if err != nil {
-			return ""
+func getManifest(dir string) string {
+	fsys := os.DirFS(dir)
+	buf := []byte{}
+	if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir():
+			return nil
 		}
 
-		if hdr.Name == "manifest.json" {
-			content := strings.Builder{}
-			_, err := io.Copy(&content, tarReader)
+		if strings.Contains(path, "manifest.json") {
+			buf, err = fs.ReadFile(fsys, path)
 			if err != nil {
-				return ""
+				return err
 			}
 
-			return content.String()
-
+			return nil
 		}
-	}
-	return ""
-}
 
-func calMd5(fd *os.File) string {
-	md5h := md5.New()
-	_, err := io.Copy(md5h, fd)
-	if err != nil {
-		log.Printf("io copy error, error: %v", err)
+		return nil
+	}); err != nil {
 		return ""
 	}
-	return hex.EncodeToString(md5h.Sum(nil))
+
+	return string(buf)
 }
 
-func (m *Manifest) GetLayers(ctx context.Context, imagePath, tempPath string) error {
-	fd, err := os.Open(imagePath)
-	if err != nil {
-		log.Printf("open tar file failed")
-		return err
-	}
+func md5Stamp() string {
+	timeStamp := time.Now().String()
+	md5h := md5.Sum([]byte(timeStamp))
+	return hex.EncodeToString(md5h[:])
+}
 
-	defer fd.Close()
-	manifest := getManifest(fd)
+func (m *Manifest) GetLayers(ctx context.Context, tempPath string) error {
+
+	manifest := getManifest(tempPath)
+	m.Hash = md5Stamp()
+
 	result := gjson.Parse(manifest).Value()
 
 	if result == nil {
-		err = errors.New("illegal inspector tar file")
+		err := errors.New("illegal inspector tar file")
 		return err
 	}
 	value := result.([]interface{})[0].(map[string]interface{})
 	cwd, _ := os.Getwd()
-	m.Hash = calMd5(fd)
+
 	// if not contains name, use tar hash
 	if value["RepoTags"] == nil {
 		m.Name = value["Config"].(string)[:64]
@@ -80,8 +78,6 @@ func (m *Manifest) GetLayers(ctx context.Context, imagePath, tempPath string) er
 			localpath:  filepath.Join(tempPath, layer.(string)[:64]),
 		})
 	}
-
-	//log.Printf("Getting layers successful")
 
 	return nil
 }
