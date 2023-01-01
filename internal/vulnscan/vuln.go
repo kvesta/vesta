@@ -241,6 +241,8 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", py.Version, m.Name)
 				}
+
+				sortSeverity(vs)
 				pyVuln = append(pyVuln, vs...)
 			}
 
@@ -267,8 +269,9 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", node.Version, npm.Name)
 				}
-				npmVuln = append(npmVuln, vs...)
 
+				sortSeverity(vs)
+				npmVuln = append(npmVuln, vs...)
 			}
 		}
 
@@ -281,7 +284,7 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 
 func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) error {
 
-	npmVuln := []*vulnComponent{}
+	goVuln := []*vulnComponent{}
 
 	for _, gobin := range gobins {
 
@@ -294,14 +297,15 @@ func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) err
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s(%s) - %s", gobin.Name, gobin.Path, mod.Path)
 				}
-				npmVuln = append(npmVuln, vs...)
 
+				sortSeverity(vs)
+				goVuln = append(goVuln, vs...)
 			}
 		}
 
 	}
 
-	ps.Vulns = append(ps.Vulns, npmVuln...)
+	ps.Vulns = append(ps.Vulns, goVuln...)
 
 	return nil
 }
@@ -323,6 +327,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 					v.Name = p.Name
 				}
 
+				sortSeverity(vs)
 				packVuln = append(packVuln, vs...)
 			}
 		}
@@ -343,6 +348,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 				v.Name = p.Name
 			}
 
+			sortSeverity(vs)
 			packVuln = append(packVuln, vs...)
 		}
 	}
