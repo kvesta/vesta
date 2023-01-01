@@ -22,7 +22,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 ## Build
 
-Vesta is built with Go 1.16. 
+Vesta is built with Go 1.18. 
 
 ```bash
 go build

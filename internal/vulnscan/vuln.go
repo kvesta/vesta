@@ -42,6 +42,11 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check node module")
 	}
 
+	err = ps.checkGoMod(ctx, p.GOPacks)
+	if err != nil {
+		log.Printf("failed to check go mod")
+	}
+
 	return err
 }
 
@@ -261,6 +266,33 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 			if vs, vuln := compareVersion(rows, npm.Version, "node.js"); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", node.Version, npm.Name)
+				}
+				npmVuln = append(npmVuln, vs...)
+
+			}
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, npmVuln...)
+
+	return nil
+}
+
+func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) error {
+
+	npmVuln := []*vulnComponent{}
+
+	for _, gobin := range gobins {
+
+		for _, mod := range gobin.Deps {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(mod.Name))
+			if err != nil {
+				continue
+			}
+			if vs, vuln := compareVersion(rows, mod.Version, "*"); vuln {
+				for _, v := range vs {
+					v.Name = fmt.Sprintf("%s(%s) - %s", gobin.Name, gobin.Path, mod.Path)
 				}
 				npmVuln = append(npmVuln, vs...)
 
