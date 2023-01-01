@@ -139,6 +139,8 @@ func checkEnvoy() (bool, []*threat) {
 			envoyCommand := strings.Join(cmds[1:], " ")
 			if len(envoyCommand) > 80 {
 				envoyCommand = "envoy " + envoyCommand[:80] + "..."
+			} else {
+				envoyCommand = strings.Join(cmds, " ")
 			}
 
 			th := &threat{
@@ -164,11 +166,11 @@ func checkEnvoy() (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks *KScanner) checkIstio() error {
+func (ks KScanner) checkIstio() error {
 	return nil
 }
 
-func (ks *KScanner) checkCilium() (bool, []*threat) {
+func (ks KScanner) checkCilium() (bool, []*threat) {
 
 	var vuln = false
 	tlist := []*threat{}
@@ -295,6 +297,8 @@ func checkKubectlProxy() (bool, []*threat) {
 		kubectlCommand := strings.Join(cmds[2:], " ")
 		if len(kubectlCommand) > 50 {
 			kubectlCommand = "kubectl proxy " + kubectlCommand[:50] + "..."
+		} else {
+			kubectlCommand = strings.Join(cmds[:], " ")
 		}
 
 		for i, cmd := range cmds {
@@ -344,7 +348,7 @@ func checkKubectlProxy() (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks *KScanner) checkEtcd() (bool, []*threat) {
+func (ks KScanner) checkEtcd() (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 

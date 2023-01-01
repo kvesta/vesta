@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,7 +22,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func DoScan(ctx context.Context, tarFile string) {
+func DoScan(ctx context.Context, tarFile string, tarIO io.ReadCloser) {
 
 	// Get vulnerability database
 	if !ctx.Value("skip").(bool) {
@@ -33,20 +34,15 @@ func DoScan(ctx context.Context, tarFile string) {
 
 	log.Printf(config.Green("Begin to analyze the layer"))
 	// Extract tar file to local folder
-	m, err := Extract(ctx, tarFile)
+	m, err := Extract(ctx, tarFile, tarIO)
 	if err != nil {
 		log.Printf("Extract container failed, error: %v\n"+
 			"\tTips: try to use the container scan", err)
 		return
 	}
 
-	defer func() {
-		err := os.RemoveAll(m.Localpath)
-		if err != nil {
-			log.Printf("failed to remove %s : %v", m.Localpath, err)
-		}
-	}()
 	osVersion, err := osrelease.DetectOs(ctx, *m)
+	log.Printf("Detect OS: %s", osVersion.OID)
 
 	vulns := &internal.Vuln{
 		OsRelease: osVersion,
@@ -62,6 +58,17 @@ func DoScan(ctx context.Context, tarFile string) {
 	if err != nil {
 		log.Printf("package error %v", err)
 	}
+
+	go func() {
+		if tarIO != nil {
+			tarIO.Close()
+		}
+
+		err := os.RemoveAll(m.Localpath)
+		if err != nil {
+			log.Printf("failed to remove %s : %v", m.Localpath, err)
+		}
+	}()
 
 	scanner := vulns.Scan
 

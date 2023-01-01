@@ -4,6 +4,8 @@
 - Add Kubelet `read-only-port` and `kubectl proxy` checking 
 - Add Etcd safe configuration checking
 - Add RoleBinding checking
+- Optimize layer integration
+- Add go binary analysis
 
 # 1.0.1 (2022.12.13)
 ## features

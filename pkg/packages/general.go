@@ -2,42 +2,54 @@ package packages
 
 import (
 	"context"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 )
 
-func (s *Packages) getSpecialPacks(ctx context.Context) error {
-
-	versionReg := regexp.MustCompile(`(\d+\.)?(\d+\.)?(\*|\d+)`)
+func (s *Packages) Traverse(ctx context.Context) error {
 
 	m := s.Mani
 
-	slocals := map[string]string{
-		"grafana": "usr/share/grafana/VERSION",
-	}
+	fsys := os.DirFS(m.Localpath)
 
-	for name, sl := range slocals {
-		filePath := filepath.Join(m.Localpath, sl)
-		if !exists(filePath) {
-			continue
+	if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir():
+			return nil
 		}
 
-		versionFile, err := os.Open(filePath)
+		in, err := d.Info()
 		if err != nil {
-			continue
+			return nil
+		}
+		mode := in.Mode()
+
+		if mode.IsRegular() && mode.Perm()&0555 != 0 {
+			filename := filepath.Join(m.Localpath, path)
+			f, err := os.Open(filename)
+			if err != nil {
+				return nil
+			}
+
+			defer f.Close()
+
+			// parse go binary
+			gobin, err := parseGo(f)
+			if err != nil {
+				return nil
+			}
+
+			gobin.Path = path
+			s.GOPacks = append(s.GOPacks, gobin)
+
 		}
 
-		data, _ := ioutil.ReadAll(versionFile)
-		correctVersion := versionReg.FindString(string(data))
-		pack := &Package{
-			Name:    name,
-			Version: correctVersion,
-		}
-
-		s.Packs = append(s.Packs, pack)
-
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	return nil

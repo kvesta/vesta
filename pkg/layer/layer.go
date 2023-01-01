@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 
 	"github.com/kvesta/vesta/pkg"
 )
@@ -53,30 +51,17 @@ func (l *Layer) GetTarFile(file string) (*bytes.Buffer, error) {
 func (l *Layer) Integration(dir string) error {
 	targetFile := filepath.Join(l.localpath, "layer.tar")
 
-	if runtime.GOOS == "windows" {
-		image, err := os.Open(targetFile)
+	image, err := os.Open(targetFile)
 
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
+	}
 
-		defer image.Close()
-		tarReader := tar.NewReader(image)
-		err = pkg.Decompress(tarReader, dir)
-		if err != nil {
-			return fmt.Errorf("err: %v", err)
-		}
-
-	} else {
-		tarcmd := exec.Command("tar", "--no-same-owner", "-xC", dir, "-f", targetFile)
-		if err := tarcmd.Run(); err != nil {
-			return fmt.Errorf("err: %v", err)
-		}
-
-		chmodcmd := exec.Command("chmod", "-R", "u+w", dir)
-		if err := chmodcmd.Run(); err != nil {
-			return fmt.Errorf("err: %v", err)
-		}
+	defer image.Close()
+	tarReader := tar.NewReader(image)
+	err = pkg.Walk(tarReader, dir)
+	if err != nil {
+		return fmt.Errorf("err: %v", err)
 	}
 
 	return nil

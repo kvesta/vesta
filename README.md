@@ -22,7 +22,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 ## Build
 
-Vesta is built with Go 1.16. 
+Vesta is built with Go 1.18. 
 
 ```bash
 go build
@@ -207,7 +207,7 @@ Configures:
 | ✔         | PrivilegeAllowed                                        | Privileged module is allowed.                                   | critical                 |
 | ✔         | Capabilities                                            | Dangerous capabilities are opening.                             | critical                 |
 | ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.            | critical/medium          |
-| ✔         | ClusterRoleBinding                                      | Permissions with default server account.                        | high/medium              |
+| ✔         | RBAC                                                    | RBAC has some unsafe configurations.                            | high/medium              |
 | ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.           | critical/high/low        |
 | ✔         | Kernel version (k8s versions is less than v1.24)        | Kernel version is under the escape version.                     | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.              | critical/high/medium/low |

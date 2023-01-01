@@ -3,15 +3,14 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"path/filepath"
 
 	_cmd "github.com/kvesta/vesta/cmd"
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/vulnlib"
-
 	"github.com/spf13/cobra"
 )
 
@@ -102,33 +101,25 @@ func Execute() error {
 			ctx = context.WithValue(ctx, "output", outfile)
 			ctx = context.WithValue(ctx, "skip", skipUpdate)
 
+			var tarIO io.ReadCloser
+
 			if tarFile == "" {
 				var err error
-				tarFile, err = inspector.GetTarFromID(ctx, args[0])
+				tarIO, err = inspector.GetTarFromID(ctx, args[0])
 
 				if err != nil {
 					os.Exit(1)
 				}
 
-				defer func() {
-					pwd, _ := os.Getwd()
-					if tarFile == filepath.Join(pwd, "output.tar") {
-						err := os.RemoveAll(tarFile)
-						if err != nil {
-							log.Printf("failed to remove %s : %v", tarFile, err)
-						}
-					}
-				}()
-
 			}
 
-			if tarFile == "" {
+			if tarFile == "" && tarIO == nil {
 				log.Printf("Can not get tarfile parameter. " +
 					"Make sure that you have a right image ID " +
 					"or use -f to get from tar file")
 				return
 			}
-			_cmd.DoScan(ctx, tarFile)
+			_cmd.DoScan(ctx, tarFile, tarIO)
 		},
 	}
 
@@ -141,32 +132,26 @@ func Execute() error {
 			ctx = context.WithValue(ctx, "output", outfile)
 			ctx = context.WithValue(ctx, "skip", skipUpdate)
 
+			var tarIO io.ReadCloser
+
 			if tarFile == "" {
 				var err error
-				tarFile, err = inspector.GetTarFromID(ctx, args[0])
+				tarIO, err = inspector.GetTarFromID(ctx, args[0])
 
 				if err != nil {
 					os.Exit(1)
 				}
 
-				defer func() {
-					pwd, _ := os.Getwd()
-					if tarFile == filepath.Join(pwd, "output.tar") {
-						err := os.RemoveAll(tarFile)
-						if err != nil {
-							log.Printf("failed to remove %s : %v", tarFile, err)
-						}
-					}
-				}()
 			}
 
-			if tarFile == "" {
+			if tarFile == "" && tarIO == nil {
 				log.Printf("Can not get tarfile parameter. " +
 					"Make sure that you have a right container ID" +
 					"or use -f to get from tar file")
 				return
 			}
-			_cmd.DoScan(ctx, tarFile)
+
+			_cmd.DoScan(ctx, tarFile, tarIO)
 		},
 	}
 

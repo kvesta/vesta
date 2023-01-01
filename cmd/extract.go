@@ -3,6 +3,7 @@ package cmd
 import (
 	"archive/tar"
 	"context"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -36,24 +37,28 @@ func mkFolder(foldername string) string {
 }
 
 // Extract extract layers from inspector tar
-func Extract(ctx context.Context, tarPath string) (*layer.Manifest, error) {
+func Extract(ctx context.Context, tarPath string, tarIO io.ReadCloser) (*layer.Manifest, error) {
+	var tarReader *tar.Reader
+
 	tempPath := mkFolder(RandomString())
 
-	image, err := os.Open(tarPath)
+	if tarIO == nil {
+		image, err := os.Open(tarPath)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		defer image.Close()
+
+		tarReader = tar.NewReader(image)
+	} else {
+		tarReader = tar.NewReader(tarIO)
 	}
 
-	defer image.Close()
-	tarReader := tar.NewReader(image)
-
-	err = pkg.Decompress(tarReader, tempPath)
+	err := pkg.Decompress(tarReader, tempPath)
 	if err != nil {
 		log.Printf("extract tar file failed: %v", err)
 	}
-
-	//log.Printf("Tar file extracted")
 
 	// command `docker export` will generate a single file system
 	// just return the directory
@@ -75,9 +80,9 @@ func Extract(ctx context.Context, tarPath string) (*layer.Manifest, error) {
 	}()
 
 	// need temp folder path to get layer.tar
-	img, err := Inspect(ctx, tarPath, tempPath)
+	img, err := Inspect(ctx, tempPath)
 	if err != nil {
-		log.Println("Getting layers failed")
+		log.Printf("Getting layers failed")
 		return nil, err
 	}
 
