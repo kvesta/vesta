@@ -107,3 +107,59 @@ func TestParseJava(t *testing.T) {
 		})
 	}
 }
+
+func TestParsePHP(t *testing.T) {
+	type args struct {
+		r io.Reader
+	}
+
+	f, _ := os.Open("testdata/composer.lock")
+	defer f.Close()
+
+	phpResult := &PHP{
+		Packs: []*PHPPack{
+			{
+				Name:      "thinkphp",
+				Component: "topthink/framework",
+				Version:   "v5.0.23",
+			},
+			{
+				Name:      "think-captcha",
+				Component: "topthink/think-captcha",
+				Version:   "v1.0.7",
+			},
+			{
+				Name:      "think-installer",
+				Component: "topthink/think-installer",
+				Version:   "v1.0.12",
+			},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		want    *PHP
+		wantErr bool
+	}{
+		{
+			name: "parsePHPTest",
+			args: args{r: f},
+			want: phpResult,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getPHPPacks(tt.args.r)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parsePHP() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parsePHP() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

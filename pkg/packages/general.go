@@ -24,6 +24,18 @@ func (s *Packages) Traverse(ctx context.Context) error {
 			if strings.HasSuffix(path, "node_modules") && strings.Count(path, "node_modules") < 2 {
 				return s.getNodeModulePacks(path)
 			}
+
+			// Get wordpress version
+			if filepath.Base(path) == "wordpress" && strings.Count(path, "wordpress") < 2 {
+				wordPath := filepath.Join(m.Localpath, path)
+				wordpress, err := getWordpressInfo(wordPath)
+				if err == nil {
+					wordpress.Path = path
+					s.PHPPacks = append(s.PHPPacks, wordpress)
+				}
+
+			}
+			return nil
 		}
 
 		// Parse jar, war
@@ -50,6 +62,39 @@ func (s *Packages) Traverse(ctx context.Context) error {
 				java.Name = filepath.Base(path)
 			}
 			s.JavaPacks = append(s.JavaPacks, java)
+
+		}
+
+		// Parse PHP composer.lock
+		if strings.HasSuffix(path, "composer.lock") {
+			filename := filepath.Join(m.Localpath, path)
+			f, err := os.Open(filename)
+			if err != nil {
+				return nil
+			}
+
+			defer f.Close()
+
+			php, err := getPHPPacks(f)
+			if err != nil {
+				return err
+			}
+			comparePath := filepath.Join(filepath.Dir(filename), "composer.json")
+			if exists(comparePath) {
+				cf, err := os.Open(comparePath)
+				if err == nil {
+					defer cf.Close()
+					php.Name = parsePHPName(cf)
+				}
+			}
+
+			if php.Name == "" {
+				php.Name = path
+			}
+
+			php.Path = path
+
+			s.PHPPacks = append(s.PHPPacks, php)
 
 		}
 

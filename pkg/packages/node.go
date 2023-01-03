@@ -34,7 +34,7 @@ func (s *Packages) getNodeModulePacks(nodePath string) error {
 	npms, err := getNodeModules(sys, dir)
 
 	node := &Node{
-		Version: fmt.Sprintf(`nodejs(%s)`, strings.TrimSuffix(nodePath, "node_modules")),
+		Version: fmt.Sprintf(`nodejs (%s)`, strings.TrimSuffix(nodePath, "node_modules")),
 		NPMS:    npms,
 	}
 

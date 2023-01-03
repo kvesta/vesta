@@ -52,6 +52,11 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check go mod")
 	}
 
+	err = ps.checkPHPPacks(ctx, p.PHPPacks)
+	if err != nil {
+		log.Printf("failed to check php packs")
+	}
+
 	return err
 }
 
@@ -339,6 +344,34 @@ func (ps *Scanner) checkJavaPacks(ctx context.Context, javas []*packages.JAVA) e
 	}
 
 	ps.Vulns = append(ps.Vulns, javaVuln...)
+
+	return nil
+}
+
+func (ps *Scanner) checkPHPPacks(ctx context.Context, phps []*packages.PHP) error {
+
+	phpVuln := []*vulnComponent{}
+
+	for _, php := range phps {
+
+		for _, pack := range php.Packs {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(pack.Name))
+			if err != nil {
+				continue
+			}
+			if vs, vuln := compareVersion(rows, pack.Version, "*"); vuln {
+				for _, v := range vs {
+					v.Name = fmt.Sprintf("%s (%s) - %s", php.Name, php.Path, pack.Name)
+				}
+
+				sortSeverity(vs)
+				phpVuln = append(phpVuln, vs...)
+			}
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, phpVuln...)
 
 	return nil
 }
