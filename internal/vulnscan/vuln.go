@@ -47,6 +47,11 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check go mod")
 	}
 
+	err = ps.checkJavaPacks(ctx, p.JavaPacks)
+	if err != nil {
+		log.Printf("failed to check go mod")
+	}
+
 	return err
 }
 
@@ -295,7 +300,7 @@ func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) err
 			}
 			if vs, vuln := compareVersion(rows, mod.Version, "*"); vuln {
 				for _, v := range vs {
-					v.Name = fmt.Sprintf("%s(%s) - %s", gobin.Name, gobin.Path, mod.Path)
+					v.Name = fmt.Sprintf("%s (%s) - %s", gobin.Name, gobin.Path, mod.Path)
 				}
 
 				sortSeverity(vs)
@@ -306,6 +311,34 @@ func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) err
 	}
 
 	ps.Vulns = append(ps.Vulns, goVuln...)
+
+	return nil
+}
+
+func (ps *Scanner) checkJavaPacks(ctx context.Context, javas []*packages.JAVA) error {
+
+	javaVuln := []*vulnComponent{}
+
+	for _, java := range javas {
+
+		for _, jar := range java.Jars {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(jar.Name))
+			if err != nil {
+				continue
+			}
+			if vs, vuln := compareVersion(rows, jar.Version, "*"); vuln {
+				for _, v := range vs {
+					v.Name = fmt.Sprintf("%s (%s) - %s", java.Name, java.Path, jar.Name)
+				}
+
+				sortSeverity(vs)
+				javaVuln = append(javaVuln, vs...)
+			}
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, javaVuln...)
 
 	return nil
 }

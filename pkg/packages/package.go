@@ -14,6 +14,7 @@ type Packages struct {
 	PythonPacks []*Python  `json:"python_pack"`
 	NodePacks   []*Node    `json:"node_packs"`
 	GOPacks     []*GOBIN   `json:"go_packs"`
+	JavaPacks   []*JAVA    `json:"java_packs"`
 }
 
 type Package struct {

@@ -18,7 +18,7 @@ type GOBIN struct {
 	Deps []*MOD `json:"deps"`
 }
 
-func parseGo(r io.ReaderAt) (*GOBIN, error) {
+func getGOPacks(r io.ReaderAt) (*GOBIN, error) {
 	gobin := &GOBIN{}
 	mods := []*MOD{}
 

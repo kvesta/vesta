@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func (s *Packages) Traverse(ctx context.Context) error {
@@ -18,7 +19,38 @@ func (s *Packages) Traverse(ctx context.Context) error {
 		case err != nil:
 			return err
 		case d.IsDir():
-			return nil
+
+			// Get node model
+			if strings.HasSuffix(path, "node_modules") && strings.Count(path, "node_modules") < 2 {
+				return s.getNodeModulePacks(path)
+			}
+		}
+
+		// Parse jar, war
+		if strings.HasSuffix(path, ".jar") || strings.HasSuffix(path, ".war") {
+			filename := filepath.Join(m.Localpath, path)
+			f, err := os.Open(filename)
+			if err != nil {
+				return nil
+			}
+
+			defer f.Close()
+			fi, err := f.Stat()
+			if err != nil {
+				return err
+			}
+
+			java, err := getJavaPacks(f, fi.Size())
+			if err != nil {
+				return err
+			}
+
+			java.Path = path
+			if java.Name == "" {
+				java.Name = filepath.Base(path)
+			}
+			s.JavaPacks = append(s.JavaPacks, java)
+
 		}
 
 		in, err := d.Info()
@@ -36,8 +68,8 @@ func (s *Packages) Traverse(ctx context.Context) error {
 
 			defer f.Close()
 
-			// parse go binary
-			gobin, err := parseGo(f)
+			// Parse go binary
+			gobin, err := getGOPacks(f)
 			if err != nil {
 				return nil
 			}

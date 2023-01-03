@@ -1,14 +1,14 @@
 package packages
 
 import (
-	"context"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 type NPM struct {
@@ -21,32 +21,28 @@ type Node struct {
 	NPMS    []*NPM `json:"NPMS"`
 }
 
-func (s *Packages) getNodeModulePacks(ctx context.Context) error {
+func (s *Packages) getNodeModulePacks(nodePath string) error {
+
 	m := s.Mani
 
-	var nodePaths = []string{"/usr/local/lib/",
-		"/api/vendors", "/var/www/web"}
-
-	for _, p := range nodePaths {
-		fsys := filepath.Join(m.Localpath, p, "node_modules")
-		dir, err := ioutil.ReadDir(fsys)
-		if err != nil {
-			continue
-		}
-		npms, err := getNodeModules(fsys, dir)
-
-		node := &Node{
-			Version: fmt.Sprintf(`nodejs("%s")`, p),
-			NPMS:    npms,
-		}
-
-		if strings.Contains(p, "/usr/local/lib/") {
-			node.Version = "nodejs(global)"
-		}
-
-		s.NodePacks = append(s.NodePacks, node)
-
+	sys := filepath.Join(m.Localpath, nodePath)
+	dir, err := ioutil.ReadDir(sys)
+	if err != nil {
+		return err
 	}
+
+	npms, err := getNodeModules(sys, dir)
+
+	node := &Node{
+		Version: fmt.Sprintf(`nodejs(%s)`, strings.TrimSuffix(nodePath, "node_modules")),
+		NPMS:    npms,
+	}
+
+	if strings.Contains(nodePath, "usr/local/lib/node_modules") {
+		node.Version = "nodejs (global)"
+	}
+
+	s.NodePacks = append(s.NodePacks, node)
 
 	return nil
 }

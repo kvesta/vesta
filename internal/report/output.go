@@ -24,17 +24,20 @@ func ResolveAnalysisData(ctx context.Context, r vulnscan.Scanner) error {
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{1})
 
+	var Des string
 	for i, c := range r.Vulns {
 		scroe := fmt.Sprintf("%.1f", c.Score)
 
 		// Limit the length of description
 		if len(c.Desc) > 200 {
-			c.Desc = c.Desc[:200] + " ..."
+			Des = c.Desc[:200] + " ..."
+		} else {
+			Des = c.Desc
 		}
 
 		vulnData := []string{
 			strconv.Itoa(i + 1), c.Name, c.CorrectVersion, c.CVEID,
-			scroe, judgeSeverity(c.Level), c.Desc,
+			scroe, judgeSeverity(c.Level), Des,
 		}
 
 		table.Append(vulnData)
