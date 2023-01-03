@@ -1,3 +1,11 @@
+# 1.0.3 (2023.1.3)
+## features
+- Add java libraries analysis
+- Add php libraries analysis
+
+## improvements
+- Change the method of npm analysis
+
 # 1.0.2 (2022.12.24)
 ## features
 - Add cilium checking

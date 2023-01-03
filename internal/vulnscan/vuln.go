@@ -47,6 +47,16 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check go mod")
 	}
 
+	err = ps.checkJavaPacks(ctx, p.JavaPacks)
+	if err != nil {
+		log.Printf("failed to check go mod")
+	}
+
+	err = ps.checkPHPPacks(ctx, p.PHPPacks)
+	if err != nil {
+		log.Printf("failed to check php packs")
+	}
+
 	return err
 }
 
@@ -241,6 +251,8 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", py.Version, m.Name)
 				}
+
+				sortSeverity(vs)
 				pyVuln = append(pyVuln, vs...)
 			}
 
@@ -267,8 +279,9 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", node.Version, npm.Name)
 				}
-				npmVuln = append(npmVuln, vs...)
 
+				sortSeverity(vs)
+				npmVuln = append(npmVuln, vs...)
 			}
 		}
 
@@ -281,7 +294,7 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 
 func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) error {
 
-	npmVuln := []*vulnComponent{}
+	goVuln := []*vulnComponent{}
 
 	for _, gobin := range gobins {
 
@@ -292,16 +305,73 @@ func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) err
 			}
 			if vs, vuln := compareVersion(rows, mod.Version, "*"); vuln {
 				for _, v := range vs {
-					v.Name = fmt.Sprintf("%s(%s) - %s", gobin.Name, gobin.Path, mod.Path)
+					v.Name = fmt.Sprintf("%s (%s) - %s", gobin.Name, gobin.Path, mod.Path)
 				}
-				npmVuln = append(npmVuln, vs...)
 
+				sortSeverity(vs)
+				goVuln = append(goVuln, vs...)
 			}
 		}
 
 	}
 
-	ps.Vulns = append(ps.Vulns, npmVuln...)
+	ps.Vulns = append(ps.Vulns, goVuln...)
+
+	return nil
+}
+
+func (ps *Scanner) checkJavaPacks(ctx context.Context, javas []*packages.JAVA) error {
+
+	javaVuln := []*vulnComponent{}
+
+	for _, java := range javas {
+
+		for _, jar := range java.Jars {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(jar.Name))
+			if err != nil {
+				continue
+			}
+			if vs, vuln := compareVersion(rows, jar.Version, "*"); vuln {
+				for _, v := range vs {
+					v.Name = fmt.Sprintf("%s (%s) - %s", java.Name, java.Path, jar.Name)
+				}
+
+				sortSeverity(vs)
+				javaVuln = append(javaVuln, vs...)
+			}
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, javaVuln...)
+
+	return nil
+}
+
+func (ps *Scanner) checkPHPPacks(ctx context.Context, phps []*packages.PHP) error {
+
+	phpVuln := []*vulnComponent{}
+
+	for _, php := range phps {
+
+		for _, pack := range php.Packs {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(pack.Name))
+			if err != nil {
+				continue
+			}
+			if vs, vuln := compareVersion(rows, pack.Version, "*"); vuln {
+				for _, v := range vs {
+					v.Name = fmt.Sprintf("%s (%s) - %s", php.Name, php.Path, pack.Name)
+				}
+
+				sortSeverity(vs)
+				phpVuln = append(phpVuln, vs...)
+			}
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, phpVuln...)
 
 	return nil
 }
@@ -323,6 +393,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 					v.Name = p.Name
 				}
 
+				sortSeverity(vs)
 				packVuln = append(packVuln, vs...)
 			}
 		}
@@ -343,6 +414,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 				v.Name = p.Name
 			}
 
+			sortSeverity(vs)
 			packVuln = append(packVuln, vs...)
 		}
 	}

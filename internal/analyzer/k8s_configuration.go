@@ -139,6 +139,8 @@ func (ks *KScanner) checkPod(ns string) error {
 		}
 
 		if len(vList) > 0 {
+
+			sortSeverity(vList)
 			con := &container{
 				ContainerName: pod.Name,
 				Namepsace:     ns,

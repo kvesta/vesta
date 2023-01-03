@@ -50,7 +50,6 @@ func (s *Packages) GetApp(ctx context.Context) error {
 	}
 
 	err = s.getSitePacks(ctx)
-	err = s.getNodeModulePacks(ctx)
 	err = s.Traverse(ctx)
 
 	return err

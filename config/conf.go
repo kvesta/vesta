@@ -13,4 +13,12 @@ var (
 	Pink   = color.New(color.FgMagenta).SprintFunc()
 
 	Ctx = context.Background()
+
+	SeverityMap = map[string]int{
+		"critical": 5,
+		"high":     4,
+		"medium":   3,
+		"low":      2,
+		"tips":     1,
+	}
 )

@@ -114,8 +114,8 @@ func Execute() error {
 			}
 
 			if tarFile == "" && tarIO == nil {
-				log.Printf("Can not get tarfile parameter. " +
-					"Make sure that you have a right image ID " +
+				log.Printf("Can not get tarfile. " +
+					"Make sure that you have the right image ID " +
 					"or use -f to get from tar file")
 				return
 			}
@@ -145,8 +145,8 @@ func Execute() error {
 			}
 
 			if tarFile == "" && tarIO == nil {
-				log.Printf("Can not get tarfile parameter. " +
-					"Make sure that you have a right container ID" +
+				log.Printf("Can not get tarfile. " +
+					"Make sure that you have the right container ID" +
 					"or use -f to get from tar file")
 				return
 			}
