@@ -3,9 +3,11 @@ package analyzer
 import (
 	"context"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
+	"github.com/kvesta/vesta/config"
 	rv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -113,6 +115,8 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 }
 
 func (ks *KScanner) checkClusterBinding() error {
+	log.Printf(config.Yellow("Begin ClusterRoleBinding analyzing"))
+
 	clrb, err := ks.KClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err

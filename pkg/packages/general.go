@@ -116,11 +116,20 @@ func (s *Packages) Traverse(ctx context.Context) error {
 			// Parse go binary
 			gobin, err := getGOPacks(f)
 			if err != nil {
-				return nil
+				goto rustCheck
 			}
 
 			gobin.Path = path
 			s.GOPacks = append(s.GOPacks, gobin)
+
+		rustCheck:
+			rustbin, err := getRustPacks(f)
+			if err != nil {
+				return nil
+			}
+
+			rustbin.Path = path
+			s.RustPacks = append(s.RustPacks, rustbin)
 
 		}
 

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"context"
+	"log"
 
 	rv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -9,6 +10,8 @@ import (
 
 // checkKuberDashboard extra checks Kubernetes dashboard
 func (ks *KScanner) checkKuberDashboard() error {
+	log.Printf("Begin Dashboard analyzing")
+
 	deploys, err := ks.KClient.AppsV1().Deployments("kubernetes-dashboard").List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err

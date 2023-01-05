@@ -6,6 +6,7 @@ require (
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/mattn/go-sqlite3 v1.14.15
+	github.com/microsoft/go-rustaudit v0.0.0-20220808201409-204dfee52032
 	github.com/spf13/cobra v1.5.0
 	github.com/tidwall/gjson v1.14.1
 	k8s.io/apimachinery v0.21.3

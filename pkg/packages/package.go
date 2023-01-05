@@ -16,6 +16,7 @@ type Packages struct {
 	GOPacks     []*GOBIN   `json:"go_packs"`
 	JavaPacks   []*JAVA    `json:"java_packs"`
 	PHPPacks    []*PHP     `json:"php_packs"`
+	RustPacks   []*Rust    `json:"rust_packs"`
 }
 
 type Package struct {

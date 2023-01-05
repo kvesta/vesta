@@ -12,6 +12,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	version2 "github.com/hashicorp/go-version"
+	_config "github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	"github.com/tidwall/gjson"
 )
@@ -75,6 +76,8 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []types.ImageSu
 }
 
 func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
+	log.Printf(_config.Yellow("Begin privileged and capabilities analyzing"))
+
 	var vuln = false
 	var capList string
 
@@ -123,6 +126,8 @@ func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
 }
 
 func checkMount(config *types.ContainerJSON) (bool, []*threat) {
+	log.Printf(_config.Yellow("Begin mount analyzing"))
+
 	var vuln = false
 
 	mounts := config.Mounts
@@ -265,6 +270,8 @@ func checkNetworkModel(config *types.ContainerJSON, version string) (bool, []*th
 }
 
 func checkDockerUnauthorized() (bool, []*threat) {
+	log.Printf(_config.Yellow("Begin unauthorized analyzing"))
+
 	var vuln = false
 
 	tlist := []*threat{}
@@ -313,6 +320,8 @@ func checkDockerUnauthorized() (bool, []*threat) {
 }
 
 func checkImages(images []types.ImageSummary) (bool, []*threat) {
+	log.Printf(_config.Yellow("Begin image analyzing"))
+
 	var vuln = false
 
 	tlist := []*threat{}

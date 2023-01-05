@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	"github.com/shirou/gopsutil/process"
 	"gopkg.in/yaml.v3"
@@ -49,6 +50,7 @@ func (ks *KScanner) checkCNI() error {
 }
 
 func checkEnvoy() (bool, []*threat) {
+	log.Printf(config.Yellow("Begin Envoy analyzing"))
 
 	var vuln = false
 	tlist := []*threat{}
@@ -167,10 +169,13 @@ func checkEnvoy() (bool, []*threat) {
 }
 
 func (ks KScanner) checkIstio() error {
+	log.Printf(config.Yellow("Begin Istio analyzing"))
+
 	return nil
 }
 
 func (ks KScanner) checkCilium() (bool, []*threat) {
+	log.Printf(config.Yellow("Begin cilium analyzing"))
 
 	var vuln = false
 	tlist := []*threat{}
@@ -233,6 +238,8 @@ func (ks KScanner) checkCilium() (bool, []*threat) {
 }
 
 func checkKubelet() (bool, []*threat) {
+	log.Printf(config.Yellow("Begin Kubelet analyzing"))
+
 	var vuln = false
 	tlist := []*threat{}
 
@@ -275,6 +282,8 @@ func checkKubelet() (bool, []*threat) {
 }
 
 func checkKubectlProxy() (bool, []*threat) {
+	log.Printf(config.Yellow("Begin Kubectl proxy analyzing"))
+
 	var vuln = false
 	tlist := []*threat{}
 
@@ -349,6 +358,8 @@ func checkKubectlProxy() (bool, []*threat) {
 }
 
 func (ks KScanner) checkEtcd() (bool, []*threat) {
+	log.Printf(config.Yellow("Begin Etcd analyzing"))
+
 	var vuln = false
 	tlist := []*threat{}
 
