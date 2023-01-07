@@ -29,7 +29,6 @@ func mkFolder(foldername string) string {
 	pwd, _ := os.Getwd()
 	tempFolder := filepath.Join(pwd, foldername)
 	if !exists(tempFolder) {
-		//log.Printf("Create temp folder")
 		os.MkdirAll(tempFolder, os.FileMode(0755))
 	}
 
@@ -58,7 +57,7 @@ func Extract(ctx context.Context, tarPath string, tarIO []io.ReadCloser) (*layer
 	// command `docker export` will generate a single file system
 	// just return the directory
 	if ctx.Value("tarType") == "container" {
-		err := pkg.Decompress(tarReader, tempPath)
+		err := pkg.Walk(tarReader, tempPath)
 		if err != nil {
 			log.Printf("extract tar file failed: %v", err)
 		}
