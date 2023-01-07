@@ -20,19 +20,19 @@ func (da DockerApi) getInspect(imageID string) (*types.ContainerJSON, error) {
 	return &ins, nil
 }
 
-func (da *DockerApi) GetContainerName(containerID string) (io.ReadCloser, error) {
-	var containerList []string
+func (da *DockerApi) GetContainerName(containerID string) ([]io.ReadCloser, error) {
+	var whiteList = []string{"/", "/etc", "/proc",
+		"/sys", "/usr", "/lib", "/lib64"}
+	var containerIo []io.ReadCloser
 
-	containers, err := da.DCli.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	// Do not use the `all` option temporary
-	if strings.ToLower(containerID) == "all" {
-		for _, container := range containers {
-			containerList = append(containerList, container.ID[:12])
+	isWhite := func(path string) bool {
+		for _, whitePath := range whiteList {
+			if path == whitePath {
+				return true
+			}
 		}
+
+		return false
 	}
 
 	log.Printf(config.Green("Searching for container"))
@@ -42,7 +42,31 @@ func (da *DockerApi) GetContainerName(containerID string) (io.ReadCloser, error)
 		return nil, err
 	}
 
-	return fileio, err
+	containerIo = append(containerIo, fileio)
+
+	// Get mount path, reference: https://docs.docker.com/engine/reference/commandline/export/#description
+	ins, err := da.getInspect(containerID)
+	if err == nil {
+		var mnts []types.MountPoint
+		if ins.Mounts != nil {
+			mnts = ins.Mounts
+		}
+
+		for _, mnt := range mnts {
+			if isWhite(mnt.Source) {
+				continue
+			}
+
+			cp, stats, err := da.DCli.CopyFromContainer(ctx, containerID, mnt.Destination)
+			if err != nil || stats.Size > 1073741824 {
+				continue
+			}
+
+			containerIo = append(containerIo, cp)
+		}
+	}
+
+	return containerIo, err
 }
 
 func (da DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {

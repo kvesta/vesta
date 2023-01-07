@@ -120,7 +120,7 @@ func (cli *Client) QueryVulnByName(name string) ([]*DBRow, error) {
 			&r.Level, &r.CVEID, &r.PublishDate,
 			&r.Component, &r.Score, &r.Source)
 
-		if err != nil {
+		if err != nil || r.MaxVersion == "*" {
 			continue
 		}
 
@@ -154,7 +154,7 @@ func (cli *Client) QueryVulnByCVEID(cveid string) ([]*DBRow, error) {
 			&r.Level, &r.CVEID, &r.PublishDate,
 			&r.Component, &r.Score, &r.Source)
 
-		if err != nil {
+		if err != nil || r.MaxVersion == "*" {
 			continue
 		}
 

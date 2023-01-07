@@ -2,9 +2,11 @@
 ## features
 - Add java libraries analysis
 - Add php libraries analysis
+- Add rust libraries analysis
 
 ## improvements
 - Change the method of npm analysis
+- Add mount filesystem for container scan
 
 # 1.0.2 (2022.12.24)
 ## features

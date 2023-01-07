@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-func DoScan(ctx context.Context, tarFile string, tarIO io.ReadCloser) {
+func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 
 	// Get vulnerability database
 	if !ctx.Value("skip").(bool) {
@@ -60,11 +60,22 @@ func DoScan(ctx context.Context, tarFile string, tarIO io.ReadCloser) {
 	}
 
 	go func() {
-		if tarIO != nil {
-			tarIO.Close()
+		if len(tarIO) > 0 {
+			for _, f := range tarIO {
+				f.Close()
+			}
 		}
 
-		err := os.RemoveAll(m.Localpath)
+		// Check directory is legal
+		pwd, err := os.Getwd()
+		if err != nil {
+			log.Printf("failed to remove %s : %v", m.Localpath, err)
+		}
+		if pwd == m.Localpath {
+			return
+		}
+
+		err = os.RemoveAll(m.Localpath)
 		if err != nil {
 			log.Printf("failed to remove %s : %v", m.Localpath, err)
 		}

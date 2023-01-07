@@ -1,46 +1,16 @@
 package layer
 
 import (
+	"archive/tar"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"io/fs"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
+	"github.com/kvesta/vesta/pkg"
 	"github.com/tidwall/gjson"
 )
-
-func getManifest(dir string) string {
-	fsys := os.DirFS(dir)
-	buf := []byte{}
-	if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
-		switch {
-		case err != nil:
-			return err
-		case d.IsDir():
-			return nil
-		}
-
-		if strings.Contains(path, "manifest.json") {
-			buf, err = fs.ReadFile(fsys, path)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}
-
-		return nil
-	}); err != nil {
-		return ""
-	}
-
-	return string(buf)
-}
 
 func md5Stamp() string {
 	timeStamp := time.Now().String()
@@ -48,9 +18,12 @@ func md5Stamp() string {
 	return hex.EncodeToString(md5h[:])
 }
 
-func (m *Manifest) GetLayers(ctx context.Context, tempPath string) error {
+func (m *Manifest) GetLayers(ctx context.Context, tarReader *tar.Reader, tempPath string) error {
 
-	manifest := getManifest(tempPath)
+	manifest, err := pkg.AnalyzeTarLayer(tarReader, tempPath)
+	if err != nil {
+		return err
+	}
 	m.Hash = md5Stamp()
 
 	result := gjson.Parse(manifest).Value()
@@ -60,7 +33,6 @@ func (m *Manifest) GetLayers(ctx context.Context, tempPath string) error {
 		return err
 	}
 	value := result.([]interface{})[0].(map[string]interface{})
-	cwd, _ := os.Getwd()
 
 	// if not contains name, use tar hash
 	if value["RepoTags"] == nil {
@@ -68,14 +40,12 @@ func (m *Manifest) GetLayers(ctx context.Context, tempPath string) error {
 	} else {
 		m.Name = value["RepoTags"].([]interface{})[0].(string)
 	}
-	m.Localpath = filepath.Join(cwd, m.Hash)
 
 	layers := value["Layers"].([]interface{})
 	for _, layer := range layers {
 		m.Layers = append(m.Layers, &Layer{
 			Hash:       layer.(string)[:64],
 			Annotation: "",
-			localpath:  filepath.Join(tempPath, layer.(string)[:64]),
 		})
 	}
 

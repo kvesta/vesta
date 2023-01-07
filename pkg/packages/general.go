@@ -2,9 +2,12 @@ package packages
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -35,6 +38,35 @@ func (s *Packages) Traverse(ctx context.Context) error {
 				}
 
 			}
+
+			// Check special path /var/www/html
+			if path == "var/www/html" {
+				dirPath := filepath.Join(m.Localpath, path)
+				switch getHTMLType(dirPath) {
+				case "php":
+					wordpress, err := getWordpressInfo(dirPath)
+					if err != nil {
+						return err
+					}
+					wordpress.Path = path
+					s.PHPPacks = append(s.PHPPacks, wordpress)
+				case "py":
+					pips, err := getLocalPythonPacks(dirPath)
+					if err != nil {
+						return err
+					}
+
+					py := &Python{
+						Version:    fmt.Sprintf("python location: %s", path),
+						SitePackes: pips,
+					}
+
+					s.PythonPacks = append(s.PythonPacks, py)
+				default:
+					// ignore
+				}
+			}
+
 			return nil
 		}
 
@@ -139,4 +171,52 @@ func (s *Packages) Traverse(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func getHTMLType(path string) string {
+	extensions := map[string]int{
+		"php": 0,
+		"py":  0,
+		"js":  0,
+	}
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return ""
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		exSplit := strings.Split(file.Name(), ".")
+		if len(exSplit) < 2 {
+			continue
+		}
+
+		ex := exSplit[len(exSplit)-1]
+		if _, ok := extensions[ex]; ok {
+			extensions[ex] += 1
+		}
+
+	}
+
+	type kv struct {
+		Key   string
+		Value int
+	}
+
+	var exs []kv
+	for k, v := range extensions {
+		exs = append(exs, kv{k, v})
+	}
+
+	sort.Slice(exs, func(i, j int) bool {
+		return exs[i].Value > exs[j].Value
+	})
+
+	if exs[0].Value > 0 {
+		return exs[0].Key
+	}
+
+	return ""
 }

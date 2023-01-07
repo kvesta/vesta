@@ -2,7 +2,6 @@ package packages
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,8 +12,6 @@ import (
 var (
 	pyVersion = regexp.MustCompile(`^python\d+\.\d+$`)
 	module    = regexp.MustCompile(`(.*).dist-info`)
-
-	whitLists = []string{"pip", "setuptools", "wheel"}
 )
 
 type PIP struct {
@@ -70,14 +67,31 @@ func getPIPModules(path string) ([]*PIP, error) {
 	}
 	for _, f := range dir {
 		find := module.FindString(f.Name())
-		if ok := whiteList(f.Name()); ok {
-			continue
-		}
 		if find != "" {
 			p := parse(f.Name())
 			pips = append(pips, p)
 		}
 	}
+	return pips, nil
+}
+
+// getLocalPythonPacks for command `pip install packs -t <path>`
+func getLocalPythonPacks(path string) ([]*PIP, error) {
+	pips := []*PIP{}
+
+	dir, err := ioutil.ReadDir(path)
+	if err != nil {
+		return pips, err
+	}
+
+	for _, f := range dir {
+		find := module.FindString(f.Name())
+		if find != "" {
+			p := parse(f.Name())
+			pips = append(pips, p)
+		}
+	}
+
 	return pips, nil
 }
 
@@ -101,15 +115,4 @@ func exists(path string) bool {
 		return false
 	}
 	return true
-}
-
-func whiteList(pathname string) bool {
-	for _, w := range whitLists {
-		filter := regexp.MustCompile(fmt.Sprintf("^%s-", w))
-		if ok := filter.MatchString(pathname); ok {
-			return true
-		}
-	}
-
-	return false
 }

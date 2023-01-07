@@ -6,7 +6,6 @@ require (
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/mattn/go-sqlite3 v1.14.15
-	github.com/microsoft/go-rustaudit v0.0.0-20220808201409-204dfee52032
 	github.com/spf13/cobra v1.5.0
 	github.com/tidwall/gjson v1.14.1
 	k8s.io/apimachinery v0.21.3
@@ -25,6 +24,7 @@ require (
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/microsoft/go-rustaudit v0.0.0-20220808201409-204dfee52032 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

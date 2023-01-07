@@ -2,7 +2,9 @@ package pkg
 
 import (
 	"archive/tar"
+	"errors"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -27,6 +29,7 @@ func Decompress(tarReader *tar.Reader, path string) error {
 		}
 
 		extractFile := filepath.Join(path, hdr.Name)
+		log.Printf(hdr.Name)
 		switch hdr.Typeflag {
 		case tar.TypeDir:
 			if !exists(extractFile) {
@@ -83,4 +86,41 @@ func Walk(tarReader *tar.Reader, path string) error {
 		}
 	}
 	return nil
+}
+
+// AnalyzeTarLayer get manifest.json and layer.tar from tar file
+func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, error) {
+	var manifest string
+
+	for hdr, err := tarReader.Next(); err != io.EOF; hdr, err = tarReader.Next() {
+		if err != nil {
+			return manifest, err
+		}
+
+		if hdr.Name == "manifest.json" {
+			b, err := ioutil.ReadAll(tarReader)
+			manifest = string(b)
+			if err != nil {
+				return manifest, err
+			}
+		} else if filepath.Base(hdr.Name) == "layer.tar" {
+			layerFile := filepath.Join(tempPath, filepath.Dir(hdr.Name)+".tar")
+			file, err := os.OpenFile(layerFile, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+			if err != nil {
+				continue
+			}
+			_, err = io.Copy(file, tarReader)
+			if err != nil {
+				log.Printf("file %s can not extract: %v", hdr.Name, err)
+			}
+
+		}
+	}
+
+	if manifest == "" {
+		err := errors.New("manifest not found")
+		return manifest, err
+	}
+
+	return manifest, nil
 }
