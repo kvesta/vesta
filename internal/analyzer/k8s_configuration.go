@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/client"
+	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/vulnlib"
-
-	"github.com/docker/docker/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
@@ -50,6 +50,7 @@ func (ks *KScanner) dockershimCheck(ctx context.Context) error {
 }
 
 func (ks *KScanner) checkPersistentVolume() error {
+	log.Printf(config.Yellow("Begin PV and PVC analyzing"))
 
 	tlist := []*threat{}
 	pvs, err := ks.KClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
@@ -216,6 +217,8 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 }
 
 func (ks *KScanner) checkCerts() error {
+	log.Printf(config.Yellow("Begin cert analyzing"))
+
 	kubeConfig, err := clientcmd.LoadFromFile("/etc/kubernetes/admin.conf")
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {

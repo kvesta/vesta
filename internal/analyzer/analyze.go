@@ -7,11 +7,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kvesta/vesta/pkg/osrelease"
-	"github.com/kvesta/vesta/pkg/vulnlib"
-
 	"github.com/docker/docker/api/types"
 	version2 "github.com/hashicorp/go-version"
+	"github.com/kvesta/vesta/config"
+	"github.com/kvesta/vesta/pkg/osrelease"
+	"github.com/kvesta/vesta/pkg/vulnlib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -124,7 +124,13 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		log.Printf("Get namespace failed: %v", err)
 	}
 
-	// Check pod
+	log.Printf(config.Yellow("Begin Pods analyzing"))
+	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
+	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
+	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
+	log.Printf(config.Yellow("Begin RoleBinding analyzing"))
+
+	// Check configuration in namespace
 	if ctx.Value("nameSpace") != "all" {
 		ns := ctx.Value("nameSpace")
 		err := ks.checkPod(ns.(string))
@@ -286,6 +292,8 @@ func checkMountPath(path string) bool {
 
 // checkDockerVersion check docker server version
 func checkDockerVersion(cli vulnlib.Client, serverVersion string) (bool, []*threat) {
+	log.Printf(config.Yellow("Begin docker version analyzing"))
+
 	var vuln = false
 
 	tlist := []*threat{}
@@ -339,6 +347,7 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 		return vuln, tlist
 	}
 
+	log.Printf(config.Yellow("Begin kernel version analyzing"))
 	for cve, nickname := range vulnKernelVersion {
 		underVuln := false
 		if err != nil {

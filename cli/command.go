@@ -101,7 +101,7 @@ func Execute() error {
 			ctx = context.WithValue(ctx, "output", outfile)
 			ctx = context.WithValue(ctx, "skip", skipUpdate)
 
-			var tarIO io.ReadCloser
+			var tarIO []io.ReadCloser
 
 			if tarFile == "" {
 				var err error
@@ -113,7 +113,7 @@ func Execute() error {
 
 			}
 
-			if tarFile == "" && tarIO == nil {
+			if tarFile == "" && len(tarIO) < 1 {
 				log.Printf("Can not get tarfile. " +
 					"Make sure that you have the right image ID " +
 					"or use -f to get from tar file")
@@ -132,7 +132,7 @@ func Execute() error {
 			ctx = context.WithValue(ctx, "output", outfile)
 			ctx = context.WithValue(ctx, "skip", skipUpdate)
 
-			var tarIO io.ReadCloser
+			var tarIO []io.ReadCloser
 
 			if tarFile == "" {
 				var err error
@@ -144,7 +144,7 @@ func Execute() error {
 
 			}
 
-			if tarFile == "" && tarIO == nil {
+			if tarFile == "" && len(tarIO) < 1 {
 				log.Printf("Can not get tarfile. " +
 					"Make sure that you have the right container ID" +
 					"or use -f to get from tar file")

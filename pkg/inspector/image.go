@@ -10,7 +10,7 @@ import (
 	"github.com/kvesta/vesta/config"
 )
 
-func (da *DockerApi) GetImageName(imageID string) (io.ReadCloser, error) {
+func (da *DockerApi) GetImageName(imageID string) ([]io.ReadCloser, error) {
 
 	var imageList []string
 
@@ -19,30 +19,20 @@ func (da *DockerApi) GetImageName(imageID string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	// Do not use the `all` option temporary
-	if strings.ToLower(imageID) == "all" {
+	filter := regexp.MustCompile(`^[a-f0-9]{12}$`)
+	if filter.MatchString(imageID) {
 		for _, image := range images {
 			if len(image.RepoTags) < 1 {
 				continue
 			}
-			imageList = append(imageList, image.RepoTags[0])
+
+			sha := strings.Split(image.ID, ":")[1]
+			if imageID == sha[:12] {
+				imageList = append(imageList, image.RepoTags[0])
+			}
 		}
 	} else {
-		filter := regexp.MustCompile(`^[a-f0-9]{12}$`)
-		if filter.MatchString(imageID) {
-			for _, image := range images {
-				if len(image.RepoTags) < 1 {
-					continue
-				}
-
-				sha := strings.Split(image.ID, ":")[1]
-				if imageID == sha[:12] {
-					imageList = append(imageList, image.RepoTags[0])
-				}
-			}
-		} else {
-			imageList = append(imageList, imageID)
-		}
+		imageList = append(imageList, imageID)
 	}
 
 	log.Printf(config.Green("Searching for image"))
@@ -52,7 +42,7 @@ func (da *DockerApi) GetImageName(imageID string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	return fileio, nil
+	return []io.ReadCloser{fileio}, nil
 }
 
 func (da *DockerApi) GetAllImage() ([]types.ImageSummary, error) {

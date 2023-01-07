@@ -2,12 +2,14 @@ package packages
 
 import (
 	"errors"
+	"fmt"
 	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type PHP struct {
@@ -101,25 +103,31 @@ func getWordpressInfo(dir string) (*PHP, error) {
 		phpPacks = append(phpPacks, p)
 	}
 
-	// TODO: Get wordpress plugins
-	/*
-		pluginPath := filepath.Join(dir, "wp-content/plugins")
-		fsys := os.DirFS(pluginPath)
-		fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
-			switch {
-			case err != nil:
-				return err
-			case d.IsDir():
-				p := &PHPPack{
-					Name: filepath.Base(path),
-				}
+	pluginsDir := filepath.Join(dir, "wp-content/plugins")
+	plugins, err := ioutil.ReadDir(pluginsDir)
+	if err != nil {
+		goto check
+	}
 
-				phpPacks = append(phpPacks, p)
+	for _, file := range plugins {
+		if file.IsDir() {
+			pluginName := file.Name()
+			pluginPath := filepath.Join(pluginsDir, pluginName)
+			pluginVersion := parseWordpressPluginVersion(pluginPath, pluginName)
+
+			if pluginVersion == "" {
+				continue
 			}
-			return nil
-		})
-	*/
 
+			p := &PHPPack{
+				Name:    fmt.Sprintf("plugin: %s", pluginName),
+				Version: pluginVersion,
+			}
+			phpPacks = append(phpPacks, p)
+		}
+	}
+
+check:
 	if len(phpPacks) < 1 {
 		err = errors.New("no wordpress was detected")
 		return php, err
@@ -128,4 +136,40 @@ func getWordpressInfo(dir string) (*PHP, error) {
 	php.Packs = phpPacks
 
 	return php, nil
+}
+
+func parseWordpressPluginVersion(dir, pluginName string) string {
+	versionFile := filepath.Join(dir, fmt.Sprintf("%s.php", pluginName))
+	f, err := os.Open(versionFile)
+	if err == nil {
+		defer f.Close()
+
+		pluginVersionReg := regexp.MustCompile(`Version:(.*)`)
+
+		data, _ := ioutil.ReadAll(f)
+		pluginVersionMatch := pluginVersionReg.FindStringSubmatch(string(data))
+		if len(pluginVersionMatch) > 1 {
+			return strings.TrimSpace(pluginVersionMatch[1])
+		}
+
+	}
+
+	// Find in readme.txt
+	readmeName := filepath.Join(dir, "readme.txt")
+	read, err := os.Open(readmeName)
+	if err != nil {
+		return ""
+	}
+
+	defer read.Close()
+
+	data, _ := ioutil.ReadAll(read)
+
+	readmeReg := regexp.MustCompile(`Stable tag:(.*)`)
+	readVersionMatch := readmeReg.FindStringSubmatch(string(data))
+	if len(readVersionMatch) > 1 {
+		return strings.TrimSpace(readVersionMatch[1])
+	}
+
+	return ""
 }
