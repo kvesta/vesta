@@ -3,13 +3,14 @@ package packages
 import (
 	"errors"
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 type PHP struct {

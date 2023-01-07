@@ -30,7 +30,8 @@ func getGOPacks(r io.ReaderAt) (*GOBIN, error) {
 	if info.Main.Path == "" {
 		gobin.Name = "gobinary"
 	} else {
-		gobin.Name = strings.Split(info.Main.Path, "/")[2]
+		nameSplit := strings.Split(info.Main.Path, "/")
+		gobin.Name = nameSplit[len(nameSplit)-1]
 	}
 
 	for _, dep := range info.Deps {
@@ -50,7 +51,6 @@ func getGOPacks(r io.ReaderAt) (*GOBIN, error) {
 			Path:    dep.Path,
 			Version: dep.Version,
 		}
-
 		mods = append(mods, mod)
 	}
 
