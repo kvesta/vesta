@@ -53,7 +53,7 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 
 			if vuln {
 				th := &threat{
-					Param:    "capabilities",
+					Param:    fmt.Sprintf("sidecar name: %s |\ncapabilities", config.Name),
 					Value:    capList,
 					Type:     "capabilities.add",
 					Describe: "There has a potential container escape in privileged module.",
@@ -65,7 +65,7 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 
 		if config.SecurityContext.Privileged != nil && *config.SecurityContext.Privileged {
 			th := &threat{
-				Param:    "Privileged",
+				Param:    fmt.Sprintf("sidecar name: %s |\nPrivileged", config.Name),
 				Value:    "true",
 				Type:     "Pod",
 				Describe: "There has a potential container escape in privileged module.",
@@ -77,7 +77,7 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 
 		if config.SecurityContext.AllowPrivilegeEscalation != nil && *config.SecurityContext.AllowPrivilegeEscalation {
 			th := &threat{
-				Param:    "AllowPrivilegeEscalation",
+				Param:    fmt.Sprintf("sidecar name: %s |\nAllowPrivilegeEscalation", config.Name),
 				Value:    "true",
 				Type:     "Pod",
 				Describe: "There has a potential container escape in privileged module.",
@@ -98,7 +98,7 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 
 	if len(config.Resources.Limits) < 1 {
 		th := &threat{
-			Param:     "Resource",
+			Param:     fmt.Sprintf("sidecar name: %s |\nResource", config.Name),
 			Value:     "memory, cpu,\nephemeral-storage",
 			Type:      "Pod",
 			Describe:  "None of resources is be limited.",
@@ -114,7 +114,7 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 
 	if config.Resources.Limits.Memory().String() == "0" {
 		th := &threat{
-			Param:     "Resource",
+			Param:     fmt.Sprintf("sidecar name: %s |\nResource", config.Name),
 			Value:     "memory",
 			Type:      "Pod",
 			Describe:  "Memory usage is not limited.",
@@ -128,7 +128,7 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 
 	if config.Resources.Limits.Cpu().String() == "0" {
 		th := &threat{
-			Param:     "Resource",
+			Param:     fmt.Sprintf("sidecar name: %s |\nResource", config.Name),
 			Value:     "cpu",
 			Type:      "Pod",
 			Describe:  "CPU usage is not limited.",
@@ -152,7 +152,7 @@ func checkPodAccountService(config v1.Container) (bool, []*threat) {
 		if vc.MountPath == "/var/run/secrets/kubernetes.io/serviceaccount" {
 
 			th := &threat{
-				Param:    "automountServiceAccountToken",
+				Param:    fmt.Sprintf("sidecar name: %s |\nautomountServiceAccountToken", config.Name),
 				Value:    "true",
 				Type:     vc.Name,
 				Describe: "Mount service account has a potential sensitive data leakage.",

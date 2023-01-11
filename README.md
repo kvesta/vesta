@@ -207,7 +207,7 @@ Configures:
 | ✔         | PrivilegeAllowed                                        | Privileged module is allowed.                                              | critical                 |
 | ✔         | Capabilities                                            | Dangerous capabilities are opening.                                        | critical                 |
 | ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.                       | critical/medium          |
-| ✔         | RBAC                                                    | RBAC has some unsafe configurations in clusterrolebingding or rolebinding. | high/medium              |
+| ✔         | RBAC                                                    | RBAC has some unsafe configurations in clusterrolebingding or rolebinding. | high/medium/warning      |
 | ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.                      | critical/high/low        |
 | ✔         | Kernel version (k8s versions is less than v1.24)        | Kernel version is under the escape version.                                | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.                         | critical/high/medium/low |
@@ -217,10 +217,12 @@ Configures:
 | ✔         | NoResourceLimits                                        | No resource limits are set.                                                | low                      |
 | ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.                           | low                      |
 | ✔         | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                            | high/medium              |
-| ✔         | CVE-2022-29179                                          | CVE-2022-29179 with cilium installed                                       | high                     |
+| ✔         | Cilium version                                          | Cilium has vulnerable version.                                             | critical/high/medium/low |
+| ✔         | Istio configurations                                    | Istio has vulnerable version and vulnerable configurations.                | critical/high/medium/low |
 | ✔         | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.                         | high/medium/low          |
-| ✔         | Etcd configuration                                      | Etcd safe configuration checking                                           | high/medium              |
-| Pending   | IaC scan                                                | IaC scan                                                                   | -                        |
+| ✔         | Etcd configuration                                      | Etcd safe configuration checking.                                          | high/medium              |
+| ✔         | Sidecar configurations                                  | Sidecar has some dangerous configurations.                                 | critical/high/low        |
+| Pending   | IaC scan                                                | IaC scan.                                                                  | -                        |
 
 
 ## Help information

@@ -120,8 +120,14 @@ func (ks *KScanner) checkPod(ns string) error {
 
 		for _, sp := range pod.Spec.Containers {
 
-			//Skip the istio-proxy and so on
+			// Skip some sidecars
 			if sp.Name == "istio-proxy" {
+				// Try to check the istio header `X-Envoy-Peer-Metadata`
+				// reference: https://github.com/istio/istio/issues/17635
+				if ok, tlist := ks.checkIstioHeader(pod.Name, ns, pod.Spec.Containers[0].Name); ok {
+					vList = append(vList, tlist...)
+				}
+
 				continue
 			}
 

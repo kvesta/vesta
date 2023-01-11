@@ -195,6 +195,7 @@ func DoInspectInKubernetes(ctx context.Context) {
 	inspects := &internal.Inpsectors{}
 	scanner := inspects.Kscan
 	scanner.KClient = clientset
+	scanner.KConfig = kconfig
 	err = scanner.Kanalyze(ctx)
 
 	if err != nil {
