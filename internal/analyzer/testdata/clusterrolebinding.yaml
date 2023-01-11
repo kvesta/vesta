@@ -39,6 +39,9 @@ subjects:
   - kind: Group
     name: system:unauthenticated
     apiGroup: rbac.authorization.k8s.io
+  - kind: User
+    name: testUser
+    apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
   name: vuln-clusterrole

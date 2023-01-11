@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,11 +16,22 @@ import (
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	"github.com/shirou/gopsutil/process"
+	"github.com/tidwall/gjson"
 	"gopkg.in/yaml.v3"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/remotecommand"
 )
 
 func (ks *KScanner) checkCNI() error {
+
+	// Init database
+	vulnCli := vulnlib.Client{}
+	err := vulnCli.Init()
+	if err != nil {
+		log.Printf("init database failed, %v", err)
+	}
 
 	// Check Envoy configuration
 	if ok, tlist := checkEnvoy(); ok {
@@ -27,7 +39,12 @@ func (ks *KScanner) checkCNI() error {
 	}
 
 	// Check cilium
-	if ok, tlist := ks.checkCilium(); ok {
+	if ok, tlist := ks.checkCilium(vulnCli); ok {
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
+	// Check istio
+	if ok, tlist := ks.checkIstio(vulnCli); ok {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
@@ -168,25 +185,137 @@ func checkEnvoy() (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkIstio() error {
+func (ks KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 	log.Printf(config.Yellow("Begin Istio analyzing"))
-
-	return nil
-}
-
-func (ks KScanner) checkCilium() (bool, []*threat) {
-	log.Printf(config.Yellow("Begin cilium analyzing"))
 
 	var vuln = false
 	tlist := []*threat{}
 
-	// Init database
-	vulnCli := vulnlib.Client{}
-	err := vulnCli.Init()
+	// Get istio deployment
+	dp, err := ks.KClient.AppsV1().Deployments("istio-system").Get(context.Background(), "istiod", metav1.GetOptions{})
 	if err != nil {
-		log.Printf("check envoy configuration failed, %v", err)
+		if strings.Contains(err.Error(), "not found") {
+			return vuln, tlist
+		}
+
+		log.Printf("check istio version failed, %v", err)
 		return vuln, tlist
 	}
+
+	if dp == nil {
+		return vuln, tlist
+	}
+
+	// Check istio version
+	imageName := dp.Spec.Template.Spec.Containers[0].Image
+	versionRegex := regexp.MustCompile(`(\d+\.)?(\d+\.)?(\*|\d+)$`)
+	versionMatch := versionRegex.FindStringSubmatch(imageName)
+	if len(versionMatch) < 2 {
+		return vuln, tlist
+	}
+
+	istioVersion := versionMatch[0]
+
+	rows, err := vulnCli.QueryVulnByName("istio")
+	if err != nil {
+		log.Printf("check envoy version failed, %v", err)
+		return vuln, tlist
+	}
+
+	for _, row := range rows {
+		if compareVersion(istioVersion, row.MaxVersion, row.MinVersion) {
+			var description string
+			if len(row.Description) > 100 {
+				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description[:100], row.CVEID)
+			} else {
+				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description, row.CVEID)
+			}
+
+			th := &threat{
+				Param:     "Istio version",
+				Value:     istioVersion,
+				Type:      "Istio",
+				Describe:  description,
+				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
+				Severity:  row.Level,
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
+}
+
+func (ks KScanner) checkIstioHeader(podname, ns, cname string) (bool, []*threat) {
+	var vuln = false
+	tlist := []*threat{}
+
+	cmd := []string{
+		"curl",
+		"http://httpbin.org/get",
+	}
+
+	req := ks.KClient.CoreV1().RESTClient().Post().
+		Resource("pods").
+		Name(podname).
+		Namespace(ns).SubResource("exec").Param("container", cname)
+	option := &v1.PodExecOptions{
+		Command: cmd,
+		Stdin:   false,
+		Stdout:  true,
+		Stderr:  true,
+		TTY:     false,
+	}
+	req.VersionedParams(
+		option,
+		scheme.ParameterCodec,
+	)
+
+	var stdout, stderr bytes.Buffer
+
+	exec, err := remotecommand.NewSPDYExecutor(ks.KConfig, "POST", req.URL())
+	if err != nil {
+		return vuln, tlist
+	}
+
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: &stdout,
+		Stderr: &stderr,
+	})
+
+	if err != nil {
+		return vuln, tlist
+	}
+
+	data := strings.TrimSpace(stdout.String())
+	headers := gjson.Get(data, "headers").Value().(map[string]interface{})
+
+	if _, ok := headers["X-Envoy-Peer-Metadata"]; ok {
+		th := &threat{
+			Param: "istio header",
+			Value: "X-Envoy-Peer-Metadata, X-Envoy-Peer-Metadata-Id",
+			Type:  "Istio",
+			Describe: "Istio detected and request header " +
+				"is leaking sensitive information",
+			Reference: "https://github.com/istio/istio/issues/17635",
+			Severity:  "low",
+		}
+
+		tlist = append(tlist, th)
+		vuln = true
+	}
+
+	return vuln, tlist
+}
+
+func (ks KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
+	log.Printf(config.Yellow("Begin cilium analyzing"))
+
+	var vuln = false
+	tlist := []*threat{}
 
 	// Get cilium deployment
 	dp, err := ks.KClient.AppsV1().Deployments("kube-system").Get(context.Background(), "cilium-operator", metav1.GetOptions{})
@@ -195,7 +324,7 @@ func (ks KScanner) checkCilium() (bool, []*threat) {
 			return vuln, tlist
 		}
 
-		log.Printf("check envoy configuration failed, %v", err)
+		log.Printf("check envoy version failed, %v", err)
 		return vuln, tlist
 	}
 
@@ -207,26 +336,33 @@ func (ks KScanner) checkCilium() (bool, []*threat) {
 	imageName := dp.Spec.Template.Spec.Containers[0].Image
 	imageRegexp := regexp.MustCompile(`\A(.*?)(?:(:.*?)(@sha256:[0-9a-f]{64})?)?\z`)
 	versionMatch := imageRegexp.FindStringSubmatch(imageName)
+	if len(versionMatch) < 2 {
+		return vuln, tlist
+	}
+
 	ciliumVersion := versionMatch[2][1:]
-	rows, err := vulnCli.QueryVulnByCVEID("CVE-2022-29179")
+	rows, err := vulnCli.QueryVulnByName("cilium")
 	if err != nil {
-		log.Printf("check envoy configuration failed, %v", err)
+		log.Printf("check envoy version failed, %v", err)
 		return vuln, tlist
 	}
 
 	for _, row := range rows {
 		if compareVersion(ciliumVersion, row.MaxVersion, row.MinVersion) {
+			var description string
+			if len(row.Description) > 200 {
+				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description[:100], row.CVEID)
+			} else {
+				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description[:100], row.CVEID)
+			}
+
 			th := &threat{
-				Param: "Cilium version",
-				Value: ciliumVersion,
-				Type:  "Cilium",
-				Describe: "Prior to versions 1.9.16, 1.10.11, and 1.11.15, " +
-					"If an attacker is able to perform a container escape of a container " +
-					"running as root on a host where Cilium is installed," +
-					"the attacker can escalate privileges to cluster admin " +
-					"by using Cilium's Kubernetes service account.",
-				Reference: "https://nvd.nist.gov/vuln/detail/CVE-2022-29179",
-				Severity:  "high",
+				Param:     "Cilium version",
+				Value:     ciliumVersion,
+				Type:      "Cilium",
+				Describe:  description,
+				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
+				Severity:  row.Level,
 			}
 
 			tlist = append(tlist, th)

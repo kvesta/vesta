@@ -94,9 +94,6 @@ func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 	table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
 
 	for i, p := range r.VulnContainers {
-		//
-		//fmt.Printf("| %d | Pod Name: %s |  Namepsace: %s |\n", i+1, p.ContaineName, p.Namepsace)
-		//fmt.Printf("-----------------------------\n")
 		for _, v := range p.Threats {
 			vulnData := []string{
 				strconv.Itoa(i + 1), fmt.Sprintf("Name: %s \nNamespace: %s", p.ContainerName, p.Namepsace),
@@ -140,9 +137,11 @@ func judgeSeverity(severity string) string {
 	case "medium":
 		return config.Yellow("medium")
 	case "low":
-		return config.Green(("low"))
+		return config.Green("low")
+	case "warning":
+		return "warning"
 	default:
 		// ignore
 	}
-	return ""
+	return "unknown"
 }

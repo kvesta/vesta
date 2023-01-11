@@ -12,7 +12,10 @@ import (
 func (ks *KScanner) checkKuberDashboard() error {
 	log.Printf("Begin Dashboard analyzing")
 
-	deploys, err := ks.KClient.AppsV1().Deployments("kubernetes-dashboard").List(context.TODO(), metav1.ListOptions{})
+	deploys, err := ks.KClient.
+		AppsV1().
+		Deployments("kubernetes-dashboard").
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -44,11 +47,17 @@ func (ks *KScanner) checkKuberDashboard() error {
 }
 
 func (ks *KScanner) checkDashboardRBAC(th *threat) {
-	clrb, err := ks.KClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{})
+	clrb, err := ks.KClient.
+		RbacV1().
+		ClusterRoleBindings().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return
 	}
-	clr, err := ks.KClient.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{})
+	clr, err := ks.KClient.
+		RbacV1().
+		ClusterRoles().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return
 	}

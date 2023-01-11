@@ -19,6 +19,6 @@ var (
 		"high":     4,
 		"medium":   3,
 		"low":      2,
-		"tips":     1,
+		"warning":  1,
 	}
 )

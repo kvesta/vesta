@@ -3,10 +3,13 @@
 - Add java libraries analysis
 - Add php libraries analysis
 - Add rust libraries analysis
+- Add istio checking
 
 ## improvements
 - Change the method of npm analysis
 - Add mount filesystem for container scan
+- Change method of cilium checking
+- Change the method of image scanning
 
 # 1.0.2 (2022.12.24)
 ## features

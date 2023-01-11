@@ -194,7 +194,7 @@ Configures:
 | ✔         | PrivilegeAllowed                                         | 危险的特权模式                                                         | critical                 |
 | ✔         | Capabilities                                             | 危险capabilities被设置                                               | critical                 |
 | ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
-| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium              |
+| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium/warning      |
 | ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
 | ✔         | Kernel version (k8s versions is less than v1.24)         | 当前内核版本存在逃逸漏洞                                                    | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                                             | critical/high/medium/low |
@@ -204,9 +204,11 @@ Configures:
 | ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
 | ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
 | ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
-| ✔        | CVE-2022-29179                                           | 检测CVE-2022-29179是否存在                                            | high                     |
+| ✔        | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low                     |
+| ✔         | Istio configurations                                    | Istio 存在漏洞版本以及安全配置检查                                            | critical/high/medium/low |
 | ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
 | ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
+| ✔         | Sidecar configurations                                  | Sidecar 安全配置检查                                                  | critical/high/low        |              
 | 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
 
 

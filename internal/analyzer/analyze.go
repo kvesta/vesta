@@ -118,7 +118,9 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		}
 	}
 
-	nsList, err := ks.KClient.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	nsList, err := ks.KClient.
+		CoreV1().
+		Namespaces().List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
 		log.Printf("Get namespace failed: %v", err)

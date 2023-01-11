@@ -35,7 +35,7 @@ func mkFolder(foldername string) string {
 	return tempFolder
 }
 
-// Extract extract layers from inspector tar
+// Extract layers from inspector tar
 func Extract(ctx context.Context, tarPath string, tarIO []io.ReadCloser) (*layer.Manifest, error) {
 	var tarReader *tar.Reader
 

@@ -74,7 +74,7 @@ func getInfo(row *vulnlib.DBRow, version string) *vulnComponent {
 	return vuln
 }
 
-func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, bool) {
+func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnComponent, bool) {
 
 	var isVulnerable = false
 	vulns := []*vulnComponent{}
@@ -82,10 +82,15 @@ func compareVersion(rows []*vulnlib.DBRow, cv, cp string) ([]*vulnComponent, boo
 	for _, row := range rows {
 
 		// Skip same name which from different component
-		if cp != "*" {
-			if cp != row.Component {
-				continue
+		skip := true
+		for _, c := range cp {
+			if c == row.Component {
+				skip = false
 			}
+		}
+
+		if skip {
+			continue
 		}
 
 		currentVersion, err := version2.NewVersion(cv)
@@ -247,7 +252,7 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 				continue
 			}
 
-			if vs, vuln := compareVersion(rows, m.Version, "*"); vuln {
+			if vs, vuln := compareVersion(rows, m.Version, []string{"*", "python"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", py.Version, m.Name)
 				}
@@ -275,7 +280,7 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, npm.Version, "node.js"); vuln {
+			if vs, vuln := compareVersion(rows, npm.Version, []string{"node.js"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", node.Version, npm.Name)
 				}
@@ -303,7 +308,7 @@ func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) err
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, mod.Version, "*"); vuln {
+			if vs, vuln := compareVersion(rows, mod.Version, []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s (%s) - %s", gobin.Name, gobin.Path, mod.Path)
 				}
@@ -331,7 +336,7 @@ func (ps *Scanner) checkJavaPacks(ctx context.Context, javas []*packages.JAVA) e
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, jar.Version, "*"); vuln {
+			if vs, vuln := compareVersion(rows, jar.Version, []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s (%s) - %s", java.Name, java.Path, jar.Name)
 				}
@@ -359,7 +364,7 @@ func (ps *Scanner) checkPHPPacks(ctx context.Context, phps []*packages.PHP) erro
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, pack.Version, "*"); vuln {
+			if vs, vuln := compareVersion(rows, pack.Version, []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s (%s) - %s", php.Name, php.Path, pack.Name)
 				}
@@ -409,7 +414,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 			continue
 		}
 
-		if vs, vuln := compareVersion(rows, p.Version, "*"); vuln {
+		if vs, vuln := compareVersion(rows, p.Version, []string{"*"}); vuln {
 			for _, v := range vs {
 				v.Name = p.Name
 			}

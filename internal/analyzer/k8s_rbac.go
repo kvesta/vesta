@@ -13,17 +13,26 @@ import (
 )
 
 func (ks *KScanner) checkRoleBinding(ns string) error {
-	rbs, err := ks.KClient.RbacV1().RoleBindings(ns).List(context.TODO(), metav1.ListOptions{})
+	rbs, err := ks.KClient.
+		RbacV1().
+		RoleBindings(ns).
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	rls, err := ks.KClient.RbacV1().Roles(ns).List(context.TODO(), metav1.ListOptions{})
+	rls, err := ks.KClient.
+		RbacV1().
+		Roles(ns).
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	clr, err := ks.KClient.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{})
+	clr, err := ks.KClient.
+		RbacV1().
+		ClusterRoles().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -39,8 +48,19 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 						"| rolename: %s | kind: Role "+
 						"| subject kind: %s | subject name: %s | namespace: %s", roleName, ruleName, subKind, subName, ns)
 
+					if subKind == "User" && !strings.HasPrefix(subName, "system:kube-") {
+						if th.Severity == "medium" {
+							continue
+						}
+
+						th.Severity = "warning"
+						th.Describe = fmt.Sprintf("Key permission are given to unknown user '%s', "+
+							"printing it for checking.", subName)
+					}
+
 					if strings.Contains(subName, "unauthenticated") {
-						th.Describe = "Key permission are given and every pod can access it, which will cause a potential container escape."
+						th.Describe = "Key permission are given and every pod can access it, " +
+							"which will cause a potential container escape."
 					}
 				}
 
@@ -55,8 +75,19 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 						"| rolename: %s | kind: ClusterRole "+
 						"| subject kind: %s | subject name: %s |namespace: %s", roleName, ruleName, subKind, subName, ns)
 
+					if subKind == "User" && !strings.HasPrefix(subName, "system:kube-") {
+						if th.Severity == "medium" {
+							continue
+						}
+
+						th.Severity = "warning"
+						th.Describe = fmt.Sprintf("Key permission are given to unknown user '%s', "+
+							"printing it for checking.", subName)
+					}
+
 					if strings.Contains(subName, "unauthenticated") {
-						th.Describe = "Key permission are given and every pod can access it, which will cause a potential container escape."
+						th.Describe = "Key permission are given and every pod can access it, " +
+							"which will cause a potential container escape."
 					}
 				}
 
@@ -89,7 +120,8 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 				sub.Namespace = "all"
 			}
 
-			if sub.Kind == "Group" {
+			switch sub.Kind {
+			case "Group":
 				switch sub.Name {
 				case "system:serviceaccounts", "system:authenticated", "system:unauthenticated":
 					checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
@@ -99,13 +131,14 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 						checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
 					}
 				}
-			}
-
-			if sub.Kind == "ServiceAccount" &&
-				(sub.Name == "system:anonymous" || sub.Name == "default") {
+			case "ServiceAccount":
+				if sub.Name != "system:anonymous" && sub.Name != "default" {
+					continue
+				}
 
 				checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
-
+			case "User":
+				checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
 			}
 
 		}
@@ -117,12 +150,18 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 func (ks *KScanner) checkClusterBinding() error {
 	log.Printf(config.Yellow("Begin ClusterRoleBinding analyzing"))
 
-	clrb, err := ks.KClient.RbacV1().ClusterRoleBindings().List(context.TODO(), metav1.ListOptions{})
+	clrb, err := ks.KClient.
+		RbacV1().
+		ClusterRoleBindings().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	clr, err := ks.KClient.RbacV1().ClusterRoles().List(context.TODO(), metav1.ListOptions{})
+	clr, err := ks.KClient.
+		RbacV1().
+		ClusterRoles().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -155,11 +194,10 @@ func (ks *KScanner) checkClusterBinding() error {
 				sub.Namespace = "all"
 			}
 
-			if sub.Kind == "Group" {
-
+			switch sub.Kind {
+			case "Group":
 				switch sub.Name {
 				case "system:serviceaccounts", "system:authenticated":
-
 					if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
 
 						for _, th := range tlist {
@@ -175,7 +213,6 @@ func (ks *KScanner) checkClusterBinding() error {
 
 				case "system:unauthenticated":
 					if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
-
 						for _, th := range tlist {
 							th.Type = "ClusterRoleBinding"
 							th.Param = fmt.Sprintf("binding name: %s "+
@@ -191,7 +228,6 @@ func (ks *KScanner) checkClusterBinding() error {
 					// Case of system:serviceaccounts:<namespace>
 					if strings.Contains(sub.Name, "system:serviceaccounts:") {
 						roleNs := strings.Split(sub.Name, ":")[2]
-
 						if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
 
 							for _, th := range tlist {
@@ -206,13 +242,12 @@ func (ks *KScanner) checkClusterBinding() error {
 
 					}
 				}
-			}
-
-			if sub.Kind == "ServiceAccount" &&
-				(sub.Name == "system:anonymous" || sub.Name == "default") {
+			case "ServiceAccount":
+				if sub.Name != "system:anonymous" && sub.Name != "default" {
+					continue
+				}
 
 				if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
-
 					for _, th := range tlist {
 						th.Type = "ClusterRoleBinding"
 						th.Param = fmt.Sprintf("binding name: %s "+
@@ -221,7 +256,31 @@ func (ks *KScanner) checkClusterBinding() error {
 
 					ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 				}
+			case "User":
+				if strings.HasPrefix(sub.Name, "system:kube-") {
+					continue
+				}
+
+				if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
+					for _, th := range tlist {
+						if th.Severity == "medium" {
+							continue
+						}
+
+						th.Severity = "warning"
+						th.Type = "ClusterRoleBinding"
+						th.Describe = fmt.Sprintf("Key permission are given to unknown user '%s', "+
+							"printing it for checking.", sub.Name)
+						th.Param = fmt.Sprintf("binding name: %s "+
+							"| rolename: %s | subject kind: ClusterRole | "+
+							"subject name: %s | namespace: %s",
+							rb.Name, ruleName, sub.Name, sub.Namespace)
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+				}
 			}
+
 		}
 	}
 
@@ -309,7 +368,10 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 
 	var password string
 
-	cfs, err := ks.KClient.CoreV1().ConfigMaps(ns).List(context.TODO(), metav1.ListOptions{})
+	cfs, err := ks.KClient.
+		CoreV1().
+		ConfigMaps(ns).
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -370,7 +432,10 @@ func (ks *KScanner) checkSecret(ns string) error {
 
 	var password string
 
-	ses, err := ks.KClient.CoreV1().Secrets(ns).List(context.TODO(), metav1.ListOptions{})
+	ses, err := ks.KClient.
+		CoreV1().
+		Secrets(ns).
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 type Scanner struct {
@@ -32,6 +33,7 @@ type threat struct {
 
 type KScanner struct {
 	KClient *kubernetes.Clientset
+	KConfig *rest.Config
 	Version string
 
 	VulnConfigures []*threat

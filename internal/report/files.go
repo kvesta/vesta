@@ -39,7 +39,7 @@ func getOutputFile(ctx context.Context) (string, error) {
 				return "", err
 			}
 		}
-		nowStamp := time.Now().Format("2006-02-01")
+		nowStamp := time.Now().Format("2006-01-02")
 		file := filepath.Join(folder, fmt.Sprintf("%s.json", nowStamp))
 
 		return file, nil
