@@ -381,11 +381,12 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 		for k, v := range data {
 			needCheck := false
 
-			passKey := regexp.MustCompile(`(?i)password`)
-			passKey2 := regexp.MustCompile(`(?i)pwd`)
-			if passKey.MatchString(k) || passKey2.MatchString(k) {
-				password = v
-				needCheck = true
+			for _, p := range passKey {
+				if p.MatchString(k) {
+					password = v
+					needCheck = true
+					break
+				}
 			}
 
 			passUrlMatch := regexp.MustCompile(`\w+\+\w+\://\w+\:(.*)?\@`)
@@ -444,10 +445,16 @@ func (ks *KScanner) checkSecret(ns string) error {
 		data := se.Data
 
 		for k, v := range data {
-			passKey := regexp.MustCompile(`(?i)password`)
-			passKey2 := regexp.MustCompile(`(?i)pwd`)
+			needCheck := false
 
-			if passKey.MatchString(k) || passKey2.MatchString(k) {
+			for _, p := range passKey {
+				if p.MatchString(k) {
+					needCheck = true
+					break
+				}
+			}
+
+			if needCheck {
 				password = string(v)
 
 				switch checkWeakPassword(password) {

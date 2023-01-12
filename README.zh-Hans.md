@@ -1,3 +1,8 @@
+<p align="center" style="text-align: center">
+    <img src="https://user-images.githubusercontent.com/35037256/212051309-56468d85-4132-4780-9722-d1c0dcc79b1b.png" width="55%">
+<br/>
+</p>
+
 <p align="center">
   一款集容器扫描，Docker和Kubernetes配置基线检查于一身的工具
 </p>
@@ -170,19 +175,19 @@ Configures:
 > Docker检查
 
 
-| Supported | Check Item                | Description                                      | Severity                 |
-|-----------|---------------------------|--------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed          | 危险的特权模式                                          | critical                 |
-| ✔         | Capabilities              | 危险capabilities被设置                                | critical                 |
-| ✔         | Volume Mount              | 敏感或危险目录被挂载                                       | critical                 |
-| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                                    | critical                 |
-| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                                     | critical                 |
-| ✔         | Network Module            | Net模式为`host`模式并且在特定containerd版本下                 | critical                 |
-| ✔         | Docker Server version     | Docker Server版本存在漏洞                              | critical/high/medium/low |
-| ✔         | Docker env password check | Docker env是否存在弱密码                                | high/medium              |
-| ✔         | Image tag check           | Image没有被打tag或为默认latest                           | low                      |
-| 待定   | Container env             | 检查数据库是否未设置密码, 包括但不限于`MySQL`, `Redis`, `PostgreSQL` | -                        | 
-| 待定          | IaC scan                  | IaC 扫描                                           | -                        |
+| Supported | Check Item                | Description                      | Severity                 |
+|-----------|---------------------------|----------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed          | 危险的特权模式                          | critical                 |
+| ✔         | Capabilities              | 危险capabilities被设置                | critical                 |
+| ✔         | Volume Mount              | 敏感或危险目录被挂载                       | critical                 |
+| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                    | critical                 |
+| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                     | critical                 |
+| ✔         | Network Module            | Net模式为`host`模式并且在特定containerd版本下 | critical                 |
+| ✔         | Docker Server version     | Docker Server版本存在漏洞              | critical/high/medium/low |
+| ✔         | Docker env password check | Docker env是否存在弱密码                | high/medium              |
+| ✔         | Image tag check           | Image没有被打tag或为默认latest           | low                      |
+| ✔         | Docker history            | Docker layers 存在不安全的命令           | high/medium              |
+| 待定        | IaC scan                  | IaC 扫描                           | -                        |
 
 ---
 

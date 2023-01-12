@@ -1,3 +1,8 @@
+<p align="center" style="text-align: center">
+    <img src="https://user-images.githubusercontent.com/35037256/212051309-56468d85-4132-4780-9722-d1c0dcc79b1b.png" width="55%">
+<br/>
+</p>
+
 <p align="center">
   A static analysis of vulnerabilities, Docker and Kubernetes cluster configuration detect toolkit
 </p>
@@ -194,8 +199,8 @@ Configures:
 | ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/medium/low |
 | ✔         | Docker env password check | Check weak password in database.                                         | high/medium              |
 | ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                      |
-| Pending   | Container env             | Check Unauthorized database, such as `MySQL`, `Redis`, `PostgreSQL` etc. | -                        | 
-| Pending   | IaC scan                  | IaC scan                                                                 | -                        |
+| ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium              |
+| Pending   | IaC scan                  | IaC scan.                                                                | -                        |
 
 ---
 

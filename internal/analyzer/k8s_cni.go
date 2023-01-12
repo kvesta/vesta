@@ -291,9 +291,12 @@ func (ks KScanner) checkIstioHeader(podname, ns, cname string) (bool, []*threat)
 	}
 
 	data := strings.TrimSpace(stdout.String())
-	headers := gjson.Get(data, "headers").Value().(map[string]interface{})
+	headers := gjson.Get(data, "headers").Value()
+	if headers == nil {
+		return vuln, tlist
+	}
 
-	if _, ok := headers["X-Envoy-Peer-Metadata"]; ok {
+	if _, ok := headers.(map[string]interface{})["X-Envoy-Peer-Metadata"]; ok {
 		th := &threat{
 			Param: "istio header",
 			Value: "X-Envoy-Peer-Metadata, X-Envoy-Peer-Metadata-Id",
