@@ -290,6 +290,7 @@ func checkFullPaths(path string) bool {
 }
 
 func checkMountPath(path string) bool {
+	path = strings.TrimSuffix(path, "/")
 	return checkPrefixMountPaths(path) || checkFullPaths(path)
 }
 
