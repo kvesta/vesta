@@ -401,7 +401,7 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 					case "Weak":
 						th := &threat{
 							Param: "Image History",
-							Value: fmt.Sprintf("Image name: %s \n "+
+							Value: fmt.Sprintf("Image name: %s | "+
 								"Image ID: %s", img.Summary.RepoTags[0],
 								strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
 							Describe: fmt.Sprintf("Weak password found in command: '%s'.", cmd),
@@ -414,7 +414,7 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 					case "Medium":
 						th := &threat{
 							Param: "Image History",
-							Value: fmt.Sprintf("Image name: %s \n "+
+							Value: fmt.Sprintf("Image name: %s | "+
 								"Image ID: %s", img.Summary.RepoTags[0],
 								strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
 							Describe: fmt.Sprintf("Password need need to be reinforeced, found in command: '%s'.", cmd),

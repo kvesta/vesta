@@ -164,7 +164,7 @@ func checkEnvoy() (bool, []*threat) {
 
 			th := &threat{
 				Param: "admin",
-				Value: fmt.Sprintf("Pid:%d \nCommand:\n \"%s\"", ps.Pid, envoyCommand),
+				Value: fmt.Sprintf("Pid:%d  Command: \"%s\"", ps.Pid, envoyCommand),
 				Type:  "Envoy",
 				Describe: fmt.Sprintf("Envoy admin is activated and exposed to '%s:%s', "+
 					"which includes sensitive api and unauthorized.", address, port),
@@ -226,9 +226,9 @@ func (ks KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 		if compareVersion(istioVersion, row.MaxVersion, row.MinVersion) {
 			var description string
 			if len(row.Description) > 100 {
-				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description[:100], row.CVEID)
+				description = fmt.Sprintf("%s ... Reference: %s", row.Description[:100], row.CVEID)
 			} else {
-				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description, row.CVEID)
+				description = fmt.Sprintf("%s ... Reference: %s", row.Description, row.CVEID)
 			}
 
 			th := &threat{
@@ -354,9 +354,9 @@ func (ks KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
 		if compareVersion(ciliumVersion, row.MaxVersion, row.MinVersion) {
 			var description string
 			if len(row.Description) > 200 {
-				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description[:100], row.CVEID)
+				description = fmt.Sprintf("%s ... Reference: %s", row.Description[:100], row.CVEID)
 			} else {
-				description = fmt.Sprintf("%s ...\n Reference: %s", row.Description[:100], row.CVEID)
+				description = fmt.Sprintf("%s ... Reference: %s", row.Description[:100], row.CVEID)
 			}
 
 			th := &threat{

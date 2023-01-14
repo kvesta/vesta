@@ -12,6 +12,7 @@
 - Change method of cilium checking
 - Change the method of image scanning
 - Add RBAC User output for untrusted User checking
+- Revise the rules of RBAC checking
 
 ## fixed
 - Fixed error of version comparison
