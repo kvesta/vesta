@@ -107,7 +107,7 @@ func DoInspectInDocker(ctx context.Context) {
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Printf("Can not initialized docker environment, error: %v\n")
+		log.Printf("Can not initialized docker environment, error: %v", err)
 		return
 	}
 

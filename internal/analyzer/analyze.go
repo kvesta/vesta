@@ -126,6 +126,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		log.Printf("Get namespace failed: %v", err)
 	}
 
+	// Check RBAC rules
+	err = ks.checkClusterBinding()
+	if err != nil {
+		log.Printf("check RBAC failed, %v", err)
+	}
+
 	log.Printf(config.Yellow("Begin Pods analyzing"))
 	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
 	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
@@ -135,6 +141,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	// Check configuration in namespace
 	if ctx.Value("nameSpace") != "all" {
 		ns := ctx.Value("nameSpace")
+
+		err = ks.checkRoleBinding(ns.(string))
+		if err != nil {
+			log.Printf("check role binding failed in namespace: %s, %v", ns.(string), err)
+		}
+
 		err := ks.checkPod(ns.(string))
 		if err != nil {
 			log.Printf("check pod failed in namespace: %s, %v", ns.(string), err)
@@ -155,11 +167,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			log.Printf("check secret failed in namespace: %s, %v", ns.(string), err)
 		}
 
-		err = ks.checkRoleBinding(ns.(string))
-		if err != nil {
-			log.Printf("check role binding failed in namespace: %s, %v", ns.(string), err)
-		}
-
 	} else {
 		for _, ns := range nsList.Items {
 
@@ -173,6 +180,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			}
 
 			if isNecessary {
+				err = ks.checkRoleBinding(ns.Name)
+				if err != nil {
+					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
+				}
+
 				err := ks.checkPod(ns.Name)
 				if err != nil {
 					log.Printf("check pod failed in namespace: %s, %v", ns.Name, err)
@@ -193,11 +205,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
 				}
 
-				err = ks.checkRoleBinding(ns.Name)
-				if err != nil {
-					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
-				}
-
 			}
 		}
 	}
@@ -206,12 +213,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	err = ks.checkPersistentVolume()
 	if err != nil {
 		log.Printf("check pv and pvc failed, %v", err)
-	}
-
-	// Check RBAC rules
-	err = ks.checkClusterBinding()
-	if err != nil {
-		log.Printf("check RBAC failed, %v", err)
 	}
 
 	// Check certification expiration
@@ -289,6 +290,7 @@ func checkFullPaths(path string) bool {
 }
 
 func checkMountPath(path string) bool {
+	path = strings.TrimSuffix(path, "/")
 	return checkPrefixMountPaths(path) || checkFullPaths(path)
 }
 

@@ -91,29 +91,33 @@ Detected 216 vulnerabilities
 $./vesta analyze docker
 
 2022/11/29 23:06:32 Start analysing
-2022/11/29 23:06:32 Geting engine version
-2022/11/29 23:06:32 Geting docker server version
-2022/11/29 23:06:32 Geting kernel version
 
 Detected 3 vulnerabilities
 
-+----+----------------------+----------------+---------------------------+----------+--------------------------------+
-| ID |   CONTAINER DETAIL   |     PARAM      |           VALUE           | SEVERITY |          DESCRIPTION           |
-+----+----------------------+----------------+---------------------------+----------+--------------------------------+
-|  1 | Name: Kernel         | kernel version | 5.10.104-linuxkit         | critical | Kernel version is suffering    |
-|    |  ID: None            |                |                           |          | the CVE-2022-0185 with         |
-|    |                      |                |                           |          | CAP_SYS_ADMIN vulnerablility,  |
-|    |                      |                |                           |          | has a potential container      |
-|    |                      |                |                           |          | escape.                        |
-+----+----------------------+----------------+---------------------------+----------+--------------------------------+
-|    | Name: Image Tag      | Image Name     | nginx:latest              | low      | Using the latest tag will      |
-|    |  ID: None            |                |                           |          | be suffered potential image    |
-|    |                      |                |                           |          | hijack.                        |
-+----+----------------------+----------------+---------------------------+----------+--------------------------------+
-|  3 | Name: vesta_vuln_test| Privileged     | true                      | critical | There has a potential          |
-|    |  ID: 207cf8842b15    |                |                           |          | container escape in privileged |
-|    |                      |                |                           |          | module.                        |
-+----+----------------------+----------------+---------------------------+----------+--------------------------------+
++----+----------------------------+----------------+--------------------------------+----------+--------------------------------+
+| ID |      CONTAINER DETAIL      |     PARAM      |             VALUE              | SEVERITY |          DESCRIPTION           |
++----+----------------------------+----------------+--------------------------------+----------+--------------------------------+
+|  1 | Name: Kernel               | kernel version | 5.10.104-linuxkit              | critical | Kernel version is suffering    |
+|    | ID: None                   |                |                                |          | the CVE-2022-0492 with         |
+|    |                            |                |                                |          | CAP_SYS_ADMIN and v1           |
+|    |                            |                |                                |          | architecture of cgroups        |
+|    |                            |                |                                |          | vulnerablility, has a          |
+|    |                            |                |                                |          | potential container escape.    |
++----+----------------------------+----------------+--------------------------------+----------+--------------------------------+
+|  2 | Name: vesta_vuln_test      | kernel version | 5.10.104-linuxkit              | critical | Kernel version is suffering    |
+|    | ID: 207cf8842b15           |                |                                |          | the Dirty Pipe vulnerablility, |
+|    |                            |                |                                |          | has a potential container      |
+|    |                            |                |                                |          | escape.                        |
++----+----------------------------+----------------+--------------------------------+----------+--------------------------------+
+|  3 | Name: Image Tag            | Privileged     | true                           | critical | There has a potential container|
+|    | ID: None                   |                |                                |          | escape in privileged  module.  |
+|    |                            |                |                                |          |                                |
++----+----------------------------+----------------+--------------------------------+----------+--------------------------------+
+|  4 | Name: Image Configuration  | Image History  | Image name:                    | high     | Weak password found            |
+|    | ID: None                   |                | vesta_history_test:latest |    |          | in command: ' echo             |
+|    |                            |                | Image ID: 4bc05e1e3881         |          | 'password=test123456' >        |
+|    |                            |                |                                |          | config.ini # buildkit'.        |
++----+----------------------------+----------------+--------------------------------+----------+--------------------------------+
 ```
 
 4. 使用vesta检查Kubernetes的基线配置
@@ -122,30 +126,37 @@ Detected 3 vulnerabilities
 $./vesta analyze k8s
 
 2022/11/29 23:15:59 Start analysing
-2022/11/29 23:15:59 Geting docker server version
-2022/11/29 23:15:59 Geting kernel version
 
 Detected 4 vulnerabilities
 
 Pods:
-+----+--------------------+------------------------------+-------------------+-----------------------+----------+--------------------------------+
-| ID |     POD DETAIL     |            PARAM             |       VALUE       |         TYPE          | SEVERITY |          DESCRIPTION           |
-+----+--------------------+------------------------------+-------------------+-----------------------+----------+--------------------------------+
-|  1 | Name: vulntest     | test-volume                  | /etc              | Directory             | critical | Mounting '/etc' is suffer      |
-|    | Namespace: default |                              |                   |                       |          | vulnerable of container        |
-|    |                    |                              |                   |                       |          | escape.                        |
-+    +                    +------------------------------+-------------------+-----------------------+----------+--------------------------------+
-|    |                    | Privileged                   | true              | Pod                   | critical | There has a potential          |
-|    |                    |                              |                   |                       |          | container escape in privileged |
-|    |                    |                              |                   |                       |          | module.                        |
-+    +                    +------------------------------+-------------------+-----------------------+----------+--------------------------------+
-|    |                    | AllowPrivilegeEscalation     | true              | Pod                   | critical | There has a potential          |
-|    |                    |                              |                   |                       |          | container escape in privileged |
-|    |                    |                              |                   |                       |          | module.                        |
-+    +                    +------------------------------+-------------------+-----------------------+----------+--------------------------------+
-|    |                    | Resource                     | memory, cpu,      | Pod                   | low      | None of resources is be        |
-|    |                    |                              | ephemeral-storage |                       |          | limited.                       |
-+----+--------------------+------------------------------+-------------------+-----------------------+----------+--------------------------------+
++----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+| ID |           POD DETAIL           |             PARAM              |             VALUE              |         TYPE          | SEVERITY |          DESCRIPTION           |
++----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|  1 | Name: vulntest | Namespace:    | sidecar name: vulntest |       | true                           | Pod                   | critical | There has a potential          |
+|    | default | Status: Running |    | Privileged                     |                                |                       |          | container escape in privileged |
+|    | Node Name: docker-desktop      |                                |                                |                       |          | module.                        |
++    +                                +--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|    |                                | sidecar name: vulntest |       | memory, cpu, ephemeral-storage | Pod                   | low      | None of resources is be        |
+|    |                                | Resource                       |                                |                       |          | limited.                       |
+|    |                                |                                |                                |                       |          |                                |
++----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|  2 | Name: vulntest2 | Namespace:   | sidecar name: vulntest2 |      | CAP_SYS_ADMIN                  | capabilities.add      | critical | There has a potential          |
+|    | default | Status: Running |    | capabilities                   |                                |                       |          | container escape in privileged |
+|    | Node Name: docker-desktop      |                                |                                |                       |          | module.                        |
++    +                                +--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|    |                                | sidecar name: vulntest2 |      | true                           | kube-api-access-lcvh8 | critical | Mount service account          |
+|    |                                | automountServiceAccountToken   |                                |                       |          | and key permission are         |
+|    |                                |                                |                                |                       |          | given, which will cause a      |
+|    |                                |                                |                                |                       |          | potential container escape.    |
+|    |                                |                                |                                |                       |          | Reference clsuterRolebind:     |
+|    |                                |                                |                                |                       |          | vuln-clusterrolebinding |      |
+|    |                                |                                |                                |                       |          | roleBinding: vuln-rolebinding  |
++    +                                +--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|    |                                | sidecar name: vulntest2 |      | cpu                            | Pod                   | low      | CPU usage is not limited.      |
+|    |                                | Resource                       |                                |                       |          |                                |
+|    |                                |                                |                                |                       |          |                                |
++----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
 
 Configures:
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
@@ -163,10 +174,26 @@ Configures:
 |  3 | Secret                      | Secret Name: vulnsecret-auth   | password:Password123                                   | high     | Secret has found weak          |
 |    |                             | Namespace: default             |                                                        |          | password: 'Password123'.       |
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
-|  4 | ClusterRoleBinding          | binding name:                  | verbs:                                                 | high     | Key permission are given to    |
-|    |                             | vuln-clusterrolebinding |      | get,watch,list,create,update |                         |          | the default service account    |
-|    |                             | rolename: vuln-clusterrole |   | resources: pods,services                               |          | which will cause a potential   |
-|    |                             | namespace: default             |                                                        |          | container escape.              |
+|  4 | ClusterRoleBinding          | binding name:                  | verbs: get, watch, list,                               | high     | Key permissions with key       |
+|    |                             | vuln-clusterrolebinding |      | create, update | resources:                            |          | resources given to the         |
+|    |                             | rolename: vuln-clusterrole |   | pods, services                                         |          | default service account, which |
+|    |                             | kind: ClusterRole | subject    |                                                        |          | will cause a potential data    |
+|    |                             | kind: Group | subject name:    |                                                        |          | leakage.                       |
+|    |                             | system:serviceaccounts:vuln |  |                                                        |          |                                |
+|    |                             | namespace: vuln                |                                                        |          |                                |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  5 | RoleBinding                 | binding name: vuln-rolebinding | verbs: get, watch, list,                               | high     | Key permissions with key       |
+|    |                             | | rolename: vuln-role | role   | create, update | resources:                            |          | resources given to the         |
+|    |                             | kind: Role | subject kind:     | pods, services                                         |          | default service account, which |
+|    |                             | ServiceAccount | subject name: |                                                        |          | will cause a potential data    |
+|    |                             | default | namespace: default   |                                                        |          | leakage.                       |
++----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
+|  6 | ClusterRoleBinding          | binding name:                  | verbs: get, watch, list,                               | warning  | Key permission are given       |
+|    |                             | vuln-clusterrolebinding2 |     | create, update | resources:                            |          | to unknown user 'testUser',    |
+|    |                             | rolename: vuln-clusterrole |   | pods, services                                         |          | printing it for checking.      |
+|    |                             | subject kind: User | subject   |                                                        |          |                                |
+|    |                             | name: testUser | namespace:    |                                                        |          |                                |
+|    |                             | all                            |                                                        |          |                                |
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
 ```
 

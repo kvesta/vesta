@@ -62,7 +62,7 @@ func ResolveDockerData(ctx context.Context, r analyzer.Scanner) error {
 
 		for _, v := range c.Threats {
 			vulnData := []string{strconv.Itoa(i + 1),
-				fmt.Sprintf("Name: %s\n ID: %s", c.ContainerName, c.ContainerID),
+				fmt.Sprintf("Name: %s \nID: %s", c.ContainerName, c.ContainerID),
 				v.Param, v.Value, judgeSeverity(v.Severity), v.Describe,
 			}
 
@@ -96,7 +96,11 @@ func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 	for i, p := range r.VulnContainers {
 		for _, v := range p.Threats {
 			vulnData := []string{
-				strconv.Itoa(i + 1), fmt.Sprintf("Name: %s \nNamespace: %s", p.ContainerName, p.Namepsace),
+				strconv.Itoa(i + 1), fmt.Sprintf("Name: %s | "+
+					"Namespace: %s | "+
+					"Status: %s | "+
+					"Node Name: %s", p.ContainerName, p.Namepsace,
+					p.Status, p.NodeName),
 				v.Param, v.Value, v.Type,
 				judgeSeverity(v.Severity), v.Describe,
 			}
