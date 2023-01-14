@@ -6,19 +6,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/kvesta/vesta/config"
-
 	"github.com/docker/docker/api/types"
+	"github.com/kvesta/vesta/config"
 )
-
-func (da DockerApi) getInspect(imageID string) (*types.ContainerJSON, error) {
-	var ins types.ContainerJSON
-	ins, err := da.DCli.ContainerInspect(ctx, imageID)
-	if err != nil {
-		return &ins, err
-	}
-	return &ins, nil
-}
 
 func (da *DockerApi) GetContainerName(containerID string) ([]io.ReadCloser, error) {
 	var whiteList = []string{"/", "/etc", "/proc",
@@ -45,7 +35,8 @@ func (da *DockerApi) GetContainerName(containerID string) ([]io.ReadCloser, erro
 	containerIo = append(containerIo, fileio)
 
 	// Get mount path, reference: https://docs.docker.com/engine/reference/commandline/export/#description
-	ins, err := da.getInspect(containerID)
+	ins, err := da.DCli.ContainerInspect(ctx, containerID)
+
 	if err == nil {
 		var mnts []types.MountPoint
 		if ins.Mounts != nil {
@@ -80,11 +71,11 @@ func (da DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {
 		if strings.Contains(c.Names[0], "k8s") {
 			continue
 		}
-		ins, err := da.getInspect(c.ID[:12])
+		ins, err := da.DCli.ContainerInspect(ctx, c.ID[:12])
 		if err != nil {
 			log.Printf("%s can not inpsect, error: %v", c.Names, err)
 		}
-		inps = append(inps, ins)
+		inps = append(inps, &ins)
 	}
 
 	return inps, nil

@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	version2 "github.com/hashicorp/go-version"
 	"github.com/kvesta/vesta/config"
+	_image "github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +26,7 @@ var namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 var dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
 	"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
 
-func (s *Scanner) Analyze(ctx context.Context, inspectors []*types.ContainerJSON, images []types.ImageSummary) error {
+func (s *Scanner) Analyze(ctx context.Context, inspectors []*types.ContainerJSON, images []*_image.ImageInfo) error {
 
 	err := s.checkDockerContext(ctx, images)
 	if err != nil {
@@ -126,6 +126,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		log.Printf("Get namespace failed: %v", err)
 	}
 
+	// Check RBAC rules
+	err = ks.checkClusterBinding()
+	if err != nil {
+		log.Printf("check RBAC failed, %v", err)
+	}
+
 	log.Printf(config.Yellow("Begin Pods analyzing"))
 	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
 	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
@@ -135,6 +141,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	// Check configuration in namespace
 	if ctx.Value("nameSpace") != "all" {
 		ns := ctx.Value("nameSpace")
+
+		err = ks.checkRoleBinding(ns.(string))
+		if err != nil {
+			log.Printf("check role binding failed in namespace: %s, %v", ns.(string), err)
+		}
+
 		err := ks.checkPod(ns.(string))
 		if err != nil {
 			log.Printf("check pod failed in namespace: %s, %v", ns.(string), err)
@@ -155,11 +167,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			log.Printf("check secret failed in namespace: %s, %v", ns.(string), err)
 		}
 
-		err = ks.checkRoleBinding(ns.(string))
-		if err != nil {
-			log.Printf("check role binding failed in namespace: %s, %v", ns.(string), err)
-		}
-
 	} else {
 		for _, ns := range nsList.Items {
 
@@ -173,6 +180,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			}
 
 			if isNecessary {
+				err = ks.checkRoleBinding(ns.Name)
+				if err != nil {
+					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
+				}
+
 				err := ks.checkPod(ns.Name)
 				if err != nil {
 					log.Printf("check pod failed in namespace: %s, %v", ns.Name, err)
@@ -193,11 +205,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
 				}
 
-				err = ks.checkRoleBinding(ns.Name)
-				if err != nil {
-					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
-				}
-
 			}
 		}
 	}
@@ -206,12 +213,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	err = ks.checkPersistentVolume()
 	if err != nil {
 		log.Printf("check pv and pvc failed, %v", err)
-	}
-
-	// Check RBAC rules
-	err = ks.checkClusterBinding()
-	if err != nil {
-		log.Printf("check RBAC failed, %v", err)
 	}
 
 	// Check certification expiration
@@ -391,67 +392,4 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 	}
 
 	return vuln, tlist
-}
-
-func checkWeakPassword(pass string) string {
-	countCase := 0
-
-	// Particularly checking the keyword
-	keyWords := []string{"password", "admin", "qwerty", "1q2w3e"}
-	for _, keyword := range keyWords {
-		replmatch := regexp.MustCompile(fmt.Sprintf(`(?i)%s`, keyword))
-		pass = replmatch.ReplaceAllString(pass, "")
-	}
-
-	length := len(pass)
-
-	lowerCase := regexp.MustCompile(`[a-z]`)
-	lowerMatch := lowerCase.FindStringSubmatch(pass)
-	if len(lowerMatch) > 0 {
-		countCase += 1
-	}
-
-	upperCase := regexp.MustCompile(`[A-Z]`)
-	upperMatch := upperCase.FindStringSubmatch(pass)
-	if len(upperMatch) > 0 {
-		countCase += 1
-	}
-
-	numberCase := regexp.MustCompile(`[\d]`)
-	numberMatch := numberCase.FindStringSubmatch(pass)
-	if len(numberMatch) > 0 {
-		countCase += 1
-	}
-
-	characterCase := regexp.MustCompile(`[^\w]`)
-	characterMatch := characterCase.FindStringSubmatch(pass)
-	if len(characterMatch) > 0 {
-		countCase += 1
-	}
-
-	if length <= 6 {
-		switch countCase {
-		case 4:
-			return "Medium"
-		default:
-			return "Weak"
-		}
-
-	} else if length > 6 && length <= 10 {
-		switch countCase {
-		case 4, 3:
-			return "Strong"
-		case 2:
-			return "Medium"
-		case 1, 0:
-			return "Weak"
-
-		}
-	} else {
-		if countCase < 2 {
-			return "Medium"
-		}
-	}
-
-	return "Strong"
 }

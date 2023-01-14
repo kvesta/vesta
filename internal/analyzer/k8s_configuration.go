@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -53,7 +52,10 @@ func (ks *KScanner) checkPersistentVolume() error {
 	log.Printf(config.Yellow("Begin PV and PVC analyzing"))
 
 	tlist := []*threat{}
-	pvs, err := ks.KClient.CoreV1().PersistentVolumes().List(context.TODO(), metav1.ListOptions{})
+	pvs, err := ks.KClient.
+		CoreV1().
+		PersistentVolumes().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		log.Printf("list persistentvolumes failed: %v", err)
 		return err
@@ -65,7 +67,8 @@ func (ks *KScanner) checkPersistentVolume() error {
 			continue
 		}
 
-		pvPath := filepath.Dir(pv.Spec.HostPath.Path)
+		//pvPath := filepath.Dir(pv.Spec.HostPath.Path)
+		pvPath := pv.Spec.HostPath.Path
 
 		if isVuln := checkMountPath(pvPath); isVuln {
 			th := &threat{
@@ -92,25 +95,31 @@ func (ks *KScanner) checkPersistentVolume() error {
 	return nil
 }
 
+type RBACVuln struct {
+	Severity           string
+	ClusterRoleBinding string
+	RoleBinding        string
+}
+
 // checkPod check pod privileged and configure of server account
 func (ks *KScanner) checkPod(ns string) error {
 	if ns == "kubernetes-dashboard" {
 		return ks.checkKuberDashboard()
 	}
 
-	pods, err := ks.KClient.CoreV1().Pods(ns).List(context.TODO(), metav1.ListOptions{})
+	pods, err := ks.KClient.
+		CoreV1().
+		Pods(ns).
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
+	rv := ks.getRBACVulnType(ns)
+
 	for _, pod := range pods.Items {
 
 		vList := []*threat{}
-
-		// Skip pod which is not running
-		if pod.Status.Phase != "Running" {
-			continue
-		}
 
 		for _, v := range pod.Spec.Volumes {
 			if ok, tlist := checkPodVolume(v); ok {
@@ -135,7 +144,7 @@ func (ks *KScanner) checkPod(ns string) error {
 				vList = append(vList, tlist...)
 			}
 
-			if ok, tlist := checkPodAccountService(sp); ok {
+			if ok, tlist := checkPodAccountService(sp, rv); ok {
 				vList = append(vList, tlist...)
 			}
 
@@ -151,6 +160,8 @@ func (ks *KScanner) checkPod(ns string) error {
 			con := &container{
 				ContainerName: pod.Name,
 				Namepsace:     ns,
+				Status:        string(pod.Status.Phase),
+				NodeName:      pod.Spec.NodeName,
 				Threats:       vList,
 			}
 			ks.VulnContainers = append(ks.VulnContainers, con)
@@ -163,13 +174,19 @@ func (ks *KScanner) checkPod(ns string) error {
 
 // checkJobsOrCornJob check job and cronjob whether have malicious command
 func (ks *KScanner) checkJobsOrCornJob(ns string) error {
-	jobs, err := ks.KClient.BatchV1().Jobs(ns).List(context.TODO(), metav1.ListOptions{})
+	jobs, err := ks.KClient.
+		BatchV1().
+		Jobs(ns).
+		List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
 		return err
 	}
 
-	cronjobs, err := ks.KClient.BatchV1().CronJobs(ns).List(context.TODO(), metav1.ListOptions{})
+	cronjobs, err := ks.KClient.
+		BatchV1().
+		CronJobs(ns).
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -186,7 +203,7 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 
 			th := &threat{
 				Type:     "Job",
-				Param:    fmt.Sprintf("Job Name: %s\nNamespace: %s", job.Name, ns),
+				Param:    fmt.Sprintf("Job Name: %s Namespace: %s", job.Name, ns),
 				Value:    fmt.Sprintf("Command: %s", command),
 				Describe: fmt.Sprintf("Active job %s is not setting any security policy.", job.Name),
 				Severity: "low",
@@ -208,7 +225,7 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 
 			th := &threat{
 				Type: "CronJob",
-				Param: fmt.Sprintf("CronJob Name: %s\nNamespace: %s\n"+
+				Param: fmt.Sprintf("CronJob Name: %s Namespace: %s "+
 					"Schedule: %s", cronjob.Name, ns, cronjob.Spec.Schedule),
 				Value:    fmt.Sprintf("Command: %s", command),
 				Describe: fmt.Sprintf("Active Cronjob %s is not setting any security policy.", cronjob.Name),

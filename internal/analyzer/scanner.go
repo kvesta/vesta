@@ -15,7 +15,8 @@ type Scanner struct {
 type container struct {
 	ContainerID   string
 	ContainerName string
-
+	Status        string
+	NodeName      string
 	// For kubernetes
 	Namepsace string
 	Threats   []*threat

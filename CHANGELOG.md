@@ -4,12 +4,18 @@
 - Add php libraries analysis
 - Add rust libraries analysis
 - Add istio checking
+- Add Docker history analysis
 
 ## improvements
 - Change the method of npm analysis
 - Add mount filesystem for container scan
 - Change method of cilium checking
 - Change the method of image scanning
+- Add RBAC User output for untrusted User checking
+- Revise the rules of RBAC checking
+
+## fixed
+- Fixed error of version comparison
 
 # 1.0.2 (2022.12.24)
 ## features

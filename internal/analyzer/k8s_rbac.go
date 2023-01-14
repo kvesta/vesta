@@ -45,11 +45,12 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 				for _, th := range tlist {
 					th.Type = "RoleBinding"
 					th.Param = fmt.Sprintf("binding name: %s "+
-						"| rolename: %s | kind: Role "+
+						"| rolename: %s | role kind: Role "+
 						"| subject kind: %s | subject name: %s | namespace: %s", roleName, ruleName, subKind, subName, ns)
 
 					if subKind == "User" && !strings.HasPrefix(subName, "system:kube-") {
-						if th.Severity == "medium" {
+
+						if config.SeverityMap[th.Severity] < 4 {
 							continue
 						}
 
@@ -62,9 +63,10 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 						th.Describe = "Key permission are given and every pod can access it, " +
 							"which will cause a potential container escape."
 					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
 				}
 
-				ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 			}
 		case "ClusterRole":
 			if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
@@ -72,11 +74,11 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 				for _, th := range tlist {
 					th.Type = "RoleBinding"
 					th.Param = fmt.Sprintf("binding name: %s "+
-						"| rolename: %s | kind: ClusterRole "+
-						"| subject kind: %s | subject name: %s |namespace: %s", roleName, ruleName, subKind, subName, ns)
+						"| rolename: %s | role kind: ClusterRole "+
+						"| subject kind: %s | subject name: %s | namespace: %s", roleName, ruleName, subKind, subName, ns)
 
 					if subKind == "User" && !strings.HasPrefix(subName, "system:kube-") {
-						if th.Severity == "medium" {
+						if config.SeverityMap[th.Severity] < 4 {
 							continue
 						}
 
@@ -89,9 +91,10 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 						th.Describe = "Key permission are given and every pod can access it, " +
 							"which will cause a potential container escape."
 					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
 				}
 
-				ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 			}
 		default:
 			// ignore
@@ -126,9 +129,14 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 				case "system:serviceaccounts", "system:authenticated", "system:unauthenticated":
 					checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
 				default:
-					// Case of system:serviceaccounts:<namespace>
-					if strings.Contains(sub.Name, "system:serviceaccounts:") {
-						checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, sub.Namespace)
+					// Case of system:serviceaccounts:<namespace>:<serviceaccount>
+					if strings.HasPrefix(sub.Name, "system:serviceaccounts:") {
+						if len(strings.Split(sub.Name, ":")) > 3 {
+							continue
+						}
+
+						roleNs := strings.Split(sub.Name, ":")[2]
+						checkBindKing(ruleKind, ruleName, rb.Name, sub.Kind, sub.Name, roleNs)
 					}
 				}
 			case "ServiceAccount":
@@ -203,7 +211,7 @@ func (ks *KScanner) checkClusterBinding() error {
 						for _, th := range tlist {
 							th.Type = "ClusterRoleBinding"
 							th.Param = fmt.Sprintf("binding name: %s "+
-								"| rolename: %s | kind: ClusterRole "+
+								"| rolename: %s | role kind: ClusterRole "+
 								"| subject kind: %s | subject name: %s | namespace: %s", rb.Name, ruleName, sub.Kind, sub.Name, sub.Namespace)
 							th.Describe = "Key permission are given to all account, which will cause a potential container escape."
 						}
@@ -216,8 +224,9 @@ func (ks *KScanner) checkClusterBinding() error {
 						for _, th := range tlist {
 							th.Type = "ClusterRoleBinding"
 							th.Param = fmt.Sprintf("binding name: %s "+
-								"| rolename: %s | kind: ClusterRole "+
-								"| subject kind: %s | subject name: %s | namespace: %s", rb.Name, ruleName, sub.Kind, sub.Name, sub.Namespace)
+								"| rolename: %s | role kind: ClusterRole "+
+								"| subject kind: %s | subject name: %s | namespace: %s",
+								rb.Name, ruleName, sub.Kind, sub.Name, sub.Namespace)
 							th.Describe = "Key permission are given and every pod can access it, which will cause a potential container escape."
 						}
 
@@ -225,16 +234,21 @@ func (ks *KScanner) checkClusterBinding() error {
 					}
 
 				default:
-					// Case of system:serviceaccounts:<namespace>
-					if strings.Contains(sub.Name, "system:serviceaccounts:") {
+					// Case of system:serviceaccounts:<namespace>:<serviceaccount>
+					if strings.HasPrefix(sub.Name, "system:serviceaccounts:") {
+						if len(strings.Split(sub.Name, ":")) > 3 {
+							continue
+						}
+
 						roleNs := strings.Split(sub.Name, ":")[2]
 						if ok, tlist := checkMatchingRole(clr.Items, []rv1.Role{}, ruleName); ok {
 
 							for _, th := range tlist {
 								th.Type = "ClusterRoleBinding"
 								th.Param = fmt.Sprintf("binding name: %s "+
-									"| rolename: %s | kind: ClusterRole "+
-									"| subject kind: %s | subject name: %s | namespace: %s", rb.Name, ruleName, sub.Kind, sub.Name, roleNs)
+									"| rolename: %s | role kind: ClusterRole "+
+									"| subject kind: %s | subject name: %s | namespace: %s",
+									rb.Name, ruleName, sub.Kind, sub.Name, roleNs)
 							}
 
 							ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
@@ -251,7 +265,9 @@ func (ks *KScanner) checkClusterBinding() error {
 					for _, th := range tlist {
 						th.Type = "ClusterRoleBinding"
 						th.Param = fmt.Sprintf("binding name: %s "+
-							"| rolename: %s | subject kind: ClusterRole | subject name: ServiceAccount | namespace: %s", rb.Name, ruleName, sub.Namespace)
+							"| rolename: %s | role kind: ClusterRole | "+
+							"subject kind: ServiceAccount | "+
+							"subject name: %s | namespace: %s", rb.Name, ruleName, sub.Name, sub.Namespace)
 					}
 
 					ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
@@ -272,12 +288,13 @@ func (ks *KScanner) checkClusterBinding() error {
 						th.Describe = fmt.Sprintf("Key permission are given to unknown user '%s', "+
 							"printing it for checking.", sub.Name)
 						th.Param = fmt.Sprintf("binding name: %s "+
-							"| rolename: %s | subject kind: ClusterRole | "+
-							"subject name: %s | namespace: %s",
+							"| rolename: %s | role kind: ClusterRole | "+
+							"subject kind: User | subject name: %s | namespace: %s",
 							rb.Name, ruleName, sub.Name, sub.Namespace)
+
+						ks.VulnConfigures = append(ks.VulnConfigures, th)
 					}
 
-					ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 				}
 			}
 
@@ -301,8 +318,8 @@ func checkMatchingRole(clr []rv1.ClusterRole, rol []rv1.Role, ruleName string) (
 			th := &threat{}
 
 			// Check whether all permission are given
-			if rul.Verbs[0] == "*" {
-				th.Value = fmt.Sprintf("verbs:* resources:%s", strings.Join(rul.Resources, ","))
+			if rul.Verbs[0] == "*" && rul.Resources[0] == "*" {
+				th.Value = fmt.Sprintf("verbs:* resources:%s", strings.Join(rul.Resources, ", "))
 				th.Severity = "high"
 				th.Describe = "All the permission are given to the default service account " +
 					"which will cause a potential container escape."
@@ -313,24 +330,15 @@ func checkMatchingRole(clr []rv1.ClusterRole, rol []rv1.Role, ruleName string) (
 
 			if len(rul.Verbs) > 0 {
 				// Check whether the default account has the permission of pod control
-				for _, v := range rul.Verbs {
-					if v == "create" || v == "update" ||
-						v == "patch" || v == "delete" {
-						th.Severity = "high"
-						th.Describe = "Key permission are given to the default service account " +
-							"which will cause a potential container escape."
-						break
-					}
-				}
-				if th.Severity == "" {
-					th.Severity = "medium"
-					th.Describe = "View permission are given to the default service account " +
-						"which will cause a potential data leakage."
+				th.Severity, th.Describe = RBACVulnTypeJudge(rul.Verbs, rul.Resources)
+
+				if th.Severity == "warning" {
+					continue
 				}
 
 				th.Value = fmt.Sprintf("verbs: %s | resources: %s",
-					strings.Join(rul.Verbs, ","),
-					strings.Join(rul.Resources, ","))
+					strings.Join(rul.Verbs, ", "),
+					strings.Join(rul.Resources, ", "))
 
 				tlist = append(tlist, th)
 				vuln = true
@@ -342,7 +350,6 @@ func checkMatchingRole(clr []rv1.ClusterRole, rol []rv1.Role, ruleName string) (
 
 	// Check clusterrole
 	for _, r := range clr {
-
 		if ruleName != r.Name {
 			continue
 		}
@@ -353,7 +360,6 @@ func checkMatchingRole(clr []rv1.ClusterRole, rol []rv1.Role, ruleName string) (
 
 	// Check role
 	for _, r := range rol {
-
 		if ruleName != r.Name {
 			continue
 		}
@@ -381,11 +387,12 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 		for k, v := range data {
 			needCheck := false
 
-			passKey := regexp.MustCompile(`(?i)password`)
-			passKey2 := regexp.MustCompile(`(?i)pwd`)
-			if passKey.MatchString(k) || passKey2.MatchString(k) {
-				password = v
-				needCheck = true
+			for _, p := range passKey {
+				if p.MatchString(k) {
+					password = v
+					needCheck = true
+					break
+				}
 			}
 
 			passUrlMatch := regexp.MustCompile(`\w+\+\w+\://\w+\:(.*)?\@`)
@@ -399,7 +406,7 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 				switch checkWeakPassword(password) {
 				case "Weak":
 					th := &threat{
-						Param:    fmt.Sprintf("ConfigMap Name: %s\nNamespace: %s", cf.Name, ns),
+						Param:    fmt.Sprintf("ConfigMap Name: %s Namespace: %s", cf.Name, ns),
 						Value:    fmt.Sprintf("%s:%s", k, v),
 						Type:     "ConfigMap",
 						Describe: fmt.Sprintf("ConfigMap has found weak password: '%s'.", password),
@@ -410,7 +417,7 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 
 				case "Medium":
 					th := &threat{
-						Param: fmt.Sprintf("ConfigMap Name: %s\nNamespace: %s", cf.Name, ns),
+						Param: fmt.Sprintf("ConfigMap Name: %s Namespace: %s", cf.Name, ns),
 						Value: fmt.Sprintf("%s:%s", k, v),
 						Type:  "ConfigMap",
 						Describe: fmt.Sprintf("ConfigMap has found password '%s' "+
@@ -444,16 +451,22 @@ func (ks *KScanner) checkSecret(ns string) error {
 		data := se.Data
 
 		for k, v := range data {
-			passKey := regexp.MustCompile(`(?i)password`)
-			passKey2 := regexp.MustCompile(`(?i)pwd`)
+			needCheck := false
 
-			if passKey.MatchString(k) || passKey2.MatchString(k) {
+			for _, p := range passKey {
+				if p.MatchString(k) {
+					needCheck = true
+					break
+				}
+			}
+
+			if needCheck {
 				password = string(v)
 
 				switch checkWeakPassword(password) {
 				case "Weak":
 					th := &threat{
-						Param:    fmt.Sprintf("Secret Name: %s\nNamspace: %s", se.Name, ns),
+						Param:    fmt.Sprintf("Secret Name: %s Namspace: %s", se.Name, ns),
 						Value:    fmt.Sprintf("%s:%s", k, v),
 						Type:     "Secret",
 						Describe: fmt.Sprintf("Secret has found weak password: '%s'.", password),
@@ -464,7 +477,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 
 				case "Medium":
 					th := &threat{
-						Param: fmt.Sprintf("Secret Name: %s\nNamspace: %s", se.Name, ns),
+						Param: fmt.Sprintf("Secret Name: %s Namspace: %s", se.Name, ns),
 						Value: fmt.Sprintf("%s:%s", k, v),
 						Type:  "Secret",
 						Describe: fmt.Sprintf("Secret has found password '%s' "+
@@ -481,4 +494,112 @@ func (ks *KScanner) checkSecret(ns string) error {
 	}
 
 	return nil
+}
+
+func RBACVulnTypeJudge(rules, resources []string) (string, string) {
+	var severity = "warning"
+	var description string
+
+	dangerResources := []string{"pods", "deployments", "statefulsets",
+		"serviceaccounts"}
+	dangerRules := []string{"create", "update", "patch", "delete"}
+	sensitiveResources := []string{"secrets", "configmaps"}
+
+	secretLeakage := false
+
+	if resources[0] == "*" {
+		severity = "medium"
+		goto rulesJudge
+	}
+
+	for _, resource := range resources {
+		for _, drs := range dangerResources {
+			switch {
+			case resource == drs:
+				severity = "medium"
+				break
+
+			case strings.HasPrefix(resource, drs):
+				if severity != "warning" {
+					severity = "low"
+				}
+			}
+		}
+
+		for _, srs := range sensitiveResources {
+			if resource == srs {
+				severity = "medium"
+				secretLeakage = true
+				break
+			}
+		}
+	}
+
+	if rules[0] == "*" {
+		switch severity {
+		case "medium":
+			severity = "high"
+			description = "All permissions with key resources given to the default service account, " +
+				"which will cause a potential container escape."
+		case "low":
+			severity = "medium"
+			description = "All permissions with some resources are given to the default service account " +
+				"which will cause a potential data leakage."
+		case "warning":
+			severity = "low"
+			description = "All permissions with unknown resources are given to the default service account " +
+				"which will cause a potential data leakage."
+		}
+
+		goto otherJudge
+	}
+rulesJudge:
+	for _, verb := range rules {
+		for _, drl := range dangerRules {
+			if verb != drl {
+				continue
+			}
+
+			switch severity {
+			case "medium":
+				severity = "high"
+				description = "Key permissions with key resources given to the default service account, " +
+					"which will cause a potential data leakage."
+			case "low":
+				severity = "medium"
+				description = "Key permissions with some resources are given to the default service account " +
+					"which will cause a potential data leakage."
+			case "warning":
+				severity = "low"
+				description = "Key permissions with unknown resources are given to the default service account " +
+					"which will cause a potential data leakage."
+			}
+			break
+		}
+	}
+
+otherJudge:
+	if description == "" {
+		switch severity {
+		case "medium":
+			if secretLeakage {
+				severity = "high"
+				description = "Secret view permission is given to the default service account, " +
+					"which will cause a data leakage."
+
+			} else {
+				description = "Some permissions with key resources given to the default service account, " +
+					"which will cause a potential data leakage."
+			}
+		case "low":
+			description = "Some permissions with some resources are given to the default service account " +
+				"which will cause a potential data leakage."
+		case "warning":
+			description = "Some permissions with unknown resources are given to the default service account " +
+				"which will cause a potential data leakage."
+
+		}
+	}
+
+	return severity, description
 }

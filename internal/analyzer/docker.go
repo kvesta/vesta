@@ -13,11 +13,12 @@ import (
 	"github.com/docker/docker/api/types"
 	version2 "github.com/hashicorp/go-version"
 	_config "github.com/kvesta/vesta/config"
+	_image "github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	"github.com/tidwall/gjson"
 )
 
-func (s *Scanner) checkDockerContext(ctx context.Context, images []types.ImageSummary) error {
+func (s *Scanner) checkDockerContext(ctx context.Context, images []*_image.ImageInfo) error {
 
 	cli := vulnlib.Client{}
 	err := cli.Init()
@@ -61,11 +62,22 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []types.ImageSu
 		s.VulnContainers = append(s.VulnContainers, ct)
 	}
 
-	// Check th repo's tag
+	// Check the repo's tag
 	if ok, tlist := checkImages(images); ok {
 		ct := &container{
 			ContainerID:   "None",
 			ContainerName: "Image Tag",
+			Threats:       tlist,
+		}
+
+		s.VulnContainers = append(s.VulnContainers, ct)
+	}
+
+	// Check image's history
+	if ok, tlist := checkHistories(images); ok {
+		ct := &container{
+			ContainerID:   "None",
+			ContainerName: "Image Configuration",
 			Threats:       tlist,
 		}
 
@@ -319,16 +331,15 @@ func checkDockerUnauthorized() (bool, []*threat) {
 	return vuln, tlist
 }
 
-func checkImages(images []types.ImageSummary) (bool, []*threat) {
+func checkImages(images []*_image.ImageInfo) (bool, []*threat) {
 	log.Printf(_config.Yellow("Begin image analyzing"))
 
 	var vuln = false
-
 	tlist := []*threat{}
 
 	for _, image := range images {
-		if len(image.RepoTags) < 1 {
-			sha := strings.Split(image.ID, ":")[1]
+		if len(image.Summary.RepoTags) < 1 {
+			sha := strings.Split(image.Summary.ID, ":")[1]
 			th := &threat{
 				Param:    "Image ID",
 				Value:    sha[:12],
@@ -340,11 +351,11 @@ func checkImages(images []types.ImageSummary) (bool, []*threat) {
 			continue
 		}
 
-		repoTag := strings.Split(image.RepoTags[0], ":")
+		repoTag := strings.Split(image.Summary.RepoTags[0], ":")
 		if len(repoTag) > 1 && repoTag[1] == "latest" {
 			th := &threat{
 				Param:    "Image Name",
-				Value:    image.RepoTags[0],
+				Value:    image.Summary.RepoTags[0],
 				Describe: "Using the latest tag will be suffered potential image hijack.",
 				Severity: "low",
 			}
@@ -355,4 +366,98 @@ func checkImages(images []types.ImageSummary) (bool, []*threat) {
 	}
 
 	return vuln, tlist
+}
+
+func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
+	log.Printf(_config.Yellow("Begin image histories analyzing"))
+
+	var vuln = false
+	tlist := []*threat{}
+
+	echoReg := regexp.MustCompile(`echo ["|'](.*?)["|']`)
+
+	for _, img := range images {
+		for _, layer := range img.History {
+			pruneLayerAfter1 := strings.TrimPrefix(layer.CreatedBy, "/bin/sh -c ")
+			pruneLayerAfter2 := strings.TrimPrefix(pruneLayerAfter1, "#(nop)")
+			pruneLayer := strings.TrimSpace(pruneLayerAfter2)
+
+			link := strings.Split(pruneLayer, " ")[0]
+			switch link {
+			case "CMD", "ADD", "ARG", "ENV", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER":
+				continue
+			}
+
+			commands := strings.Split(pruneLayer, "&&")
+			for _, cmd := range commands {
+				echoMatch := echoReg.FindStringSubmatch(cmd)
+				if len(echoMatch) > 1 {
+					pass := echoPass(echoMatch[1])
+					if len(pass) < 1 {
+						continue
+					}
+
+					switch checkWeakPassword(pass) {
+					case "Weak":
+						th := &threat{
+							Param: "Image History",
+							Value: fmt.Sprintf("Image name: %s | "+
+								"Image ID: %s", img.Summary.RepoTags[0],
+								strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+							Describe: fmt.Sprintf("Weak password found in command: '%s'.", cmd),
+							Severity: "high",
+						}
+
+						tlist = append(tlist, th)
+						vuln = true
+
+					case "Medium":
+						th := &threat{
+							Param: "Image History",
+							Value: fmt.Sprintf("Image name: %s | "+
+								"Image ID: %s", img.Summary.RepoTags[0],
+								strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+							Describe: fmt.Sprintf("Password need need to be reinforeced, found in command: '%s'.", cmd),
+							Severity: "medium",
+						}
+
+						tlist = append(tlist, th)
+						vuln = true
+					}
+				}
+			}
+
+		}
+	}
+
+	return vuln, tlist
+}
+
+func echoPass(cmd string) string {
+
+	var pass string
+	match := false
+
+	for _, p := range passKey {
+		if p.MatchString(cmd) {
+			match = true
+			break
+		}
+	}
+
+	if !match {
+		return pass
+	}
+
+	prune := strings.TrimSpace(cmd)
+
+	if len(strings.Split(prune, "=")) > 1 {
+		pass = strings.Split(prune, "=")[1]
+	} else if len(strings.Split(prune, ":")) > 1 {
+		pass = strings.Split(prune, ":")[1]
+	}
+
+	pass = strings.TrimSpace(pass)
+
+	return pass
 }

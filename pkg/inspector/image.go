@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	imagev1 "github.com/docker/docker/api/types/image"
 	"github.com/kvesta/vesta/config"
 )
 
@@ -45,11 +46,30 @@ func (da *DockerApi) GetImageName(imageID string) ([]io.ReadCloser, error) {
 	return []io.ReadCloser{fileio}, nil
 }
 
-func (da *DockerApi) GetAllImage() ([]types.ImageSummary, error) {
+type ImageInfo struct {
+	Summary types.ImageSummary
+	History []imagev1.HistoryResponseItem
+}
 
-	var images []types.ImageSummary
+func (da *DockerApi) GetAllImage() ([]*ImageInfo, error) {
 
-	images, err := da.DCli.ImageList(ctx, types.ImageListOptions{})
+	images := []*ImageInfo{}
+	ims, err := da.DCli.ImageList(ctx, types.ImageListOptions{})
+
+	for _, im := range ims {
+		his, err := da.DCli.ImageHistory(ctx, im.ID)
+		if err != nil {
+			continue
+		}
+
+		image := &ImageInfo{
+			Summary: im,
+			History: his,
+		}
+
+		images = append(images, image)
+	}
+
 	if err != nil {
 		return images, err
 	}
