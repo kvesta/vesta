@@ -91,6 +91,13 @@ Detected 216 vulnerabilities
 
 ```
 
+<details>
+<summary>Result</summary>
+
+![](https://user-images.githubusercontent.com/35037256/212480788-b2c77ff4-e484-49f8-b283-b0347de7d646.gif)
+
+</details>
+
 Example of docker config scan, start vesta:
 
 ```bash
@@ -216,6 +223,13 @@ Configures:
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
 ```
 
+<details>
+<summary>Result</summary>
+
+![](https://user-images.githubusercontent.com/35037256/212480704-c6e6f7ac-6531-4eda-b3a2-1ca99eeedfcf.gif)
+
+</details>
+
 ## Checklist
 
 > Docker
@@ -244,13 +258,13 @@ Configures:
 | ✔         | PrivilegeAllowed                                        | Privileged module is allowed.                                              | critical                 |
 | ✔         | Capabilities                                            | Dangerous capabilities are opening.                                        | critical                 |
 | ✔         | PV and PVC                                              | PV is mounted the dangerous location and is actived.                       | critical/medium          |
-| ✔         | RBAC                                                    | RBAC has some unsafe configurations in clusterrolebingding or rolebinding. | high/medium/warning      |
+| ✔         | RBAC                                                    | RBAC has some unsafe configurations in clusterrolebingding or rolebinding. | high/medium/low/warning  |
 | ✔         | Kubernetes-dashborad                                    | Checking `-enable-skip-login` and account permission.                      | critical/high/low        |
 | ✔         | Kernel version (k8s versions is less than v1.24)        | Kernel version is under the escape version.                                | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.                         | critical/high/medium/low |
 | ✔         | Kubernetes certification expiration                     | Certification is expired after 30 days.                                    | medium                   |
 | ✔         | ConfigMap and Secret check                              | Check weak password in ConfigMap or Secret.                                | high/medium              |
-| ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`.            | low                      |
+| ✔         | Auto Mount ServiceAccount Token                         | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`.            | critical/high/medium/low |
 | ✔         | NoResourceLimits                                        | No resource limits are set.                                                | low                      |
 | ✔         | Job and Cronjob                                         | No seccomp or seLinux are set in Job or CronJob.                           | low                      |
 | ✔         | Envoy admin                                             | Envoy admin is opening and listen to `0.0.0.0`.                            | high/medium              |

@@ -31,7 +31,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 
 <samp>
 
-[![asciicast](https://asciinema.org/a/mtcyVDefFN8IXtv0abX8MA5MH.svg)](https://asciinema.org/a/mtcyVDefFN8IXtv0abX8MA5MH)
+![](https://user-images.githubusercontent.com/35037256/212480704-c6e6f7ac-6531-4eda-b3a2-1ca99eeedfcf.gif)
 
 </samp>
 </details>
@@ -226,17 +226,17 @@ Configures:
 | ✔         | PrivilegeAllowed                                         | 危险的特权模式                                                         | critical                 |
 | ✔         | Capabilities                                             | 危险capabilities被设置                                               | critical                 |
 | ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
-| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium/warning      |
+| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium/low/warning  |
 | ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
 | ✔         | Kernel version (k8s versions is less than v1.24)         | 当前内核版本存在逃逸漏洞                                                    | critical                 |
 | ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                                             | critical/high/medium/low |
 | ✔         | Kubernetes certification expiration                      | 证书到期时间小于30天                                                     | medium                   |
 | ✔         | ConfigMap and Secret check                               | ConfigMap 或者 Secret是否存在弱密码                                      | high/medium              |
-| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | low                      |
+| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | critical/high/medium/low |
 | ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
 | ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
 | ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
-| ✔        | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low                     |
+| ✔        | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low |
 | ✔         | Istio configurations                                    | Istio 存在漏洞版本以及安全配置检查                                            | critical/high/medium/low |
 | ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
 | ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
