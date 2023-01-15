@@ -3,6 +3,7 @@ package packages
 import (
 	"context"
 	"log"
+	"strings"
 )
 
 var (
@@ -13,8 +14,8 @@ func (s *Packages) GetApp(ctx context.Context) error {
 	m := s.Mani
 	s.Packs = []*Package{}
 	for _, r := range rpmId {
-		if s.OsRelease.OID == r {
-			err = s.getRpmPacks(ctx)
+		if strings.ToLower(s.OsRelease.OID) == r {
+			err := s.getRpmPacks(ctx)
 			if err != nil {
 				log.Printf("Get rpm packages failed: %v", err)
 				return err

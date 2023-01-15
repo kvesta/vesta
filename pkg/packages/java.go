@@ -128,7 +128,7 @@ func parseLib(jarName string) (*Jar, error) {
 	if len(versionMath) > 1 {
 		jar.Version = versionMath[0]
 	} else {
-		err = errors.New("not a lar library")
+		err := errors.New("not a lar library")
 		return jar, err
 	}
 
