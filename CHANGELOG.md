@@ -1,3 +1,8 @@
+# 1.0.4 (2023.1.16)
+## improvements
+- Change method of rpm analysis
+- Change folder structure
+
 # 1.0.3 (2023.1.3)
 ## features
 - Add java libraries analysis

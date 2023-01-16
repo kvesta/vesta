@@ -30,7 +30,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 Vesta is built with Go 1.18. 
 
 ```bash
-go build
+make build
 ```
 
 ## Quick Start
