@@ -20,7 +20,7 @@
 ## Overview
 
 Vesta is a static analysis of vulnerabilities, Docker and Kubernetes cluster configuration detect toolkit. It inspects Kubernetes and Docker configures,
-cluster pods, and containers with safe practices. It also analyses image or container components with an extra python module and node npm scan.
+cluster pods, and containers with safe practices.
 <br/>
 <br/>
 Vesta is a flexible toolkit which can run on physical machines in different types of systems (Windows, Linux, MacOS).
