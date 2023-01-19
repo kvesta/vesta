@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	_cmd "github.com/kvesta/vesta/cmd"
 	"github.com/kvesta/vesta/config"
+	"github.com/kvesta/vesta/internal"
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	"github.com/spf13/cobra"
@@ -75,7 +75,7 @@ func Execute() error {
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "output", outfile)
 
-			_cmd.DoInspectInDocker(ctx)
+			internal.DoInspectInDocker(ctx)
 		},
 	}
 
@@ -88,7 +88,7 @@ func Execute() error {
 			ctx = context.WithValue(ctx, "kubeconfig", kubeconfig)
 			ctx = context.WithValue(ctx, "output", outfile)
 
-			_cmd.DoInspectInKubernetes(ctx)
+			internal.DoInspectInKubernetes(ctx)
 		},
 	}
 
@@ -96,6 +96,12 @@ func Execute() error {
 		Use:   "image",
 		Short: "input from image",
 		Run: func(cmd *cobra.Command, args []string) {
+
+			if len(args) < 1 {
+				fmt.Println("Require at least 1 argument.")
+				os.Exit(1)
+			}
+
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "tarType", "image")
 			ctx = context.WithValue(ctx, "output", outfile)
@@ -119,7 +125,7 @@ func Execute() error {
 					"or use -f to get from tar file")
 				return
 			}
-			_cmd.DoScan(ctx, tarFile, tarIO)
+			internal.DoScan(ctx, tarFile, tarIO)
 		},
 	}
 
@@ -127,6 +133,12 @@ func Execute() error {
 		Use:   "container",
 		Short: "input from inspector",
 		Run: func(cmd *cobra.Command, args []string) {
+
+			if len(args) < 1 {
+				fmt.Println("Require at least 1 argument.")
+				os.Exit(1)
+			}
+
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "tarType", "container")
 			ctx = context.WithValue(ctx, "output", outfile)
@@ -151,7 +163,7 @@ func Execute() error {
 				return
 			}
 
-			_cmd.DoScan(ctx, tarFile, tarIO)
+			internal.DoScan(ctx, tarFile, tarIO)
 		},
 	}
 

@@ -95,12 +95,21 @@ func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 
 	for i, p := range r.VulnContainers {
 		for _, v := range p.Threats {
+
+			nodeName := ""
+			if r.MasterNodes[p.NodeName].IsMaster {
+				nodeName = fmt.Sprintf("%s (%s)",
+					p.NodeName, config.Red("Master"))
+			} else {
+				nodeName = p.NodeName
+			}
+
 			vulnData := []string{
 				strconv.Itoa(i + 1), fmt.Sprintf("Name: %s | "+
 					"Namespace: %s | "+
 					"Status: %s | "+
 					"Node Name: %s", p.ContainerName, p.Namepsace,
-					p.Status, p.NodeName),
+					p.Status, nodeName),
 				v.Param, v.Value, v.Type,
 				judgeSeverity(v.Severity), v.Describe,
 			}

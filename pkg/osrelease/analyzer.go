@@ -203,7 +203,7 @@ func getOs(config, path string) (*OsVersion, error) {
 		switch k {
 		case "NAME":
 			os.NAME = v
-		case "ID":
+		case "OID":
 			os.OID = v
 		case "VERSION":
 			os.VERSION = v

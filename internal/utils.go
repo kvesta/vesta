@@ -1,4 +1,4 @@
-package cmd
+package internal
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/kvesta/vesta/config"
-	"github.com/kvesta/vesta/internal"
 	"github.com/kvesta/vesta/internal/report"
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/osrelease"
@@ -44,7 +43,7 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 	osVersion, err := osrelease.DetectOs(ctx, *m)
 	log.Printf("Detect OS: %s", osVersion.OID)
 
-	vulns := &internal.Vuln{
+	vulns := &Vuln{
 		OsRelease: osVersion,
 		Mani:      m,
 		Packs: &packages.Packages{
@@ -141,7 +140,7 @@ func DoInspectInDocker(ctx context.Context) {
 	if err != nil {
 		log.Printf("Can not get server version, error: %v", err)
 	}
-	inspects := &internal.Inpsectors{}
+	inspects := &Inpsectors{}
 	scanner := inspects.Scan
 	scanner.EngineVersion = engineVersion
 	scanner.ServerVersion = serverVersion
@@ -192,7 +191,7 @@ func DoInspectInKubernetes(ctx context.Context) {
 		log.Printf("Can not get all kubernetes inpector, error: %v", err)
 	}
 
-	inspects := &internal.Inpsectors{}
+	inspects := &Inpsectors{}
 	scanner := inspects.Kscan
 	scanner.KClient = clientset
 	scanner.KConfig = kconfig

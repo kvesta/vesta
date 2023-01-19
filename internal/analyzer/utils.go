@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strings"
 
+	version2 "github.com/hashicorp/go-version"
 	"github.com/kvesta/vesta/config"
 )
 
@@ -13,6 +15,7 @@ var (
 		regexp.MustCompile(`(?i)password`),
 		regexp.MustCompile(`(?i)pwd`),
 		regexp.MustCompile(`(?i)token`),
+		regexp.MustCompile(`(?i)secret`),
 	}
 )
 
@@ -77,6 +80,68 @@ func checkWeakPassword(pass string) string {
 	}
 
 	return "Strong"
+}
+
+func compareVersion(currentVersion, maxVersion, minVersion string) bool {
+	k1, err := version2.NewVersion(currentVersion)
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(maxVersion, "=") {
+		maxv, _ := version2.NewVersion(maxVersion[1:])
+		if strings.Contains(minVersion, "=") {
+			minv, _ := version2.NewVersion(minVersion[1:])
+			if k1.Compare(maxv) <= 0 && k1.Compare(minv) >= 0 {
+				return true
+			}
+		} else {
+			minv, _ := version2.NewVersion(minVersion)
+			if k1.Compare(maxv) <= 0 && k1.Compare(minv) > 0 {
+				return true
+			}
+		}
+
+	} else {
+		maxv, _ := version2.NewVersion(maxVersion)
+		if strings.Contains(minVersion, "=") {
+			minv, _ := version2.NewVersion(minVersion[1:])
+			if k1.Compare(maxv) < 0 && k1.Compare(minv) >= 0 {
+
+				return true
+			}
+		} else {
+			minv, _ := version2.NewVersion(minVersion)
+			if k1.Compare(maxv) < 0 && k1.Compare(minv) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func checkPrefixMountPaths(path string) bool {
+	for _, p := range dangerPrefixMountPaths {
+		if strings.HasPrefix(path, p) {
+			return true
+		}
+	}
+	return false
+}
+
+func checkFullPaths(path string) bool {
+
+	for _, p := range dangerFullPaths {
+		if path == p {
+			return true
+		}
+	}
+	return false
+}
+
+func checkMountPath(path string) bool {
+	path = strings.TrimSuffix(path, "/")
+	return checkPrefixMountPaths(path) || checkFullPaths(path)
 }
 
 func sortSeverity(threats []*threat) {

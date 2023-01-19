@@ -171,12 +171,25 @@ func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCompo
 	return vulns, isVulnerable
 }
 
-func compareRpmVersion(rows []*vulnlib.DBRow, cv string) ([]*vulnComponent, bool) {
+func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnComponent, bool) {
 
 	var isVulnerable = false
 	vulns := []*vulnComponent{}
 
 	for _, row := range rows {
+
+		// Skip same name which from different component
+		skip := true
+		for _, c := range cp {
+			if c == row.Component {
+				skip = false
+			}
+		}
+
+		if skip {
+			continue
+		}
+
 		currentVersion := rpmversion.NewVersion(cv)
 
 		if row.MaxVersion == "*" {
@@ -384,6 +397,7 @@ func (ps *Scanner) checkPHPPacks(ctx context.Context, phps []*packages.PHP) erro
 func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Package, os string) error {
 
 	packVuln := []*vulnComponent{}
+	os = strings.ToLower(os)
 
 	if os == "centos" || os == "rhel" {
 		for _, p := range packs {
@@ -393,7 +407,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 				continue
 			}
 
-			if vs, vuln := compareRpmVersion(rows, p.Version); vuln {
+			if vs, vuln := compareRpmVersion(rows, p.Version, []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = p.Name
 				}
