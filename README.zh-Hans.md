@@ -19,7 +19,7 @@
 
 ## 概述
 
-vesta是一款集容器扫描，Docker和Kubernetes配置基线检查于一身的工具。检查内容包括镜像或容器中包含漏洞版本的组件，Docker以及Kubernetes的危险配置
+vesta是一款集容器扫描，Docker和Kubernetes配置基线检查于一身的工具。检查内容包括镜像或容器中包含漏洞版本的组件，同时根据云上实战渗透经验检查Docker以及Kubernetes的危险配置
 <br/>
 <br/>
 vesta同时也是一个灵活，方便的工具，能够在各种系统上运行，包括但不限于Windows，Linux以及MacOS

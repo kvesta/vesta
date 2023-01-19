@@ -1,7 +1,11 @@
 # 1.0.4 (2023.1.16)
+## features
+- Add sidecar Environment Checking
+
 ## improvements
 - Change method of rpm analysis
 - Change folder structure
+- Change method of kernel version checking
 
 # 1.0.3 (2023.1.3)
 ## features

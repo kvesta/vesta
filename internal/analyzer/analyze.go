@@ -7,10 +7,8 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	version2 "github.com/hashicorp/go-version"
 	"github.com/kvesta/vesta/config"
 	_image "github.com/kvesta/vesta/pkg/inspector"
-	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,7 +16,7 @@ import (
 var dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
 	"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
 
-var dangerFullPaths = []string{"/", "/etc", "/proc", "/sys", "/root", "/var/log"}
+var dangerFullPaths = []string{"/", "/etc", "/proc", "proc/1", "/sys", "/root", "/var/log"}
 
 var namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 	"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
@@ -116,6 +114,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		if err != nil {
 			log.Printf("failed to use docker to check, error: %v", err)
 		}
+	} else {
+		err = ks.kernelCheck(ctx)
+		if err != nil {
+			log.Printf("failed to check kernel version, error: %v", err)
+		}
 	}
 
 	nsList, err := ks.KClient.
@@ -123,7 +126,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		Namespaces().List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
-		log.Printf("Get namespace failed: %v", err)
+		log.Printf("get namespace failed: %v", err)
+	}
+
+	err = ks.getNodeInfor(ctx)
+	if err != nil {
+		log.Printf("failed to get node information: %v", err)
 	}
 
 	// Check RBAC rules
@@ -232,68 +240,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	return nil
 }
 
-func compareVersion(currentVersion, maxVersion, minVersion string) bool {
-	k1, err := version2.NewVersion(currentVersion)
-	if err != nil {
-		return false
-	}
-
-	if strings.Contains(maxVersion, "=") {
-		maxv, _ := version2.NewVersion(maxVersion[1:])
-		if strings.Contains(minVersion, "=") {
-			minv, _ := version2.NewVersion(minVersion[1:])
-			if k1.Compare(maxv) <= 0 && k1.Compare(minv) >= 0 {
-				return true
-			}
-		} else {
-			minv, _ := version2.NewVersion(minVersion)
-			if k1.Compare(maxv) <= 0 && k1.Compare(minv) > 0 {
-				return true
-			}
-		}
-
-	} else {
-		maxv, _ := version2.NewVersion(maxVersion)
-		if strings.Contains(minVersion, "=") {
-			minv, _ := version2.NewVersion(minVersion[1:])
-			if k1.Compare(maxv) < 0 && k1.Compare(minv) >= 0 {
-
-				return true
-			}
-		} else {
-			minv, _ := version2.NewVersion(minVersion)
-			if k1.Compare(maxv) < 0 && k1.Compare(minv) > 0 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func checkPrefixMountPaths(path string) bool {
-	for _, p := range dangerPrefixMountPaths {
-		if strings.HasPrefix(path, p) {
-			return true
-		}
-	}
-	return false
-}
-
-func checkFullPaths(path string) bool {
-
-	for _, p := range dangerFullPaths {
-		if path == p {
-			return true
-		}
-	}
-	return false
-}
-
-func checkMountPath(path string) bool {
-	path = strings.TrimSuffix(path, "/")
-	return checkPrefixMountPaths(path) || checkFullPaths(path)
-}
-
 // checkDockerVersion check docker server version
 func checkDockerVersion(cli vulnlib.Client, serverVersion string) (bool, []*threat) {
 	log.Printf(config.Yellow("Begin docker version analyzing"))
@@ -329,7 +275,7 @@ func checkDockerVersion(cli vulnlib.Client, serverVersion string) (bool, []*thre
 // checkKernelVersion check kernel version for whether the kernel version
 // is under the vulnerable version which has a potential container escape
 // such as Dirty Cow,Dirty Pipe
-func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
+func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*threat) {
 	var vuln = false
 
 	tlist := []*threat{}
@@ -341,23 +287,9 @@ func checkKernelVersion(cli vulnlib.Client) (bool, []*threat) {
 		"CVE-2022-0185":  "CVE-2022-0185 with CAP_SYS_ADMIN",
 		"CVE-2022-0492":  "CVE-2022-0492 with CAP_SYS_ADMIN and v1 architecture of cgroups"}
 
-	kernelVersion, err := osrelease.GetKernelVersion(context.Background())
-	if err != nil {
-		log.Printf("failed to get kernel version: %v", err)
-	}
-
-	if err != nil {
-		log.Printf("failed to init database, error %v", err)
-		return vuln, tlist
-	}
-
 	log.Printf(config.Yellow("Begin kernel version analyzing"))
 	for cve, nickname := range vulnKernelVersion {
 		underVuln := false
-		if err != nil {
-			log.Printf("failed to recognize kernel version")
-			break
-		}
 
 		rows, err := cli.QueryVulnByCVEID(cve)
 		if err != nil {

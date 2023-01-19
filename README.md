@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  A static analysis of vulnerabilities, Docker and Kubernetes cluster configuration detect toolkit
+  A static analysis of vulnerabilities, Docker and Kubernetes cluster configuration detect toolkit based on the real penetration of cloud computing.
 </p>
 
 <div align="center">

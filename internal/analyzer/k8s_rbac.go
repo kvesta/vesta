@@ -60,8 +60,13 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 					}
 
 					if strings.Contains(subName, "unauthenticated") {
+
+						if th.Severity == "medium" {
+							th.Severity = "high"
+						}
+
 						th.Describe = "Key permission are given and every pod can access it, " +
-							"which will cause a potential container escape."
+							"which will cause a potential data leakage."
 					}
 
 					ks.VulnConfigures = append(ks.VulnConfigures, th)
@@ -88,8 +93,13 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 					}
 
 					if strings.Contains(subName, "unauthenticated") {
+						
+						if th.Severity == "medium" {
+							th.Severity = "high"
+						}
+
 						th.Describe = "Key permission are given and every pod can access it, " +
-							"which will cause a potential container escape."
+							"which will cause a potential data leakage."
 					}
 
 					ks.VulnConfigures = append(ks.VulnConfigures, th)

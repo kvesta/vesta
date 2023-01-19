@@ -72,7 +72,7 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 				Param: fmt.Sprintf("sidecar name: %s | "+
 					"Privileged", config.Name),
 				Value:    "true",
-				Type:     "Pod",
+				Type:     "Sidecar Privileged",
 				Describe: "There has a potential container escape in privileged module.",
 				Severity: "critical",
 			}
@@ -85,12 +85,61 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 				Param: fmt.Sprintf("sidecar name: %s | "+
 					"AllowPrivilegeEscalation", config.Name),
 				Value:    "true",
-				Type:     "Pod",
+				Type:     "Sidecar Privileged",
 				Describe: "There has a potential container escape in privileged module.",
 				Severity: "critical",
 			}
 			tlist = append(tlist, th)
 			vuln = true
+		}
+
+	}
+
+	return vuln, tlist
+}
+
+func checkSidecarEnv(config v1.Container) (bool, []*threat) {
+	var vuln = false
+	tlist := []*threat{}
+
+	for _, env := range config.Env {
+
+		needCheck := false
+
+		for _, p := range passKey {
+			if p.MatchString(env.Name) && env.ValueFrom == nil {
+				needCheck = true
+				break
+			}
+		}
+
+		if needCheck {
+			switch checkWeakPassword(env.Value) {
+			case "Weak":
+				th := &threat{
+					Param:    fmt.Sprintf("sidecar name: %s | env", config.Name),
+					Value:    fmt.Sprintf("%s:%s", env.Name, env.Value),
+					Type:     "Sidecar Env",
+					Describe: fmt.Sprintf("Container '%s' has found weak password: '%s'.", config.Name, env.Value),
+					Severity: "high",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+
+			case "Medium":
+				th := &threat{
+					Param: fmt.Sprintf("sidecar name: %s | env", config.Name),
+					Value: fmt.Sprintf("%s:%s", env.Name, env.Value),
+					Type:  "Sidecar Env",
+					Describe: fmt.Sprintf("Container '%s' has found password '%s' "+
+						"need to be reinforeced.", config.Name, env.Value),
+					Severity: "medium",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+			}
 		}
 
 	}
@@ -107,7 +156,7 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 			Param: fmt.Sprintf("sidecar name: %s | "+
 				"Resource", config.Name),
 			Value:     "memory, cpu, ephemeral-storage",
-			Type:      "Pod",
+			Type:      "Sidecar Resource",
 			Describe:  "None of resources is be limited.",
 			Reference: "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 			Severity:  "low",
@@ -124,7 +173,7 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 			Param: fmt.Sprintf("sidecar name: %s | "+
 				"Resource", config.Name),
 			Value:     "memory",
-			Type:      "Pod",
+			Type:      "Sidecar Resource",
 			Describe:  "Memory usage is not limited.",
 			Reference: "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 			Severity:  "low",
@@ -139,7 +188,7 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 			Param: fmt.Sprintf("sidecar name: %s | "+
 				"Resource", config.Name),
 			Value:     "cpu",
-			Type:      "Pod",
+			Type:      "Sidecar Resource",
 			Describe:  "CPU usage is not limited.",
 			Reference: "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
 			Severity:  "low",

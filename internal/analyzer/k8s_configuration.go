@@ -4,17 +4,52 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/docker/docker/client"
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/inspector"
+	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
 )
+
+func (ks *KScanner) getNodeInfor(ctx context.Context) error {
+	nodes, err := ks.KClient.
+		CoreV1().
+		Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	ks.MasterNodes = make(map[string]*nodeInfo)
+
+	for _, node := range nodes.Items {
+		rolesInfo := &nodeInfo{
+			IsMaster: false,
+		}
+		roles := []string{}
+		for role, _ := range node.Labels {
+			if strings.HasPrefix(role, "node-role.kubernetes") {
+				roleName := strings.Split(role, "/")[1]
+				if roleName == "master" {
+					rolesInfo.IsMaster = true
+				}
+				roles = append(roles, roleName)
+			}
+		}
+
+		rolesInfo.Role = roles
+		ks.MasterNodes[node.Name] = rolesInfo
+
+	}
+
+	return nil
+}
 
 func (ks *KScanner) dockershimCheck(ctx context.Context) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -36,12 +71,45 @@ func (ks *KScanner) dockershimCheck(ctx context.Context) error {
 	c.DCli.Close()
 
 	// Checking kernel version
-	if ok, tlist := checkKernelVersion(vulnCli); ok {
+	kernelVersion, err := osrelease.GetKernelVersion(context.Background())
+	if err != nil {
+		log.Printf("failed to get kernel version: %v", err)
+	}
+
+	if ok, tlist := checkKernelVersion(vulnCli, kernelVersion); ok {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
 	// Check Docker server version
 	if ok, tlist := checkDockerVersion(vulnCli, serverVersion); ok {
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
+	return nil
+}
+
+// kernelCheck get /proc/version directly for non-Docker-Desktop
+func (ks *KScanner) kernelCheck(ctx context.Context) error {
+
+	cmd := exec.Command("cat", "/proc/version")
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+
+	vulnCli := vulnlib.Client{}
+	err = vulnCli.Init()
+	if err != nil {
+		return err
+	}
+
+	kernelVersion := osrelease.KernelParse(string(stdout))
+
+	if ok, tlist := checkKernelVersion(vulnCli, kernelVersion); ok {
+		for _, th := range tlist {
+			th.Type = "K8s kernel version"
+		}
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
@@ -152,6 +220,10 @@ func (ks *KScanner) checkPod(ns string) error {
 				vList = append(vList, tlist...)
 			}
 
+			if ok, tlist := checkSidecarEnv(sp); ok {
+				vList = append(vList, tlist...)
+			}
+
 		}
 
 		if len(vList) > 0 {
@@ -180,14 +252,10 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 		List(context.TODO(), metav1.ListOptions{})
 
 	if err != nil {
-		return err
-	}
+		if strings.Contains(err.Error(), "could not find the requested resource") {
+			goto cronJob
+		}
 
-	cronjobs, err := ks.KClient.
-		BatchV1().
-		CronJobs(ns).
-		List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
 		return err
 	}
 
@@ -211,6 +279,16 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 
 			ks.VulnConfigures = append(ks.VulnConfigures, th)
 		}
+	}
+
+cronJob:
+
+	cronjobs, err := ks.KClient.
+		BatchV1().
+		CronJobs(ns).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return err
 	}
 
 	for _, cronjob := range cronjobs.Items {

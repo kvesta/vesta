@@ -14,6 +14,7 @@ import (
 	version2 "github.com/hashicorp/go-version"
 	_config "github.com/kvesta/vesta/config"
 	_image "github.com/kvesta/vesta/pkg/inspector"
+	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	"github.com/tidwall/gjson"
 )
@@ -30,7 +31,12 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []*_image.Image
 	}
 
 	// Checking kernel version
-	if ok, tlist := checkKernelVersion(cli); ok {
+	kernelVersion, err := osrelease.GetKernelVersion(context.Background())
+	if err != nil {
+		log.Printf("failed to get kernel version: %v", err)
+	}
+
+	if ok, tlist := checkKernelVersion(cli, kernelVersion); ok {
 		ct := &container{
 			ContainerID:   "None",
 			ContainerName: "Kernel",

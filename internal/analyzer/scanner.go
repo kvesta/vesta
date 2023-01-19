@@ -17,6 +17,7 @@ type container struct {
 	ContainerName string
 	Status        string
 	NodeName      string
+
 	// For kubernetes
 	Namepsace string
 	Threats   []*threat
@@ -33,10 +34,16 @@ type threat struct {
 }
 
 type KScanner struct {
-	KClient *kubernetes.Clientset
-	KConfig *rest.Config
-	Version string
+	KClient     *kubernetes.Clientset
+	KConfig     *rest.Config
+	Version     string
+	MasterNodes map[string]*nodeInfo
 
 	VulnConfigures []*threat
 	VulnContainers []*container
+}
+
+type nodeInfo struct {
+	Role     []string
+	IsMaster bool
 }
