@@ -163,9 +163,9 @@ Pods:
 |    | default | Status: Running |    | Privileged                     |                                |                       |          | container escape in privileged |
 |    | Node Name: docker-desktop      |                                |                                |                       |          | module.                        |
 +    +                                +--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
-|    |                                | sidecar name: vulntest |       | memory, cpu, ephemeral-storage | Pod                   | low      | None of resources is be        |
-|    |                                | Resource                       |                                |                       |          | limited.                       |
-|    |                                |                                |                                |                       |          |                                |
+|    |                                | sidecar name: vulntest |       | Token:Password123456           | Sidecar EnvFrom       | high     | Sidecar envFrom ConfigMap has  |
+|    |                                | env                            |                                |                       |          | found weak password:           |
+|    |                                |                                |                                |                       |          | 'Password123456'.              |
 +----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
 |  2 | Name: vulntest2 | Namespace:   | sidecar name: vulntest2 |      | CAP_SYS_ADMIN                  | capabilities.add      | critical | There has a potential          |
 |    | default | Status: Running |    | capabilities                   |                                |                       |          | container escape in privileged |
@@ -272,7 +272,7 @@ Configures:
 | ✔         | Istio configurations                                    | Istio has vulnerable version and vulnerable configurations.                | critical/high/medium/low |
 | ✔         | Kubelet 10255 and Kubectl proxy                         | 10255 port is opening or Kubectl proxy is opening.                         | high/medium/low          |
 | ✔         | Etcd configuration                                      | Etcd safe configuration checking.                                          | high/medium              |
-| ✔         | Sidecar configurations                                  | Sidecar has some dangerous configurations.                                 | critical/high/low        |
+| ✔         | Sidecar configurations                                  | Sidecar has some dangerous configurations.                                 | critical/high/medium/low |
 | Pending   | IaC scan                                                | IaC scan.                                                                  | -                        |
 
 

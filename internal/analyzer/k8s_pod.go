@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/kvesta/vesta/config"
@@ -98,13 +99,40 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func checkSidecarEnv(config v1.Container) (bool, []*threat) {
+func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
+	// Check Pod Env
 	for _, env := range config.Env {
 
 		needCheck := false
+
+		if env.ValueFrom != nil {
+			switch {
+			case env.ValueFrom.SecretKeyRef != nil:
+				secretRef := env.ValueFrom.SecretKeyRef
+				if ok, th := ks.checkSecretFromName(ns, secretRef.Key, secretRef.Name, env.Name); ok {
+					th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+
+					tlist = append(tlist, th)
+					vuln = true
+				}
+
+				continue
+
+			case env.ValueFrom.ConfigMapKeyRef != nil:
+				configRef := env.ValueFrom.ConfigMapKeyRef
+				if ok, th := ks.checkConfigFromName(ns, configRef.Name, configRef.Key, env.Name); ok {
+					th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+
+					tlist = append(tlist, th)
+					vuln = true
+				}
+
+				continue
+			}
+		}
 
 		for _, p := range passKey {
 			if p.MatchString(env.Name) && env.ValueFrom == nil {
@@ -142,6 +170,34 @@ func checkSidecarEnv(config v1.Container) (bool, []*threat) {
 			}
 		}
 
+	}
+
+	// Check pod envFrom
+	for _, envFrom := range config.EnvFrom {
+		switch {
+		case envFrom.ConfigMapRef != nil:
+			configRef := envFrom.ConfigMapRef
+			configReg := regexp.MustCompile(`ConfigMap Name: (.*)? Namespace: (.*)`)
+			if ok, th := ks.checkConfigVulnType(ns, configRef.Name, "ConfigMap", configReg); ok {
+				th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+				
+				tlist = append(tlist, th)
+				vuln = true
+			}
+
+		case envFrom.SecretRef != nil:
+			configRef := envFrom.SecretRef
+			configReg := regexp.MustCompile(`Secret Name: (.*)? Namespace: (.*)`)
+			if ok, th := ks.checkConfigVulnType(ns, configRef.Name, "Secret", configReg); ok {
+				th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+
+				tlist = append(tlist, th)
+				vuln = true
+			}
+
+		default:
+			//ignore
+		}
 	}
 
 	return vuln, tlist
@@ -294,4 +350,30 @@ func (ks KScanner) getRBACVulnType(ns string) RBACVuln {
 	rbv.ClusterRoleBinding = strings.Join(clusterNames, ", ")
 
 	return rbv
+}
+
+func (ks KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Regexp) (bool, *threat) {
+	var vuln = false
+	th := &threat{}
+
+	for _, t := range ks.VulnConfigures {
+
+		if t.Type != ty {
+			continue
+		}
+
+		configMatch := configReg.FindStringSubmatch(t.Param)
+		configName := strings.TrimSpace(configMatch[1])
+		namespace := strings.TrimSpace(configMatch[2])
+		if configName == name && namespace == ns {
+			th = t
+			th.Type = "Sidecar EnvFrom"
+			th.Describe = "Sidecar envFrom " + th.Describe
+
+			vuln = true
+			break
+		}
+	}
+
+	return vuln, th
 }

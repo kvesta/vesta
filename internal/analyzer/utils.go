@@ -17,6 +17,17 @@ var (
 		regexp.MustCompile(`(?i)token`),
 		regexp.MustCompile(`(?i)secret`),
 	}
+
+	dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
+		"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
+
+	dangerFullPaths = []string{"/", "/etc", "/proc", "proc/1", "/sys", "/root", "/var/log"}
+
+	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
+		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
+
+	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
+		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
 )
 
 func checkWeakPassword(pass string) string {
@@ -57,7 +68,7 @@ func checkWeakPassword(pass string) string {
 
 	if length <= 6 {
 		switch countCase {
-		case 4:
+		case 3, 4:
 			return "Medium"
 		default:
 			return "Weak"
