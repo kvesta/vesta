@@ -93,7 +93,7 @@ func (ks *KScanner) checkRoleBinding(ns string) error {
 					}
 
 					if strings.Contains(subName, "unauthenticated") {
-						
+
 						if th.Severity == "medium" {
 							th.Severity = "high"
 						}
@@ -504,6 +504,96 @@ func (ks *KScanner) checkSecret(ns string) error {
 	}
 
 	return nil
+}
+
+func (ks KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *threat) {
+	var vuln = false
+	th := &threat{}
+
+	ses, err := ks.KClient.
+		CoreV1().
+		Secrets(ns).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return vuln, th
+	}
+
+	for _, se := range ses.Items {
+		data := se.Data
+
+		if se.Name != seName {
+			continue
+		}
+
+		vuln, th = findEnvName[[]byte](data, key, envName, "secret")
+	}
+
+	return vuln, th
+}
+
+func (ks KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *threat) {
+	var vuln = false
+	th := &threat{}
+
+	ses, err := ks.KClient.
+		CoreV1().
+		ConfigMaps(ns).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return vuln, th
+	}
+
+	for _, se := range ses.Items {
+		data := se.Data
+
+		if se.Name != seName {
+			continue
+		}
+
+		vuln, th = findEnvName[string](data, key, envName, "configmap")
+	}
+
+	return vuln, th
+}
+
+func findEnvName[T []byte | string](data map[string]T, key, envName, tp string) (bool, *threat) {
+	var vuln = false
+	th := &threat{}
+
+	for k, v := range data {
+		if k != key {
+			continue
+		}
+
+		password := string(v)
+		switch checkWeakPassword(password) {
+		case "Weak":
+			th = &threat{
+				Value:    fmt.Sprintf("%s:%s", k, v),
+				Type:     fmt.Sprintf("Sidecar Env %s", tp),
+				Describe: fmt.Sprintf("Sidecar env '%s' has found weak password: '%s'.", envName, password),
+				Severity: "high",
+			}
+			vuln = true
+			break
+		case "Medium":
+			th = &threat{
+				Value: fmt.Sprintf("%s:%s", k, v),
+				Type:  fmt.Sprintf("Sidecar Env %s", tp),
+				Describe: fmt.Sprintf("Sidecar env '%s' has found password '%s' "+
+					"need to be reinforeced.", envName, password),
+				Severity: "medium",
+			}
+			vuln = true
+			break
+
+		default:
+			// ingore
+		}
+
+	}
+
+	return vuln, th
 }
 
 func RBACVulnTypeJudge(rules, resources []string) (string, string) {

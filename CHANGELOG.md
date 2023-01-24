@@ -1,6 +1,6 @@
 # 1.0.4 (2023.1.16)
 ## features
-- Add sidecar Environment Checking
+- Add sidecar Environment Checking, including `Env` and `EnvFrom`
 
 ## improvements
 - Change method of rpm analysis

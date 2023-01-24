@@ -121,7 +121,7 @@ func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 
 	fmt.Printf("\nConfigures:\n")
 	table = tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Typel", "Param", "Value",
+	table.SetHeader([]string{"ID", "Type", "Param", "Value",
 		"Severity", "Description"})
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{1})

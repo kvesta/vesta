@@ -220,7 +220,7 @@ func (ks *KScanner) checkPod(ns string) error {
 				vList = append(vList, tlist...)
 			}
 
-			if ok, tlist := checkSidecarEnv(sp); ok {
+			if ok, tlist := ks.checkSidecarEnv(sp, ns); ok {
 				vList = append(vList, tlist...)
 			}
 

@@ -13,17 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
-	"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
-
-var dangerFullPaths = []string{"/", "/etc", "/proc", "proc/1", "/sys", "/root", "/var/log"}
-
-var namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
-	"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
-
-var dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
-	"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
-
 func (s *Scanner) Analyze(ctx context.Context, inspectors []*types.ContainerJSON, images []*_image.ImageInfo) error {
 
 	err := s.checkDockerContext(ctx, images)
@@ -143,7 +132,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	log.Printf(config.Yellow("Begin Pods analyzing"))
 	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
 	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
-	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
 	log.Printf(config.Yellow("Begin RoleBinding analyzing"))
 
 	// Check configuration in namespace
@@ -155,16 +143,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 			log.Printf("check role binding failed in namespace: %s, %v", ns.(string), err)
 		}
 
-		err := ks.checkPod(ns.(string))
-		if err != nil {
-			log.Printf("check pod failed in namespace: %s, %v", ns.(string), err)
-		}
-
-		err = ks.checkJobsOrCornJob(ns.(string))
-		if err != nil {
-			log.Printf("check job failed in namespace: %s, %v", ns.(string), err)
-		}
-
 		err = ks.checkConfigMap(ns.(string))
 		if err != nil {
 			log.Printf("check config map failed in namespace: %s, %v", ns.(string), err)
@@ -173,6 +151,16 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		err = ks.checkSecret(ns.(string))
 		if err != nil {
 			log.Printf("check secret failed in namespace: %s, %v", ns.(string), err)
+		}
+
+		err := ks.checkPod(ns.(string))
+		if err != nil {
+			log.Printf("check pod failed in namespace: %s, %v", ns.(string), err)
+		}
+
+		err = ks.checkJobsOrCornJob(ns.(string))
+		if err != nil {
+			log.Printf("check job failed in namespace: %s, %v", ns.(string), err)
 		}
 
 	} else {
@@ -193,16 +181,6 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
 				}
 
-				err := ks.checkPod(ns.Name)
-				if err != nil {
-					log.Printf("check pod failed in namespace: %s, %v", ns.Name, err)
-				}
-
-				err = ks.checkJobsOrCornJob(ns.Name)
-				if err != nil {
-					log.Printf("check job failed in namespace: %s, %v", ns.Name, err)
-				}
-
 				err = ks.checkConfigMap(ns.Name)
 				if err != nil {
 					log.Printf("check config map failed in namespace: %s, %v", ns.Name, err)
@@ -211,6 +189,16 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 				err = ks.checkSecret(ns.Name)
 				if err != nil {
 					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
+				}
+
+				err := ks.checkPod(ns.Name)
+				if err != nil {
+					log.Printf("check pod failed in namespace: %s, %v", ns.Name, err)
+				}
+
+				err = ks.checkJobsOrCornJob(ns.Name)
+				if err != nil {
+					log.Printf("check job failed in namespace: %s, %v", ns.Name, err)
 				}
 
 			}
