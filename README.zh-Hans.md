@@ -240,7 +240,7 @@ Configures:
 | ✔         | Istio configurations                                    | Istio 存在漏洞版本以及安全配置检查                                            | critical/high/medium/low |
 | ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
 | ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
-| ✔         | Sidecar configurations                                  | Sidecar 安全配置检查以及Env环境检查                                         | critical/high/low        |              
+| ✔         | Sidecar configurations                                  | Sidecar 安全配置检查以及Env环境检查                                         | critical/high/medium/low |              
 | 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
 
 

@@ -51,7 +51,7 @@ func checkWeakPassword(pass string) string {
 	upperCase := regexp.MustCompile(`[A-Z]`)
 	upperMatch := upperCase.FindStringSubmatch(pass)
 	if len(upperMatch) > 0 {
-		countCase += 1
+		countCase += 2
 	}
 
 	numberCase := regexp.MustCompile(`[\d]`)
