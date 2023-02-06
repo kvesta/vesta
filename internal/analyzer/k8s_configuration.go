@@ -195,6 +195,11 @@ func (ks *KScanner) checkPod(ns string) error {
 			}
 		}
 
+		// Check pod annotations
+		if ok, tlist := checkPodAnnotation(pod.Annotations); ok {
+			vList = append(vList, tlist...)
+		}
+
 		for _, sp := range pod.Spec.Containers {
 
 			// Skip some sidecars

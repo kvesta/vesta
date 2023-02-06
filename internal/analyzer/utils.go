@@ -28,7 +28,17 @@ var (
 
 	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
 		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
+
+	unsafeAnnotations = map[string]AnType{
+		"sidecar.istio.io/proxyImage":          {component: "istio", level: "warning"},
+		"security.alpha.kubernetes.io/sysctls": {component: "k8s", level: "low"},
+	}
 )
+
+type AnType struct {
+	component string
+	level     string
+}
 
 func checkWeakPassword(pass string) string {
 	countCase := 0
@@ -51,7 +61,7 @@ func checkWeakPassword(pass string) string {
 	upperCase := regexp.MustCompile(`[A-Z]`)
 	upperMatch := upperCase.FindStringSubmatch(pass)
 	if len(upperMatch) > 0 {
-		countCase += 1
+		countCase += 2
 	}
 
 	numberCase := regexp.MustCompile(`[\d]`)

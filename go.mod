@@ -8,6 +8,7 @@ require (
 	github.com/knqyf263/go-rpmdb v0.0.0-20221030135625-4082a22221ce
 	github.com/mattn/go-sqlite3 v1.14.15
 	github.com/microsoft/go-rustaudit v0.0.0-20220808201409-204dfee52032
+	github.com/sergi/go-diff v1.3.1
 	github.com/spf13/cobra v1.5.0
 	github.com/tidwall/gjson v1.14.1
 	k8s.io/apimachinery v0.22.5

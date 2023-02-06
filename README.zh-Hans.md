@@ -38,6 +38,57 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 
 ---
 
+## 检查项
+
+`vest scan`扫描内容项
+- 已知的CVE漏洞
+- 混淆的第三方恶意包 （目前仅支持pip检测）
+  <br/><br/>
+> Docker检查
+
+| Supported | Check Item                | Description                      | Severity                 |
+|-----------|---------------------------|----------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed          | 危险的特权模式                          | critical                 |
+| ✔         | Capabilities              | 危险capabilities被设置                | critical                 |
+| ✔         | Volume Mount              | 敏感或危险目录被挂载                       | critical                 |
+| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                    | critical                 |
+| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                     | critical                 |
+| ✔         | Network Module            | Net模式为`host`模式并且在特定containerd版本下 | critical                 |
+| ✔         | Docker Server version     | Docker Server版本存在漏洞              | critical/high/medium/low |
+| ✔         | Docker env password check | Docker env是否存在弱密码                | high/medium              |
+| ✔         | Image tag check           | Image没有被打tag或为默认latest           | low                      |
+| ✔         | Docker history            | Docker layers 存在不安全的命令           | high/medium              |
+| 待定        | IaC scan                  | IaC 扫描                           | -                        |
+
+---
+
+> Kubernetes检查
+
+
+| Supported | Check Item                                               | Description                                                     | Severity                 |
+|-----------|----------------------------------------------------------|-----------------------------------------------------------------|--------------------------|
+| ✔         | PrivilegeAllowed                                         | 危险的特权模式                                                         | critical                 |
+| ✔         | Capabilities                                             | 危险capabilities被设置                                               | critical                 |
+| ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
+| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium/low/warning  |
+| ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
+| ✔         | Kernel version                                           | 当前内核版本存在逃逸漏洞                                                    | critical                 |
+| ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                                             | critical/high/medium/low |
+| ✔         | Kubernetes certification expiration                      | 证书到期时间小于30天                                                     | medium                   |
+| ✔         | ConfigMap and Secret check                               | ConfigMap 或者 Secret是否存在弱密码                                      | high/medium              |
+| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | critical/high/medium/low |
+| ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
+| ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
+| ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
+| ✔        | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low |
+| ✔         | Istio configurations                                     | Istio 存在漏洞版本以及安全配置检查                                            | critical/high/medium/low |
+| ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
+| ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
+| ✔         | Sidecar configurations                                   | Sidecar 安全配置检查以及Env环境检查                                         | critical/high/medium/low |              
+| ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                                          | high/medium/low/warning  |
+| 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
+
+
 ## 编译并使用vesta
 
 1. 编译vesta
@@ -197,52 +248,6 @@ Configures:
 +----+-----------------------------+--------------------------------+--------------------------------------------------------+----------+--------------------------------+
 ```
 
-## 检查项
-
-> Docker检查
-
-
-| Supported | Check Item                | Description                      | Severity                 |
-|-----------|---------------------------|----------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed          | 危险的特权模式                          | critical                 |
-| ✔         | Capabilities              | 危险capabilities被设置                | critical                 |
-| ✔         | Volume Mount              | 敏感或危险目录被挂载                       | critical                 |
-| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                    | critical                 |
-| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                     | critical                 |
-| ✔         | Network Module            | Net模式为`host`模式并且在特定containerd版本下 | critical                 |
-| ✔         | Docker Server version     | Docker Server版本存在漏洞              | critical/high/medium/low |
-| ✔         | Docker env password check | Docker env是否存在弱密码                | high/medium              |
-| ✔         | Image tag check           | Image没有被打tag或为默认latest           | low                      |
-| ✔         | Docker history            | Docker layers 存在不安全的命令           | high/medium              |
-| 待定        | IaC scan                  | IaC 扫描                           | -                        |
-
----
-
-> Kubernetes检查
-
-
-| Supported | Check Item                                               | Description                                                     | Severity                 |
-|-----------|----------------------------------------------------------|-----------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed                                         | 危险的特权模式                                                         | critical                 |
-| ✔         | Capabilities                                             | 危险capabilities被设置                                               | critical                 |
-| ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                                          | critical/medium          |
-| ✔         | RBAC                                                     | K8s 权限存在危险配置                                                    | high/medium/low/warning  |
-| ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限                        | critical/high/low        |
-| ✔         | Kernel version (k8s versions is less than v1.24)         | 当前内核版本存在逃逸漏洞                                                    | critical                 |
-| ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                                             | critical/high/medium/low |
-| ✔         | Kubernetes certification expiration                      | 证书到期时间小于30天                                                     | medium                   |
-| ✔         | ConfigMap and Secret check                               | ConfigMap 或者 Secret是否存在弱密码                                      | high/medium              |
-| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | critical/high/medium/low |
-| ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
-| ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
-| ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
-| ✔        | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low |
-| ✔         | Istio configurations                                    | Istio 存在漏洞版本以及安全配置检查                                            | critical/high/medium/low |
-| ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
-| ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
-| ✔         | Sidecar configurations                                  | Sidecar 安全配置检查以及Env环境检查                                         | critical/high/low        |              
-| 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
-
 
 ## 使用方法
 
@@ -259,7 +264,7 @@ Available Commands:
   completion  Generate the autocompletion script for the specified shell
   help        Help about any command
   scan        Container scan
-  upgrade     Upgrade vulnerability database
+  update      Update vulnerability database
   version     Print version information and quit
 
 Flags:

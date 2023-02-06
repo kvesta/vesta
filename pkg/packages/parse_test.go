@@ -54,7 +54,7 @@ func TestParseGo(t *testing.T) {
 
 func TestParseJava(t *testing.T) {
 	type args struct {
-		r io.ReaderAt
+		rt io.ReaderAt
 	}
 
 	f, _ := os.Open("testdata/test.jar")
@@ -88,13 +88,13 @@ func TestParseJava(t *testing.T) {
 	}{
 		{
 			name: "parseJavaTest",
-			args: args{r: f},
+			args: args{rt: f},
 			want: javaResult,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getJavaPacks(tt.args.r, fi.Size())
+			got, err := getJavaPacks(tt.args.rt, fi.Size())
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseJava() error = %v, wantErr %v", err, tt.wantErr)

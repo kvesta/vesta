@@ -18,11 +18,11 @@ type GOBIN struct {
 	Deps []*MOD `json:"deps"`
 }
 
-func getGOPacks(r io.ReaderAt) (*GOBIN, error) {
+func getGOPacks(rt io.ReaderAt) (*GOBIN, error) {
 	gobin := &GOBIN{}
 	mods := []*MOD{}
 
-	info, err := buildinfo.Read(r)
+	info, err := buildinfo.Read(rt)
 	if err != nil {
 		return gobin, err
 	}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/layer"
+	"github.com/kvesta/vesta/pkg/match"
 	"github.com/kvesta/vesta/pkg/packages"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 
@@ -272,6 +273,30 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 
 				sortSeverity(vs)
 				pyVuln = append(pyVuln, vs...)
+			}
+
+			if sus := match.PyMatch(m.Name); sus.Types != 0 {
+				vuln := &vulnComponent{
+					Name:           fmt.Sprintf("%s - %s", py.Version, m.Name),
+					Level:          "high",
+					CorrectVersion: m.Version,
+				}
+				switch sus.Types {
+				case 1:
+					vuln.Level = "medium"
+					vuln.Score = 7.5
+					vuln.Desc = fmt.Sprintf("Suspicious malicious package, "+
+						"compared name: %s", sus.OriginPack)
+				case 2:
+					vuln.Level = "high"
+					vuln.Score = 8.5
+					vuln.Desc = fmt.Sprintf("Detect the pypi malware,"+
+						"origin package name is: %s", sus.OriginPack)
+				default:
+					// ignore
+				}
+
+				pyVuln = append(pyVuln, vuln)
 			}
 
 		}

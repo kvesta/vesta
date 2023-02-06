@@ -561,8 +561,26 @@ func findEnvName[T []byte | string](data map[string]T, key, envName, tp string) 
 	th := &threat{}
 
 	for k, v := range data {
+
 		if k != key {
 			continue
+		}
+
+		// Skip the username
+		userReg := regexp.MustCompile(`(?i)user`)
+		if userReg.MatchString(k) {
+			skipCheck := true
+
+			for _, reg := range passKey {
+				if reg.MatchString(k) {
+					skipCheck = false
+					break
+				}
+			}
+
+			if skipCheck {
+				continue
+			}
 		}
 
 		password := string(v)
@@ -571,7 +589,7 @@ func findEnvName[T []byte | string](data map[string]T, key, envName, tp string) 
 			th = &threat{
 				Value:    fmt.Sprintf("%s:%s", k, v),
 				Type:     fmt.Sprintf("Sidecar Env %s", tp),
-				Describe: fmt.Sprintf("Sidecar env '%s' has found weak password: '%s'.", envName, password),
+				Describe: fmt.Sprintf("Sidecar env '%s' has found weak key: '%s'.", envName, password),
 				Severity: "high",
 			}
 			vuln = true
@@ -580,7 +598,7 @@ func findEnvName[T []byte | string](data map[string]T, key, envName, tp string) 
 			th = &threat{
 				Value: fmt.Sprintf("%s:%s", k, v),
 				Type:  fmt.Sprintf("Sidecar Env %s", tp),
-				Describe: fmt.Sprintf("Sidecar env '%s' has found password '%s' "+
+				Describe: fmt.Sprintf("Sidecar env '%s' has found key '%s' "+
 					"need to be reinforeced.", envName, password),
 				Severity: "medium",
 			}

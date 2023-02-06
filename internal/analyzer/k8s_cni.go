@@ -192,7 +192,10 @@ func (ks KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 	tlist := []*threat{}
 
 	// Get istio deployment
-	dp, err := ks.KClient.AppsV1().Deployments("istio-system").Get(context.Background(), "istiod", metav1.GetOptions{})
+	dp, err := ks.KClient.
+		AppsV1().
+		Deployments("istio-system").
+		Get(context.Background(), "istiod", metav1.GetOptions{})
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return vuln, tlist
@@ -321,7 +324,10 @@ func (ks KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
 	tlist := []*threat{}
 
 	// Get cilium deployment
-	dp, err := ks.KClient.AppsV1().Deployments("kube-system").Get(context.Background(), "cilium-operator", metav1.GetOptions{})
+	dp, err := ks.KClient.
+		AppsV1().
+		Deployments("kube-system").
+		Get(context.Background(), "cilium-operator", metav1.GetOptions{})
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			return vuln, tlist
