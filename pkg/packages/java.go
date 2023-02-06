@@ -32,11 +32,11 @@ var (
 	numberReg = regexp.MustCompile(`(\d+\.)?(\d+\.)?(\*|\d+)`)
 )
 
-func getJavaPacks(r io.ReaderAt, size int64) (*JAVA, error) {
+func getJavaPacks(rt io.ReaderAt, size int64) (*JAVA, error) {
 	java := &JAVA{}
 	jars := []*Jar{}
 
-	jar, err := zip.NewReader(r, size)
+	jar, err := zip.NewReader(rt, size)
 	if err != nil {
 		return java, err
 	}

@@ -17,6 +17,8 @@ import (
 
 	"github.com/docker/docker/client"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -169,6 +171,8 @@ func DoInspectInKubernetes(ctx context.Context) {
 	log.Printf(config.Green("Start analysing"))
 
 	var kubeconfig string
+	var kconfig *restclient.Config
+	var err error
 
 	if ctx.Value("kubeconfig") != "default" {
 		kubeconfig = ctx.Value("kubeconfig").(string)
@@ -180,7 +184,12 @@ func DoInspectInKubernetes(ctx context.Context) {
 	}
 
 	// use the current context in kubeconfig
-	kconfig, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if ctx.Value("inside").(bool) {
+		kconfig, err = rest.InClusterConfig()
+	} else {
+		kconfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+
 	if err != nil {
 		log.Printf("Can not initialize kubernetes environment, error: %v", err)
 		return

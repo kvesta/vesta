@@ -17,11 +17,11 @@ type Cargo struct {
 	Version string `json:"version"`
 }
 
-func getRustPacks(r io.ReaderAt) (*Rust, error) {
+func getRustPacks(rt io.ReaderAt) (*Rust, error) {
 	rust := &Rust{}
 	deps := []*Cargo{}
 
-	audit, err := rustaudit.GetDependencyInfo(r)
+	audit, err := rustaudit.GetDependencyInfo(rt)
 	if err != nil {
 		return rust, err
 	}

@@ -1,11 +1,14 @@
 # 1.0.4 (2023.1.16)
 ## features
 - Add sidecar Environment Checking, including `Env` and `EnvFrom`
+- Add pip name checking, detect whether package is potential malware
+- Add pod annotation checking
 
 ## improvements
 - Change method of rpm analysis
 - Change folder structure
 - Change method of kernel version checking
+- Change command `upgrade` to `update`
 
 # 1.0.3 (2023.1.3)
 ## features

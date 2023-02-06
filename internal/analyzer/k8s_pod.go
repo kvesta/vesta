@@ -180,7 +180,7 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 			configReg := regexp.MustCompile(`ConfigMap Name: (.*)? Namespace: (.*)`)
 			if ok, th := ks.checkConfigVulnType(ns, configRef.Name, "ConfigMap", configReg); ok {
 				th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
-				
+
 				tlist = append(tlist, th)
 				vuln = true
 			}
@@ -300,6 +300,32 @@ func checkPodAccountService(config v1.Container, rv RBACVuln) (bool, []*threat) 
 
 			tlist = append(tlist, th)
 			vuln = true
+		}
+	}
+
+	return vuln, tlist
+}
+
+func checkPodAnnotation(ans map[string]string) (bool, []*threat) {
+	var vuln = false
+	tlist := []*threat{}
+
+	for k, v := range ans {
+		for n, t := range unsafeAnnotations {
+			if k == n {
+
+				th := &threat{
+					Param: fmt.Sprintf("pod annotation"),
+					Value: fmt.Sprintf("%s: %s", k, v),
+					Type:  "Pod Annotation",
+					Describe: fmt.Sprintf("Pod Annotation has some unsafe configs from %s"+
+						" and value is `%s`.", t.component, v),
+					Severity: t.level,
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+			}
 		}
 	}
 
