@@ -29,7 +29,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 Scan (what `vesta scan` can detect)
 - Known vulnerabilities (CVEs)
-- Malicious packages (Pip only yet)
+- Malicious packages
   <br/><br/>
 > Docker
 

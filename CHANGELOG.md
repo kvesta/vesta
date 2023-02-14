@@ -1,3 +1,9 @@
+# 1.0.5 (2023.2.13)
+## improvements
+- Add other language of package checking
+- Change the minimum of downloaded vulnerable data year from 2002 to 2010
+- Add Python pip analysis from poetry and venv
+
 # 1.0.4 (2023.1.16)
 ## features
 - Add sidecar Environment Checking, including `Env` and `EnvFrom`

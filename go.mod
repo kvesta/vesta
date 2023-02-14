@@ -3,6 +3,7 @@ module github.com/kvesta/vesta
 go 1.18
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/knqyf263/go-rpmdb v0.0.0-20221030135625-4082a22221ce
@@ -36,6 +37,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect

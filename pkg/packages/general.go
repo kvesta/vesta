@@ -36,7 +36,22 @@ func (s *Packages) Traverse(ctx context.Context) error {
 					wordpress.Path = path
 					s.PHPPacks = append(s.PHPPacks, wordpress)
 				}
+			}
 
+			// Check python virtual environment
+			if filepath.Base(path) == "site-packages" && !strings.HasPrefix(path, "usr/local/lib") {
+				sitePath := filepath.Join(m.Localpath, path)
+				pips, err := getLocalPythonPacks(sitePath)
+				if err != nil {
+					return err
+				}
+
+				py := &Python{
+					Version:    fmt.Sprintf("python venv path: %s", path),
+					SitePackes: pips,
+				}
+
+				s.PythonPacks = append(s.PythonPacks, py)
 			}
 
 			// Check special path /var/www/html
@@ -50,18 +65,6 @@ func (s *Packages) Traverse(ctx context.Context) error {
 					}
 					wordpress.Path = path
 					s.PHPPacks = append(s.PHPPacks, wordpress)
-				case "py":
-					pips, err := getLocalPythonPacks(dirPath)
-					if err != nil {
-						return err
-					}
-
-					py := &Python{
-						Version:    fmt.Sprintf("python location: %s", path),
-						SitePackes: pips,
-					}
-
-					s.PythonPacks = append(s.PythonPacks, py)
 				default:
 					// ignore
 				}
@@ -130,6 +133,17 @@ func (s *Packages) Traverse(ctx context.Context) error {
 
 		}
 
+		// Parse package management of Python poetry
+		if strings.HasSuffix(path, "pyproject.toml") {
+			filename := filepath.Join(m.Localpath, path)
+			py, err := getPyproject(filename)
+			if err != nil {
+				return nil
+			}
+
+			s.PythonPacks = append(s.PythonPacks, py)
+		}
+
 		in, err := d.Info()
 		if err != nil {
 			return nil
@@ -176,7 +190,6 @@ func (s *Packages) Traverse(ctx context.Context) error {
 func getHTMLType(path string) string {
 	extensions := map[string]int{
 		"php": 0,
-		"py":  0,
 		"js":  0,
 	}
 

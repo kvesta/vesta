@@ -12,10 +12,11 @@ import (
 
 var (
 	passKey = []*regexp.Regexp{
-		regexp.MustCompile(`(?i)password`),
+		regexp.MustCompile(`(?i)pass`),
 		regexp.MustCompile(`(?i)pwd`),
 		regexp.MustCompile(`(?i)token`),
 		regexp.MustCompile(`(?i)secret`),
+		regexp.MustCompile(`(?i)key`),
 	}
 
 	dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",

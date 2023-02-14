@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/BurntSushi/toml"
 )
 
 var (
@@ -75,6 +77,43 @@ func getPIPModules(path string) ([]*PIP, error) {
 	return pips, nil
 }
 
+// getPyproject from pyproject.toml
+func getPyproject(filename string) (*Python, error) {
+	py := &Python{}
+	pips := []*PIP{}
+
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return py, err
+	}
+
+	var config map[string]interface{}
+
+	_, err = toml.Decode(string(data), &config)
+	if err != nil {
+		return py, err
+	}
+
+	libs := config["tool"].(map[string]interface{})["poetry"].(map[string]interface{})["dependencies"].(map[string]interface{})
+	for name, version := range libs {
+		if name == "python" {
+			py.Version = strings.TrimPrefix(version.(string), "^")
+			continue
+		}
+
+		pip := &PIP{
+			Name:    name,
+			Version: strings.TrimPrefix(version.(string), "^"),
+		}
+
+		pips = append(pips, pip)
+	}
+
+	py.SitePackes = pips
+
+	return py, nil
+}
+
 // getLocalPythonPacks for command `pip install packs -t <path>`
 func getLocalPythonPacks(path string) ([]*PIP, error) {
 	pips := []*PIP{}
@@ -90,6 +129,7 @@ func getLocalPythonPacks(path string) ([]*PIP, error) {
 			p := parse(f.Name())
 			pips = append(pips, p)
 		}
+
 	}
 
 	return pips, nil
