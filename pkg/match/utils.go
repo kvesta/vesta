@@ -1,6 +1,8 @@
 package match
 
 import (
+	"strings"
+
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -36,4 +38,16 @@ func compare(pack1, pack2 string) float64 {
 	}
 
 	return 1.0
+}
+
+func confusionCheck(pack string, datas []string) string {
+	for _, d := range datas {
+		d = strings.ToLower(d)
+		ratio := compare(pack, d)
+		d = strings.ToLower(d)
+		if ratio < 0.99 && ratio > 0.70 {
+			return d
+		}
+	}
+	return ""
 }

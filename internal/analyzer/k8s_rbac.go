@@ -620,7 +620,7 @@ func RBACVulnTypeJudge(rules, resources []string) (string, string) {
 
 	dangerResources := []string{"pods", "deployments", "statefulsets",
 		"serviceaccounts"}
-	dangerRules := []string{"create", "update", "patch", "delete"}
+	dangerRules := []string{"create", "update", "patch", "delete", "impersonate"}
 	sensitiveResources := []string{"secrets", "configmaps"}
 
 	secretLeakage := false

@@ -260,26 +260,26 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 
 	for _, py := range pys {
 
-		for _, m := range py.SitePackes {
-			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(m.Name))
+		for _, si := range py.SitePackes {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(si.Name))
 			if err != nil {
 				continue
 			}
 
-			if vs, vuln := compareVersion(rows, m.Version, []string{"*", "python"}); vuln {
+			if vs, vuln := compareVersion(rows, si.Version, []string{"*", "python"}); vuln {
 				for _, v := range vs {
-					v.Name = fmt.Sprintf("%s - %s", py.Version, m.Name)
+					v.Name = fmt.Sprintf("%s - %s", py.Version, si.Name)
 				}
 
 				sortSeverity(vs)
 				pyVuln = append(pyVuln, vs...)
 			}
 
-			if sus := match.PyMatch(m.Name); sus.Types != 0 {
+			if sus := match.PyMatch(si.Name); sus.Types != 0 {
 				vuln := &vulnComponent{
-					Name:           fmt.Sprintf("%s - %s", py.Version, m.Name),
+					Name:           fmt.Sprintf("%s - %s", py.Version, si.Name),
 					Level:          "high",
-					CorrectVersion: m.Version,
+					CorrectVersion: si.Version,
 				}
 				switch sus.Types {
 				case 1:
@@ -325,6 +325,30 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 
 				sortSeverity(vs)
 				npmVuln = append(npmVuln, vs...)
+			}
+
+			if sus := match.NpmMatch(npm.Name); sus.Types != 0 {
+				vuln := &vulnComponent{
+					Name:           fmt.Sprintf("%s - %s", npm.Version, npm.Name),
+					Level:          "high",
+					CorrectVersion: npm.Version,
+				}
+				switch sus.Types {
+				case 1:
+					vuln.Level = "medium"
+					vuln.Score = 7.5
+					vuln.Desc = fmt.Sprintf("Suspicious malicious package, "+
+						"compared name: %s", sus.OriginPack)
+				case 2:
+					vuln.Level = "high"
+					vuln.Score = 8.5
+					vuln.Desc = fmt.Sprintf("Detect the pypi malware,"+
+						"origin package name is: %s", sus.OriginPack)
+				default:
+					// ignore
+				}
+
+				npmVuln = append(npmVuln, vuln)
 			}
 		}
 

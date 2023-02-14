@@ -21,7 +21,7 @@ import (
 const (
 	cvssUrl = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-%d.json.gz"
 
-	firstYear = 2002
+	firstYear = 2010
 )
 
 func (c *Client) GetCvss(ctx context.Context) error {
@@ -36,7 +36,7 @@ func (c *Client) GetCvss(ctx context.Context) error {
 		filename := filepath.Join(c.Store, fmt.Sprintf("nvdcve-1.1-%d.json", y))
 
 		if exists(filename) {
-			log.Printf("cvss nvdcve-1.1-%d.json existed", y)
+			//log.Printf("cvss nvdcve-1.1-%d.json existed", y)
 			continue
 		}
 
@@ -54,6 +54,7 @@ func (c *Client) GetCvss(ctx context.Context) error {
 
 		gz, err := gzip.NewReader(res.Body)
 		if err != nil {
+			res.Body.Close()
 			continue
 		}
 
