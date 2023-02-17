@@ -3,9 +3,10 @@ package match
 import "strings"
 
 var (
-	npms = []string{"pug", "axios", "typescript", "mongodb", "lodash", "Mongoose", "redux",
+	npms = []string{"pug", "axios", "typescript", "mongodb", "lodash", "Mongoose", "redux", "osenv",
 		"jest", "qs", "rxjs", "fs-extra", "ua-parser-js", "koa", "express", "d3", "express", "http-proxy",
-		"Fastify", "socket.io", "dotenv", "async", "mssql", "cross-env", "redis", "nedb", "fusion"}
+		"Fastify", "socket.io", "dotenv", "async", "mssql", "cross-env", "redis", "nedb", "fusion", "asynckit",
+		"run-async", "core-js"}
 )
 
 func NpmMatch(pack string) Suspicion {

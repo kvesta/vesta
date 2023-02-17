@@ -329,7 +329,7 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 
 			if sus := match.NpmMatch(npm.Name); sus.Types != 0 {
 				vuln := &vulnComponent{
-					Name:           fmt.Sprintf("%s - %s", npm.Version, npm.Name),
+					Name:           fmt.Sprintf("%s - %s", node.Version, npm.Name),
 					Level:          "high",
 					CorrectVersion: npm.Version,
 				}

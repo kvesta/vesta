@@ -20,6 +20,7 @@ func (s *Scanner) Analyze(ctx context.Context, inspectors []*types.ContainerJSON
 		log.Printf("failed to check docker context, error: %v", err)
 	}
 
+	log.Printf(config.Yellow("Begin container analyzing"))
 	for _, in := range inspectors {
 		err := s.checkDockerList(in)
 		if err != nil {

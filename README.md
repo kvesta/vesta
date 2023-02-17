@@ -25,12 +25,22 @@ cluster pods, and containers with safe practices.
 <br/>
 Vesta is a flexible toolkit which can run on physical machines in different types of systems (Windows, Linux, MacOS).
 
-## Checklist
+## What can vesta check
 
-Scan (what `vesta scan` can detect)
-- Known vulnerabilities (CVEs)
-- Malicious packages
-  <br/><br/>
+> Scan
+- Scan the vulnerabilities of major package managements
+  - apt/apt-get
+  - rpm
+  - yum
+  - dpkg
+- Scan malicious packages and vulnerabilities of language-specific packages
+  - Java(Jar, War)
+  - NodeJs(NPM, YARN)
+  - Python(Wheel, Poetry)
+  - Golang(Go binary)
+  - PHP(Composer)
+  - Rust(Rust binary)
+
 > Docker
 
 | Supported | Check Item                | Description                                                              | Severity                 |
