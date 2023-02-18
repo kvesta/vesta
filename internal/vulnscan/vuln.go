@@ -3,7 +3,10 @@ package vulnscan
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/kvesta/vesta/config"
@@ -33,7 +36,7 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check package's version")
 	}
 
-	err = ps.checkPythonModule(ctx, p.PythonPacks)
+	err = ps.checkPythonModule(ctx, p.PythonPacks, m)
 	if err != nil {
 		log.Printf("failed to check python module")
 	}
@@ -254,13 +257,64 @@ func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCo
 	return vulns, isVulnerable
 }
 
-func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python) error {
+func listPythonSitePack(sitePath string) []string {
+	targetPaths := []string{}
+
+	fsys := os.DirFS(sitePath)
+
+	if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir():
+			return nil
+		}
+
+		if filepath.Base(path) == "setup.py" || filepath.Base(path) == "__init__.py" {
+			targetPaths = append(targetPaths, path)
+		}
+		return nil
+
+	}); err != nil {
+		return targetPaths
+	}
+
+	return targetPaths
+}
+
+func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python, m *layer.Manifest) error {
 
 	pyVuln := []*vulnComponent{}
 
 	for _, py := range pys {
 
-		for _, si := range py.SitePackes {
+		for _, si := range py.SitePacks {
+			// Get setup.py of python package
+
+			sites := filepath.Join(m.Localpath, py.SitePath, si.Name)
+			if py.SitePath == "poetry" {
+				goto checkVersion
+			}
+			for _, p := range listPythonSitePack(sites) {
+				filename := filepath.Join(sites, p)
+				if sus := match.PyMalwareScan(filename); sus.Types != 0 {
+					vuln := &vulnComponent{
+						Name:           fmt.Sprintf("%s - %s", py.Version, si.Name),
+						Level:          "high",
+						Score:          8.5,
+						CorrectVersion: si.Version,
+						Desc: fmt.Sprintf("Malicious package is detected in '%s', "+
+							"%s", strings.TrimPrefix(filename, m.Localpath),
+							sus.OriginPack),
+					}
+
+					pyVuln = append(pyVuln, vuln)
+
+					goto checkVersion
+				}
+			}
+
+		checkVersion:
 			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(si.Name))
 			if err != nil {
 				continue
@@ -278,18 +332,15 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 			if sus := match.PyMatch(si.Name); sus.Types != 0 {
 				vuln := &vulnComponent{
 					Name:           fmt.Sprintf("%s - %s", py.Version, si.Name),
-					Level:          "high",
+					Level:          "medium",
+					Score:          7.5,
 					CorrectVersion: si.Version,
 				}
 				switch sus.Types {
 				case 1:
-					vuln.Level = "medium"
-					vuln.Score = 7.5
 					vuln.Desc = fmt.Sprintf("Suspicious malicious package, "+
 						"compared name: %s", sus.OriginPack)
 				case 2:
-					vuln.Level = "high"
-					vuln.Score = 8.5
 					vuln.Desc = fmt.Sprintf("Detect the pypi malware,"+
 						"origin package name is: %s", sus.OriginPack)
 				default:
@@ -329,7 +380,7 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 
 			if sus := match.NpmMatch(npm.Name); sus.Types != 0 {
 				vuln := &vulnComponent{
-					Name:           fmt.Sprintf("%s - %s", npm.Version, npm.Name),
+					Name:           fmt.Sprintf("%s - %s", node.Version, npm.Name),
 					Level:          "high",
 					CorrectVersion: npm.Version,
 				}

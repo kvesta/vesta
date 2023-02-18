@@ -94,7 +94,6 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []*_image.Image
 }
 
 func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
-	log.Printf(_config.Yellow("Begin privileged and capabilities analyzing"))
 
 	var vuln = false
 	var capList string
@@ -144,7 +143,6 @@ func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
 }
 
 func checkMount(config *types.ContainerJSON) (bool, []*threat) {
-	log.Printf(_config.Yellow("Begin mount analyzing"))
 
 	var vuln = false
 

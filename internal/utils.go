@@ -60,7 +60,7 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		log.Printf("package error %v", err)
 	}
 
-	go func() {
+	defer func() {
 		if len(tarIO) > 0 {
 			for _, f := range tarIO {
 				f.Close()

