@@ -1,6 +1,7 @@
 package match
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -12,7 +13,7 @@ var (
 		"Scrapy", "scipy", "scapy", "Twisted", "torch", "torchvision", "pandas", "pastas", "algoliasearch", "tornado",
 		"pypcap", "semidbm", "signalfx", "cassandra-driver", "ShopifyAPI", "zoomeye", "osc", "PyPtt", "flake8", "opencv-python",
 		"distributed", "virtualenv", "selenium", "bs4", "beautifulsoup4", "lxml", "pylint", "pywin32", "web3", "pyebpf",
-		"matplotlib", "pytest"}
+		"matplotlib", "pytest", "paramiko"}
 
 	maliciousPypis = map[string]string{
 		"smi":          "pysmi",
@@ -73,27 +74,53 @@ func malwareCheck(pack string) string {
 
 // PyMalwareScan the malicious packages from pip
 // reference: https://github.com/DataDog/guarddog
-func PyMalwareScan(filename string) string {
+func PyMalwareScan(filename string) Suspicion {
+	t := Suspicion{
+		Types: Unknown,
+	}
+
 	f, err := os.Open(filename)
 	if err != nil {
-		return ""
+		return t
 	}
 
 	defer f.Close()
 
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
-		return ""
+		return t
 	}
 
-	if url := pyCheckLink(string(data)); url != "" {
-		return url
+	d := []string{}
+
+	doubleQuotesMatch := pyDoubleQuoteRex.FindAllStringSubmatch(string(data), -1)
+	singleQuotesMatch := pySingleQuoteRex.FindAllStringSubmatch(string(data), -1)
+
+	for _, q := range doubleQuotesMatch {
+		d = append(d, q[1])
+	}
+	for _, q := range singleQuotesMatch {
+		d = append(d, q[1])
 	}
 
-	return ""
+	if url := pyCheckLink(d); url != "" {
+		t.Types = Malware
+		t.OriginPack = fmt.Sprintf("suspcious url '%s' are detected.", url)
+
+		return t
+	}
+
+	if command := pyCheckCommand(d, string(data)); command != "" {
+		t.Types = Malware
+		t.OriginPack = fmt.Sprintf(`malicious command "%s" are detected.`, command)
+
+		return t
+	}
+
+	return t
 }
 
-func pyCheckLink(data string) string {
+func pyCheckLink(d []string) string {
 
 	httpRegex := []*regexp.Regexp{
 		regexp.MustCompile(`(http[s]?:\/\/bit\.ly.*)$`),
@@ -101,27 +128,45 @@ func pyCheckLink(data string) string {
 		regexp.MustCompile(`(http[s]?:\/\/.*\.(link|xyz|tk|ml|ga|cf|gq|pw|top|club|mw|bd|ke|am|sbs|date|quest|cd|bid|cd|ws|icu|cam|uno|email|stream)\/)`),
 	}
 
-	urlCheck := func(match [][]string) string {
-		for _, u := range match {
-			for _, reg := range httpRegex {
-				httpMatch := reg.FindStringSubmatch(u[1])
-				if len(httpMatch) > 0 {
-					return httpMatch[1]
-				}
+	for _, l := range d {
+		for _, reg := range httpRegex {
+			httpMatch := reg.FindStringSubmatch(l)
+			if len(httpMatch) > 0 {
+				return httpMatch[1]
 			}
 		}
-		return ""
+	}
+	return ""
+
+}
+
+func pyCheckCommand(d []string, data string) string {
+	execRegex := []*regexp.Regexp{
+		regexp.MustCompile(`os.system\((.*)\)`),
+		regexp.MustCompile(`exec\((.*)\)`),
+		regexp.MustCompile(`os.popen\((.*)\)`),
+		regexp.MustCompile(`eval\((.*)\)`),
+		regexp.MustCompile(`subprocess.Popen\((.*)$,.*\)`),
 	}
 
-	urlDoubleMatch := pyDoubleQuoteRex.FindAllStringSubmatch(data, -1)
-	urlSingleMatch := pySingleQuoteRex.FindAllStringSubmatch(data, -1)
-
-	if url := urlCheck(urlDoubleMatch); url != "" {
-		return url
+	for _, l := range d {
+		// Plain test checking
+		if strings.Contains(l, "powershell") || strings.Contains(l, "/dev/tcp/") ||
+			(strings.Contains(l, "curl") || strings.Contains(l, "wget") && strings.Contains(l, "bash")) {
+			return l
+		}
 	}
 
-	if url := urlCheck(urlSingleMatch); url != "" {
-		return url
+	for _, reg := range execRegex {
+		regMatch := reg.FindStringSubmatch(data)
+		if len(regMatch) < 2 {
+			continue
+		}
+
+		if len(regMatch[1]) > 30 {
+			return regMatch[0]
+		}
+
 	}
 
 	return ""

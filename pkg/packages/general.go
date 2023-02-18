@@ -38,8 +38,9 @@ func (s *Packages) Traverse(ctx context.Context) error {
 				}
 			}
 
-			// Check python virtual environment
-			if filepath.Base(path) == "site-packages" && !strings.HasPrefix(path, "usr/local/lib") {
+			// Check python virtual environment and exclude poetry
+			if filepath.Base(path) == "site-packages" &&
+				!strings.HasPrefix(path, "usr/local/lib") && !strings.Contains(path, "pypoetry") {
 				sitePath := filepath.Join(m.Localpath, path)
 				pips, err := getLocalPythonPacks(sitePath)
 				if err != nil {
@@ -47,8 +48,9 @@ func (s *Packages) Traverse(ctx context.Context) error {
 				}
 
 				py := &Python{
-					Version:    fmt.Sprintf("python venv path: %s", path),
-					SitePackes: pips,
+					Version:   fmt.Sprintf("python venv path: %s", path),
+					SitePacks: pips,
+					SitePath:  path,
 				}
 
 				s.PythonPacks = append(s.PythonPacks, py)
