@@ -1,4 +1,7 @@
 # 1.0.5 (2023.2.13)
+## features
+- Add Docker `--pid=host` checking
+
 ## improvements
 - Add other language of package checking
 - Change the minimum of downloaded vulnerable data year from 2002 to 2010

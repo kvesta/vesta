@@ -69,6 +69,11 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 		isVulnerable = true
 	}
 
+	if ok, tlist := checkPid(config); ok {
+		ths = append(ths, tlist...)
+		isVulnerable = true
+	}
+
 	if isVulnerable {
 		sortSeverity(ths)
 

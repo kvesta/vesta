@@ -280,6 +280,41 @@ func checkNetworkModel(config *types.ContainerJSON, version string) (bool, []*th
 			tlist = append(tlist, th)
 			vuln = true
 		}
+
+		if !vuln {
+			th := &threat{
+				Param: "network",
+				Value: "host",
+				Describe: "Docker container is run with `--net=host`, " +
+					"which will exposed the network of physical machine.",
+				Severity: "medium",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
+}
+
+func checkPid(config *types.ContainerJSON) (bool, []*threat) {
+	var vuln = false
+
+	tlist := []*threat{}
+
+	if config.HostConfig.PidMode == "host" {
+		th := &threat{
+			Param: "pid",
+			Value: "host",
+			Describe: "Docker container is run with `--pid=host`, " +
+				"which attackers can see all the processes in physical machine" +
+				" and cause the potential container escape.",
+			Severity: "high",
+		}
+
+		tlist = append(tlist, th)
+		vuln = true
 	}
 
 	return vuln, tlist
