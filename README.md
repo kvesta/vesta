@@ -38,7 +38,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
   - NodeJs(NPM, YARN)
   - Python(Wheel, Poetry)
   - Golang(Go binary)
-  - PHP(Composer)
+  - PHP(Composer, major frameworks: laravel, thinkphp, wordpress, wordpress plugins etc)
   - Rust(Rust binary)
 
 > Docker
@@ -50,7 +50,8 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Volume Mount              | Mount dangerous location.                                                | critical                 |
 | ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                   | critical                 |
 | ✔         | Kernel version            | Kernel version is under the escape version.                              | critical                 |
-| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical                 |
+| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical/medium          |
+| ✔         | Pid Module                | Pid Module is `host`.                                                    | high                     |
 | ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/medium/low |
 | ✔         | Docker env password check | Check weak password in database.                                         | high/medium              |
 | ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                      |

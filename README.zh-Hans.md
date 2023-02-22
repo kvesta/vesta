@@ -51,7 +51,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
   - NodeJs(NPM, YARN)
   - Python(Wheel, Poetry)
   - Golang(Go binary)
-  - PHP(Composer)
+  - PHP(Composer, 以及主流的PHP框架: laravel, thinkphp, wordpress, wordpress插件等)
   - Rust(Rust binary)
 
 > Docker检查
@@ -63,7 +63,8 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Volume Mount              | 敏感或危险目录被挂载                       | critical                 |
 | ✔         | Docker Unauthorized       | 2375端口打开并且未授权                    | critical                 |
 | ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                     | critical                 |
-| ✔         | Network Module            | Net模式为`host`模式并且在特定containerd版本下 | critical                 |
+| ✔         | Network Module            | Net模式为`host`模式或同时在特定containerd版本下 | critical/medium          |
+| ✔         | Pid Module                | Pid模式被设置为`host`                  | high                     |
 | ✔         | Docker Server version     | Docker Server版本存在漏洞              | critical/high/medium/low |
 | ✔         | Docker env password check | Docker env是否存在弱密码                | high/medium              |
 | ✔         | Image tag check           | Image没有被打tag或为默认latest           | low                      |

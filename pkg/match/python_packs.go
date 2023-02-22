@@ -147,6 +147,10 @@ func pyCheckCommand(d []string, data string) string {
 		regexp.MustCompile(`os.popen\((.*)\)`),
 		regexp.MustCompile(`eval\((.*)\)`),
 		regexp.MustCompile(`subprocess.Popen\((.*)$,.*\)`),
+		regexp.MustCompile(`os.execl\((.*)\)`),
+		regexp.MustCompile(`os.execve\((.*)\)`),
+		regexp.MustCompile(`os.spawnl\((.*)\)`),
+		regexp.MustCompile(`globals\(\)['eval']\((.*)\)`),
 	}
 
 	for _, l := range d {

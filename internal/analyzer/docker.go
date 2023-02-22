@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	imagev1 "github.com/docker/docker/api/types/image"
 	version2 "github.com/hashicorp/go-version"
 	_config "github.com/kvesta/vesta/config"
 	_image "github.com/kvesta/vesta/pkg/inspector"
@@ -280,6 +281,41 @@ func checkNetworkModel(config *types.ContainerJSON, version string) (bool, []*th
 			tlist = append(tlist, th)
 			vuln = true
 		}
+
+		if !vuln {
+			th := &threat{
+				Param: "network",
+				Value: "host",
+				Describe: "Docker container is run with `--net=host`, " +
+					"which will exposed the network of physical machine.",
+				Severity: "medium",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
+}
+
+func checkPid(config *types.ContainerJSON) (bool, []*threat) {
+	var vuln = false
+
+	tlist := []*threat{}
+
+	if config.HostConfig.PidMode == "host" {
+		th := &threat{
+			Param: "pid",
+			Value: "host",
+			Describe: "Docker container is run with `--pid=host`, " +
+				"which attackers can see all the processes in physical machine" +
+				" and cause the potential container escape.",
+			Severity: "high",
+		}
+
+		tlist = append(tlist, th)
+		vuln = true
 	}
 
 	return vuln, tlist
@@ -381,6 +417,7 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 	echoReg := regexp.MustCompile(`echo ["|'](.*?)["|']`)
 
 	for _, img := range images {
+		env := getEnv(img.History)
 		for _, layer := range img.History {
 			pruneLayerAfter1 := strings.TrimPrefix(layer.CreatedBy, "/bin/sh -c ")
 			pruneLayerAfter2 := strings.TrimPrefix(pruneLayerAfter1, "#(nop)")
@@ -388,7 +425,7 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 
 			link := strings.Split(pruneLayer, " ")[0]
 			switch link {
-			case "CMD", "ADD", "ARG", "ENV", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER":
+			case "CMD", "ADD", "ARG", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER", "ENV":
 				continue
 			}
 
@@ -396,11 +433,10 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 			for _, cmd := range commands {
 				echoMatch := echoReg.FindStringSubmatch(cmd)
 				if len(echoMatch) > 1 {
-					pass := echoPass(echoMatch[1])
+					pass := echoPass(echoMatch[1], env)
 					if len(pass) < 1 {
 						continue
 					}
-
 					switch checkWeakPassword(pass) {
 					case "Weak":
 						th := &threat{
@@ -408,7 +444,8 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 							Value: fmt.Sprintf("Image name: %s | "+
 								"Image ID: %s", img.Summary.RepoTags[0],
 								strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
-							Describe: fmt.Sprintf("Weak password found in command: '%s'.", cmd),
+							Describe: fmt.Sprintf("Weak password found in command: '%s' "+
+								"with the password '%s'.", cmd, pass),
 							Severity: "high",
 						}
 
@@ -437,11 +474,10 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func echoPass(cmd string) string {
+func echoPass(cmd string, env map[string]string) string {
 
 	var pass string
 	match := false
-
 	for _, p := range passKey {
 		if p.MatchString(cmd) {
 			match = true
@@ -463,5 +499,34 @@ func echoPass(cmd string) string {
 
 	pass = strings.TrimSpace(pass)
 
+	// Get true value from format `${env}`
+	envReg := regexp.MustCompile(`\${(.*)}`)
+	envMatch := envReg.FindStringSubmatch(pass)
+	if len(envMatch) > 1 {
+		if value, ok := env[envMatch[1]]; ok {
+			pass = value
+		}
+	}
+
 	return pass
+}
+
+func getEnv(images []imagev1.HistoryResponseItem) map[string]string {
+	env := map[string]string{}
+
+	for _, layer := range images {
+		pruneLayerAfter1 := strings.TrimPrefix(layer.CreatedBy, "/bin/sh -c ")
+		pruneLayerAfter2 := strings.TrimPrefix(pruneLayerAfter1, "#(nop)")
+		pruneLayer := strings.TrimSpace(pruneLayerAfter2)
+
+		link := strings.Split(pruneLayer, " ")[0]
+		if link != "ENV" {
+			continue
+		}
+		envLayer := strings.TrimPrefix(pruneLayer, "ENV ")
+		e := strings.Split(envLayer, "=")
+		env[e[0]] = e[1]
+	}
+
+	return env
 }

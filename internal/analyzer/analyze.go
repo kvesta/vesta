@@ -69,6 +69,11 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 		isVulnerable = true
 	}
 
+	if ok, tlist := checkPid(config); ok {
+		ths = append(ths, tlist...)
+		isVulnerable = true
+	}
+
 	if isVulnerable {
 		sortSeverity(ths)
 
@@ -271,6 +276,7 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 
 	var vulnKernelVersion = map[string]string{
 		"CVE-2016-5195":  "Dirty Cow",
+		"CVE-2020-14386": "CVE-2020-14386 with CAP_NET_RAW",
 		"CVE-2021-22555": "CVE-2021-22555 kernel-netfilter",
 		"CVE-2022-0847":  "Dirty Pipe",
 		"CVE-2022-0185":  "CVE-2022-0185 with CAP_SYS_ADMIN",
