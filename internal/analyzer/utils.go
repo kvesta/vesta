@@ -27,8 +27,8 @@ var (
 	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
 
-	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE",
-		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE"}
+	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_SYS_MODULE",
+		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE", "CAP_DAC_READ_SEARCH"}
 
 	unsafeAnnotations = map[string]AnType{
 		"sidecar.istio.io/proxyImage":          {component: "istio", level: "warning"},

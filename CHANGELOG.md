@@ -6,6 +6,7 @@
 - Add other language of package checking
 - Change the minimum of downloaded vulnerable data year from 2002 to 2010
 - Add Python pip analysis from poetry and venv
+- Parse the env command in Docker Histories
 
 # 1.0.4 (2023.1.16)
 ## features

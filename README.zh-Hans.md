@@ -51,7 +51,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
   - NodeJs(NPM, YARN)
   - Python(Wheel, Poetry)
   - Golang(Go binary)
-  - PHP(Composer)
+  - PHP(Composer, 以及主流的PHP框架: laravel, thinkphp, wordpress, wordpress插件等)
   - Rust(Rust binary)
 
 > Docker检查

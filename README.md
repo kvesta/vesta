@@ -38,7 +38,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
   - NodeJs(NPM, YARN)
   - Python(Wheel, Poetry)
   - Golang(Go binary)
-  - PHP(Composer)
+  - PHP(Composer, major frameworks: laravel, thinkphp, wordpress, wordpress plugins etc)
   - Rust(Rust binary)
 
 > Docker
