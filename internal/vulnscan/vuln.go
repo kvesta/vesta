@@ -61,10 +61,15 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check php packs")
 	}
 
+	err = ps.checkRustPacks(ctx, p.RustPacks)
+	if err != nil {
+		log.Printf("failed to check rust packs")
+	}
+
 	return err
 }
 
-func getInfo(row *vulnlib.DBRow, version string) *vulnComponent {
+func getInfo(row *vulnlib.DBRow, version, packType string) *vulnComponent {
 	vuln := &vulnComponent{}
 
 	vuln.Level = row.Level
@@ -72,13 +77,19 @@ func getInfo(row *vulnlib.DBRow, version string) *vulnComponent {
 	vuln.Desc = row.Description
 	vuln.PublishDate = row.PublishDate
 	vuln.Score = row.Score
-	vuln.VulnerableVersion = row.MaxVersion
-	vuln.CorrectVersion = version
+	vuln.CurrentVersion = version
+	vuln.Type = packType
+
+	if strings.HasPrefix(row.MaxVersion, "=") {
+		vuln.VulnerableVersion = "<=" + row.MaxVersion[1:]
+	} else {
+		vuln.VulnerableVersion = "<" + row.MaxVersion
+	}
 
 	return vuln
 }
 
-func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnComponent, bool) {
+func compareVersion(rows []*vulnlib.DBRow, cv, ty string, cp []string) ([]*vulnComponent, bool) {
 
 	var isVulnerable = false
 	vulns := []*vulnComponent{}
@@ -118,7 +129,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCompo
 				}
 				if currentVersion.Compare(vulnMaxVersion) <= 0 &&
 					currentVersion.Compare(vulnMinVersion) >= 0 {
-					vuln := getInfo(row, currentVersion.String())
+					vuln := getInfo(row, currentVersion.String(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -131,7 +142,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCompo
 				}
 				if currentVersion.Compare(vulnMaxVersion) <= 0 &&
 					currentVersion.Compare(vulnMinVersion) > 0 {
-					vuln := getInfo(row, currentVersion.String())
+					vuln := getInfo(row, currentVersion.String(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -150,7 +161,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCompo
 				}
 				if currentVersion.Compare(vulnMaxVersion) < 0 &&
 					currentVersion.Compare(vulnMinVersion) >= 0 {
-					vuln := getInfo(row, currentVersion.String())
+					vuln := getInfo(row, currentVersion.String(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -163,7 +174,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCompo
 				}
 				if currentVersion.Compare(vulnMaxVersion) < 0 &&
 					currentVersion.Compare(vulnMinVersion) > 0 {
-					vuln := getInfo(row, currentVersion.String())
+					vuln := getInfo(row, currentVersion.String(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -175,7 +186,7 @@ func compareVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCompo
 	return vulns, isVulnerable
 }
 
-func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnComponent, bool) {
+func compareRpmVersion(rows []*vulnlib.DBRow, cv, ty string, cp []string) ([]*vulnComponent, bool) {
 
 	var isVulnerable = false
 	vulns := []*vulnComponent{}
@@ -208,7 +219,7 @@ func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCo
 
 				if currentVersion.Compare(vulnMaxVersion) <= 0 &&
 					currentVersion.Compare(vulnMinVersion) >= 0 {
-					vuln := getInfo(row, currentVersion.Version())
+					vuln := getInfo(row, currentVersion.Version(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -219,7 +230,7 @@ func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCo
 
 				if currentVersion.Compare(vulnMaxVersion) <= 0 &&
 					currentVersion.Compare(vulnMinVersion) > 0 {
-					vuln := getInfo(row, currentVersion.Version())
+					vuln := getInfo(row, currentVersion.Version(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -234,7 +245,7 @@ func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCo
 
 				if currentVersion.Compare(vulnMaxVersion) < 0 &&
 					currentVersion.Compare(vulnMinVersion) >= 0 {
-					vuln := getInfo(row, currentVersion.String())
+					vuln := getInfo(row, currentVersion.String(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -245,7 +256,7 @@ func compareRpmVersion(rows []*vulnlib.DBRow, cv string, cp []string) ([]*vulnCo
 
 				if currentVersion.Compare(vulnMaxVersion) < 0 &&
 					currentVersion.Compare(vulnMinVersion) > 0 {
-					vuln := getInfo(row, currentVersion.String())
+					vuln := getInfo(row, currentVersion.String(), ty)
 					vulns = append(vulns, vuln)
 
 					isVulnerable = true
@@ -299,10 +310,12 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 				filename := filepath.Join(sites, p)
 				if sus := match.PyMalwareScan(filename); sus.Types != 0 {
 					vuln := &vulnComponent{
-						Name:           fmt.Sprintf("%s - %s", py.Version, si.Name),
-						Level:          "high",
-						Score:          8.5,
-						CorrectVersion: si.Version,
+						Name:              fmt.Sprintf("%s - %s", py.Version, si.Name),
+						Level:             "high",
+						Score:             8.5,
+						Type:              "Python",
+						CurrentVersion:    si.Version,
+						VulnerableVersion: "-",
 						Desc: fmt.Sprintf("Malicious package is detected in '%s', "+
 							"%s", strings.TrimPrefix(filename, m.Localpath),
 							sus.OriginPack),
@@ -320,7 +333,7 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 				continue
 			}
 
-			if vs, vuln := compareVersion(rows, si.Version, []string{"*", "python"}); vuln {
+			if vs, vuln := compareVersion(rows, si.Version, "Python", []string{"*", "python"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", py.Version, si.Name)
 				}
@@ -331,10 +344,12 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 
 			if sus := match.PyMatch(si.Name); sus.Types != 0 {
 				vuln := &vulnComponent{
-					Name:           fmt.Sprintf("%s - %s", py.Version, si.Name),
-					Level:          "medium",
-					Score:          7.5,
-					CorrectVersion: si.Version,
+					Name:              fmt.Sprintf("%s - %s", py.Version, si.Name),
+					Level:             "medium",
+					Score:             7.5,
+					Type:              "Python",
+					CurrentVersion:    si.Version,
+					VulnerableVersion: "-",
 				}
 				switch sus.Types {
 				case 1:
@@ -369,7 +384,7 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, npm.Version, []string{"node.js"}); vuln {
+			if vs, vuln := compareVersion(rows, npm.Version, "Node", []string{"node.js"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s - %s", node.Version, npm.Name)
 				}
@@ -380,21 +395,21 @@ func (ps *Scanner) checkNpmModule(ctx context.Context, nodes []*packages.Node) e
 
 			if sus := match.NpmMatch(npm.Name); sus.Types != 0 {
 				vuln := &vulnComponent{
-					Name:           fmt.Sprintf("%s - %s", node.Version, npm.Name),
-					Level:          "high",
-					CorrectVersion: npm.Version,
+					Name:              fmt.Sprintf("%s - %s", node.Version, npm.Name),
+					Level:             "medium",
+					Score:             7.5,
+					Type:              "Node",
+					CurrentVersion:    npm.Version,
+					VulnerableVersion: "-",
 				}
 				switch sus.Types {
 				case 1:
-					vuln.Level = "medium"
-					vuln.Score = 7.5
 					vuln.Desc = fmt.Sprintf("Suspicious malicious package, "+
 						"compared name: %s", sus.OriginPack)
 				case 2:
-					vuln.Level = "high"
-					vuln.Score = 8.5
-					vuln.Desc = fmt.Sprintf("Detect the pypi malware,"+
+					vuln.Desc = fmt.Sprintf("Detect the node malware,"+
 						"origin package name is: %s", sus.OriginPack)
+
 				default:
 					// ignore
 				}
@@ -421,7 +436,7 @@ func (ps *Scanner) checkGoMod(ctx context.Context, gobins []*packages.GOBIN) err
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, mod.Version, []string{"*"}); vuln {
+			if vs, vuln := compareVersion(rows, mod.Version, "Go", []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s (%s) - %s", gobin.Name, gobin.Path, mod.Path)
 				}
@@ -449,7 +464,7 @@ func (ps *Scanner) checkJavaPacks(ctx context.Context, javas []*packages.JAVA) e
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, jar.Version, []string{"*"}); vuln {
+			if vs, vuln := compareVersion(rows, jar.Version, "Java", []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s (%s) - %s", java.Name, java.Path, jar.Name)
 				}
@@ -477,7 +492,7 @@ func (ps *Scanner) checkPHPPacks(ctx context.Context, phps []*packages.PHP) erro
 			if err != nil {
 				continue
 			}
-			if vs, vuln := compareVersion(rows, pack.Version, []string{"*"}); vuln {
+			if vs, vuln := compareVersion(rows, pack.Version, "PHP", []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = fmt.Sprintf("%s (%s) - %s", php.Name, php.Path, pack.Name)
 				}
@@ -490,6 +505,34 @@ func (ps *Scanner) checkPHPPacks(ctx context.Context, phps []*packages.PHP) erro
 	}
 
 	ps.Vulns = append(ps.Vulns, phpVuln...)
+
+	return nil
+}
+
+func (ps *Scanner) checkRustPacks(ctx context.Context, rusts []*packages.Rust) error {
+
+	rustVuln := []*vulnComponent{}
+
+	for _, cargo := range rusts {
+
+		for _, pack := range cargo.Deps {
+			rows, err := ps.VulnDB.QueryVulnByName(strings.ToLower(pack.Name))
+			if err != nil {
+				continue
+			}
+			if vs, vuln := compareVersion(rows, pack.Version, "Rust", []string{"*", "rust"}); vuln {
+				for _, v := range vs {
+					v.Name = fmt.Sprintf("%s (%s) - %s", cargo.Name, cargo.Path, pack.Name)
+				}
+
+				sortSeverity(vs)
+				rustVuln = append(rustVuln, vs...)
+			}
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, rustVuln...)
 
 	return nil
 }
@@ -507,7 +550,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 				continue
 			}
 
-			if vs, vuln := compareRpmVersion(rows, p.Version, []string{"*"}); vuln {
+			if vs, vuln := compareRpmVersion(rows, p.Version, "System", []string{"*"}); vuln {
 				for _, v := range vs {
 					v.Name = p.Name
 				}
@@ -528,7 +571,7 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 			continue
 		}
 
-		if vs, vuln := compareVersion(rows, p.Version, []string{"*"}); vuln {
+		if vs, vuln := compareVersion(rows, p.Version, "System", []string{"*"}); vuln {
 			for _, v := range vs {
 				v.Name = p.Name
 			}

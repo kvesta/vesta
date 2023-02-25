@@ -29,7 +29,12 @@ var (
 		regexp.MustCompile(`Start-Class: (.*)`),
 		regexp.MustCompile(`Specification-Title: (.*)`),
 	}
-	numberReg = regexp.MustCompile(`(\d+\.)?(\d+\.)?(\*|\d+)`)
+
+	// Reference: https://github.com/aquasecurity/go-dep-parser/blob/main/pkg/java/jar/parse.go#L24
+	jarRegEx   = regexp.MustCompile(`^([a-zA-Z0-9\._-]*[^-*])-(\d\S*(?:-SNAPSHOT)?).jar$`)
+	jarNameMap = map[string]string{
+		"log4j-core": "log4j",
+	}
 )
 
 func getJavaPacks(rt io.ReaderAt, size int64) (*JAVA, error) {
@@ -124,17 +129,22 @@ func parseLib(jarName string) (*Jar, error) {
 	jar := &Jar{}
 
 	jarVersion := filepath.Base(jarName)
-	versionMath := numberReg.FindStringSubmatch(jarVersion)
-	if len(versionMath) > 1 {
-		jar.Version = versionMath[0]
+	jarMath := jarRegEx.FindStringSubmatch(jarVersion)
+
+	if len(jarMath) > 2 {
+		jar.Version = jarMath[2]
 	} else {
-		err := errors.New("not a lar library")
+		err := errors.New("not a jar library")
 		return jar, err
 	}
 
-	// prune library name
-	versionIndex := strings.Index(jarVersion, jar.Version)
-	jar.Name = jarVersion[:versionIndex-1]
+	jar.Name = jarMath[1]
+	for k, v := range jarNameMap {
+		if jar.Name == k {
+			jar.Name = v
+			break
+		}
+	}
 
 	return jar, nil
 }

@@ -15,7 +15,8 @@ type Scanner struct {
 
 type vulnComponent struct {
 	Name           string
-	CorrectVersion string
+	CurrentVersion string
+	Type           string
 
 	CVEID             string
 	VulnerableVersion string

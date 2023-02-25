@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/internal/report"
@@ -24,6 +25,8 @@ import (
 )
 
 func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
+
+	var wg sync.WaitGroup
 
 	// Get vulnerability database
 	if !ctx.Value("skip").(bool) {
@@ -60,7 +63,17 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		log.Printf("package error %v", err)
 	}
 
-	defer func() {
+	scanner := vulns.Scan
+
+	err = scanner.Scan(ctx, m, packs)
+	if err != nil {
+		log.Printf("scan error %v", err)
+	}
+
+	go func() {
+		wg.Add(1)
+
+		defer wg.Done()
 		if len(tarIO) > 0 {
 			for _, f := range tarIO {
 				f.Close()
@@ -82,13 +95,6 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		}
 	}()
 
-	scanner := vulns.Scan
-
-	err = scanner.Scan(ctx, m, packs)
-	if err != nil {
-		log.Printf("scan error %v", err)
-	}
-
 	err = report.ResolveAnalysisData(ctx, scanner)
 	if err != nil {
 		log.Printf("report error %v", err)
@@ -99,6 +105,7 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		log.Printf("saving error %v", err)
 	}
 
+	wg.Wait()
 }
 
 // DoInspectInDocker inspect docker configure

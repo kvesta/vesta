@@ -24,7 +24,13 @@ func (s *Packages) getAptPacks(ctx context.Context, dpkg string) error {
 				case "Package":
 					p.Name = values[1]
 				case "Version":
-					p.Version = values[1]
+					if len(values) > 2 {
+						values[2] = strings.Replace(values[2], " ", "", -1)
+						p.Version = values[2]
+					} else {
+						p.Version = values[1]
+					}
+
 				case "Architecture":
 					p.Architecture = values[1]
 
