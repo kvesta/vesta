@@ -13,7 +13,7 @@ var (
 		"Scrapy", "scipy", "scapy", "Twisted", "torch", "torchvision", "pandas", "pastas", "algoliasearch", "tornado",
 		"pypcap", "semidbm", "signalfx", "cassandra-driver", "ShopifyAPI", "zoomeye", "osc", "PyPtt", "flake8", "opencv-python",
 		"distributed", "virtualenv", "selenium", "bs4", "beautifulsoup4", "lxml", "pylint", "pywin32", "web3", "pyebpf",
-		"matplotlib", "pytest", "paramiko"}
+		"matplotlib", "pytest", "paramiko", "PySMT", "claripy", "angr"}
 
 	maliciousPypis = map[string]string{
 		"smi":          "pysmi",
@@ -155,7 +155,8 @@ func pyCheckCommand(d []string, data string) string {
 
 	for _, l := range d {
 		// Plain test checking
-		if strings.Contains(l, "powershell") || strings.Contains(l, "/dev/tcp/") ||
+		if strings.Contains(l, "powershell") || strings.Contains(l, "chmod +x") ||
+			strings.Contains(l, "/dev/tcp/") ||
 			(strings.Contains(l, "curl") || strings.Contains(l, "wget") && strings.Contains(l, "bash")) {
 			return l
 		}

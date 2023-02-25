@@ -47,7 +47,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
   - yum
   - dpkg
 - 扫描软件依赖的漏洞以及恶意投毒的依赖包
-  - Java(Jar, War)
+  - Java(Jar, War, 以及主流依赖log4j)
   - NodeJs(NPM, YARN)
   - Python(Wheel, Poetry)
   - Golang(Go binary)

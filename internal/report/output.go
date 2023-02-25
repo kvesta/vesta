@@ -20,12 +20,22 @@ func ResolveAnalysisData(ctx context.Context, r vulnscan.Scanner) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
 
-	table.SetHeader([]string{"ID", "Name", "Current Version", "CVEID", "Score", "Level", "Description"})
+	table.SetHeader([]string{"ID", "Name", "Current/Vulnerable Version", "CVEID", "Score", "Level", "Description"})
 	table.SetRowLine(true)
 	table.SetAutoMergeCellsByColumnIndex([]int{1})
 
 	var Des string
+	var currentType = "System"
 	for i, c := range r.Vulns {
+
+		if c.Type != currentType {
+			table.Render()
+			table.ClearRows()
+
+			currentType = c.Type
+			fmt.Printf("\n\n%s:\n", c.Type)
+		}
+
 		scroe := fmt.Sprintf("%.1f", c.Score)
 
 		// Limit the length of description
@@ -36,8 +46,9 @@ func ResolveAnalysisData(ctx context.Context, r vulnscan.Scanner) error {
 		}
 
 		vulnData := []string{
-			strconv.Itoa(i + 1), c.Name, c.CorrectVersion, c.CVEID,
-			scroe, judgeSeverity(c.Level), Des,
+			strconv.Itoa(i + 1), c.Name,
+			fmt.Sprintf("%s / %s", c.CurrentVersion, c.VulnerableVersion),
+			c.CVEID, scroe, judgeSeverity(c.Level), Des,
 		}
 
 		table.Append(vulnData)

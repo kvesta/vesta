@@ -34,7 +34,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
   - yum
   - dpkg
 - Scan malicious packages and vulnerabilities of language-specific packages
-  - Java(Jar, War)
+  - Java(Jar, War. major library: log4j)
   - NodeJs(NPM, YARN)
   - Python(Wheel, Poetry)
   - Golang(Go binary)
