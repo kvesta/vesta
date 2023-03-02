@@ -9,6 +9,49 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+func (ks KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName string) []*threat {
+	vList := []*threat{}
+
+	for _, v := range podSpec.Volumes {
+		if ok, tlist := checkPodVolume(v); ok {
+			vList = append(vList, tlist...)
+		}
+	}
+
+	for _, sp := range podSpec.Containers {
+
+		// Skip some sidecars
+		if sp.Name == "istio-proxy" {
+			// Try to check the istio header `X-Envoy-Peer-Metadata`
+			// reference: https://github.com/istio/istio/issues/17635
+			if ok, tlist := ks.checkIstioHeader(podName, ns, podSpec.Containers[0].Name); ok {
+				vList = append(vList, tlist...)
+			}
+
+			continue
+		}
+
+		if ok, tlist := checkPodPrivileged(sp); ok {
+			vList = append(vList, tlist...)
+		}
+
+		if ok, tlist := checkPodAccountService(sp, rv); ok {
+			vList = append(vList, tlist...)
+		}
+
+		if ok, tlist := checkResourcesLimits(sp); ok {
+			vList = append(vList, tlist...)
+		}
+
+		if ok, tlist := ks.checkSidecarEnv(sp, ns); ok {
+			vList = append(vList, tlist...)
+		}
+
+	}
+
+	return vList
+}
+
 func checkPodVolume(config v1.Volume) (bool, []*threat) {
 	tlist := []*threat{}
 	var vuln = false

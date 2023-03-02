@@ -13,7 +13,7 @@ var (
 		"Scrapy", "scipy", "scapy", "Twisted", "torch", "torchvision", "pandas", "pastas", "algoliasearch", "tornado",
 		"pypcap", "semidbm", "signalfx", "cassandra-driver", "ShopifyAPI", "zoomeye", "osc", "PyPtt", "flake8", "opencv-python",
 		"distributed", "virtualenv", "selenium", "bs4", "beautifulsoup4", "lxml", "pylint", "pywin32", "web3", "pyebpf",
-		"matplotlib", "pytest", "paramiko", "PySMT", "claripy", "angr"}
+		"matplotlib", "pytest", "paramiko", "PySMT", "claripy", "angr", "urllib3", "urllib"}
 
 	maliciousPypis = map[string]string{
 		"smi":          "pysmi",

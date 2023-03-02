@@ -69,7 +69,6 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Docker env password check | Docker env是否存在弱密码                | high/medium              |
 | ✔         | Image tag check           | Image没有被打tag或为默认latest           | low                      |
 | ✔         | Docker history            | Docker layers 存在不安全的命令           | high/medium              |
-| 待定        | IaC scan                  | IaC 扫描                           | -                        |
 
 ---
 
@@ -90,14 +89,14 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了 `/var/run/secrets/kubernetes.io/serviceaccount/token`. | critical/high/medium/low |
 | ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                                      | low                      |
 | ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略                              | low                      |
-| ✔        | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
-| ✔        | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low |
+| ✔         | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                                    | high/medium              |
+| ✔         | Cilium version                                           | Cilium 存在漏洞版本                                                   | critical/high/medium/low |
 | ✔         | Istio configurations                                     | Istio 存在漏洞版本以及安全配置检查                                            | critical/high/medium/low |
-| ✔        | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
+| ✔         | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启                                  | high/medium/low          |
 | ✔         | Etcd configuration                                       | Etcd 安全配置检查                                                     | high/medium              |
 | ✔         | Sidecar configurations                                   | Sidecar 安全配置检查以及Env环境检查                                         | critical/high/medium/low |              
 | ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                                          | high/medium/low/warning  |
-| 待定        | IaC scan                                                 | Iac扫描                                                           | -                        |
+| ✔         | DaemonSet                                                | DaemonSet存在不安全配置                                                | critical/high/medium/low |
 
 
 ## 编译并使用vesta

@@ -56,7 +56,6 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Docker env password check | Check weak password in database.                                         | high/medium              |
 | ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                      |
 | ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium              |
-| Pending   | IaC scan                  | IaC scan.                                                                | -                        |
 
 ---
 
@@ -84,7 +83,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Etcd configuration                                       | Etcd safe configuration checking.                                          | high/medium              |
 | ✔         | Sidecar configurations                                   | Sidecar has some dangerous configurations.                                 | critical/high/medium/low |
 | ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/low/warning  |
-| Pending   | IaC scan                                                 | IaC scan.                                                                  | -                        |
+| ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/medium/low |
 
 
 

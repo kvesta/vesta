@@ -9,6 +9,7 @@ spec:
   containers:
     - name: vulntest
       image: nginx
+      imagePullPolicy: IfNotPresent
       volumeMounts:
       - name: test-volume
         mountPath: /opt/vulntest
@@ -66,6 +67,7 @@ spec:
   containers:
     - name: vulntest2
       image: nginx
+      imagePullPolicy: IfNotPresent
       volumeMounts:
       ports:
         - containerPort: 80
