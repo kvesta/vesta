@@ -43,47 +43,48 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 > Docker
 
-| Supported | Check Item                | Description                                                              | Severity                 |
-|-----------|---------------------------|--------------------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                            | critical                 |
-| ✔         | Capabilities              | Dangerous capabilities are opening.                                      | critical                 |
-| ✔         | Volume Mount              | Mount dangerous location.                                                | critical                 |
-| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                   | critical                 |
-| ✔         | Kernel version            | Kernel version is under the escape version.                              | critical                 |
-| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical/medium          |
-| ✔         | Pid Module                | Pid Module is `host`.                                                    | high                     |
-| ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/medium/low |
-| ✔         | Docker env password check | Check weak password in database.                                         | high/medium              |
-| ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                      |
-| ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium              |
+| Supported | Check Item                | Description                                                              | Severity                  | Reference                                                                                   |
+|-----------|---------------------------|--------------------------------------------------------------------------|---------------------------|---------------------------------------------------------------------------------------------|
+| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                            | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
+| ✔         | Capabilities              | Dangerous capabilities are opening.                                      | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) | 
+| ✔         | Volume Mount              | Mount dangerous location.                                                | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                |
+| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                   | critical                  | [Ref](https://github.com/vulhub/vulhub/blob/master/docker/unauthorized-rce/README.md)       |
+| ✔         | Kernel version            | Kernel version is under the escape version.                              | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                       |
+| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical/medium           |                                                                                             |
+| ✔         | Pid Module                | Pid Module is `host`.                                                    | high                      |                                                                                             |
+| ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/ medium/low |                                                                                             |
+| ✔         | Docker env password check | Check weak password in database.                                         | high/medium               |                                                                                             |
+| ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                       |                                                                                             |
+| ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium               |                                                                                             |
 
 ---
 
 
 > Kubernetes
 
-| Supported | Check Item                                               | Description                                                                | Severity                 |
-|-----------|----------------------------------------------------------|----------------------------------------------------------------------------|--------------------------|
-| ✔         | PrivilegeAllowed                                         | Privileged module is allowed.                                              | critical                 |
-| ✔         | Capabilities                                             | Dangerous capabilities are opening.                                        | critical                 |
-| ✔         | PV and PVC                                               | PV is mounted the dangerous location and is actived.                       | critical/medium          |
-| ✔         | RBAC                                                     | RBAC has some unsafe configurations in clusterrolebingding or rolebinding. | high/medium/low/warning  |
-| ✔         | Kubernetes-dashborad                                     | Checking `-enable-skip-login` and account permission.                      | critical/high/low        |
-| ✔         | Kernel version                                           | Kernel version is under the escape version.                                | critical                 |
-| ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.                         | critical/high/medium/low |
-| ✔         | Kubernetes certification expiration                      | Certification is expired after 30 days.                                    | medium                   |
-| ✔         | ConfigMap and Secret check                               | Check weak password in ConfigMap or Secret.                                | high/medium              |
-| ✔         | Auto Mount ServiceAccount Token                          | Mounting `/var/run/secrets/kubernetes.io/serviceaccount/token`.            | critical/high/medium/low |
-| ✔         | NoResourceLimits                                         | No resource limits are set.                                                | low                      |
-| ✔         | Job and Cronjob                                          | No seccomp or seLinux are set in Job or CronJob.                           | low                      |
-| ✔         | Envoy admin                                              | Envoy admin is opening and listen to `0.0.0.0`.                            | high/medium              |
-| ✔         | Cilium version                                           | Cilium has vulnerable version.                                             | critical/high/medium/low |
-| ✔         | Istio configurations                                     | Istio has vulnerable version and vulnerable configurations.                | critical/high/medium/low |
-| ✔         | Kubelet 10255 and Kubectl proxy                          | 10255 port is opening or Kubectl proxy is opening.                         | high/medium/low          |
-| ✔         | Etcd configuration                                       | Etcd safe configuration checking.                                          | high/medium              |
-| ✔         | Sidecar configurations                                   | Sidecar has some dangerous configurations.                                 | critical/high/medium/low |
-| ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/low/warning  |
-| ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/medium/low |
+| Supported | Check Item                                               | Description                                                                | Severity                  | Reference                                                                                   |
+|-----------|----------------------------------------------------------|----------------------------------------------------------------------------|---------------------------|---------------------------------------------------------------------------------------------|
+| ✔         | PrivilegeAllowed                                         | Privileged module is allowed.                                              | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
+| ✔         | Capabilities                                             | Dangerous capabilities are opening.                                        | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
+| ✔         | PV and PVC                                               | PV is mounted the dangerous location and is active.                        | critical/medium           | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                |
+| ✔         | RBAC                                                     | RBAC has some unsafe configurations in clusterrolebingding or rolebinding. | high/medium/ low/warning  |                                                                                             |
+| ✔         | Kubernetes-dashborad                                     | Checking `-enable-skip-login` and account permission.                      | critical/high/low         | [Ref](https://blog.heptio.com/on-securing-the-kubernetes-dashboard-16b09b1b7aca)            |
+| ✔         | Kernel version                                           | Kernel version is under the escape version.                                | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                       |
+| ✔         | Docker Server version  (k8s versions is less than v1.24) | Server version is included the vulnerable version.                         | critical/high/ medium/low |                                                                                             |
+| ✔         | Kubernetes certification expiration                      | Certification is expired after 30 days.                                    | medium                    |                                                                                             |
+| ✔         | ConfigMap and Secret check                               | Check weak password in ConfigMap or Secret.                                | high/medium               |                                                                                             |
+| ✔         | Auto Mount ServiceAccount Token                          | Mounting default service token.                                            | critical/high/ medium/low | [Ref](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/)  |
+| ✔         | NoResourceLimits                                         | No resource limits are set.                                                | low                       | [Ref](https://www.aquasec.com/cloud-native-academy/docker-container/docker-cis-benchmark/)  |
+| ✔         | Job and Cronjob                                          | No seccomp or seLinux are set in Job or CronJob.                           | low                       | [Ref](https://www.aquasec.com/cloud-native-academy/docker-container/docker-cis-benchmark/)  |
+| ✔         | Envoy admin                                              | Envoy admin is opening and listen to `0.0.0.0`.                            | high/medium               | [Ref](https://www.envoyproxy.io/docs/envoy/latest/start/quick-start/admin#admin)            |
+| ✔         | Cilium version                                           | Cilium has vulnerable version.                                             | critical/high/ medium/low | [Ref](https://security.snyk.io/package/golang/github.com%2Fcilium%2Fcilium)                 |
+| ✔         | Istio configurations                                     | Istio has vulnerable version and vulnerable configurations.                | critical/high/ medium/low |                                                                                             |
+| ✔         | Kubelet 10255 and Kubectl proxy                          | 10255 port is opening or Kubectl proxy is opening.                         | high/medium/low           |                                                                                             |
+| ✔         | Etcd configuration                                       | Etcd safe configuration checking.                                          | high/medium               |                                                                                             |
+| ✔         | Sidecar configurations                                   | Sidecar has some dangerous configurations.                                 | critical/high/ medium/low |                                                                                             |
+| ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/ low/warning  |                                                                                             | 
+| ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/ medium/low |                                                                                             |
+| ✔         | Backdoor                                                 | Backdoor Detection                                                         | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
 
 
 

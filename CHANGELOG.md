@@ -1,6 +1,10 @@
 # 1.0.6 (2023.3.2)
 ## features
 - Add Kubernetes `DaemonSet` checking
+- Add rootkit and backdoor checking
+
+## improvements
+- Add some rules for CAP checking
 
 # 1.0.5 (2023.2.13)
 ## features

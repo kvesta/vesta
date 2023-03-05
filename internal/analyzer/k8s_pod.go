@@ -47,23 +47,27 @@ func (ks KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName strin
 			vList = append(vList, tlist...)
 		}
 
+		if ok, tlist := ks.checkPodCommand(sp, ns); ok {
+			vList = append(vList, tlist...)
+		}
+
 	}
 
 	return vList
 }
 
-func checkPodVolume(config v1.Volume) (bool, []*threat) {
+func checkPodVolume(container v1.Volume) (bool, []*threat) {
 	tlist := []*threat{}
 	var vuln = false
 
-	hostPath := config.HostPath
+	hostPath := container.HostPath
 	if hostPath != nil {
 		//volumePath := filepath.Dir(hostPath.Path)
 		volumePath := hostPath.Path
 
 		if isVuln := checkMountPath(volumePath); isVuln {
 			th := &threat{
-				Param: fmt.Sprintf("volumes name: %s", config.Name),
+				Param: fmt.Sprintf("volumes name: %s", container.Name),
 				Value: volumePath,
 				Type:  string(*hostPath.Type),
 				Describe: fmt.Sprintf("Mounting '%s' is suffer vulnerable of "+
@@ -79,17 +83,26 @@ func checkPodVolume(config v1.Volume) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func checkPodPrivileged(config v1.Container) (bool, []*threat) {
+func checkPodPrivileged(container v1.Container) (bool, []*threat) {
 	tlist := []*threat{}
 	var vuln = false
 
-	if config.SecurityContext != nil {
+	if container.SecurityContext != nil {
 
 		// check capabilities of pod
+		// Ignore the checking of cap_drop refer to:
+		// https://stackoverflow.com/questions/63162665/docker-compose-order-of-cap-drop-and-cap-add
 		capList := ""
-		if config.SecurityContext.Capabilities != nil {
-			adds := config.SecurityContext.Capabilities.Add
+		if container.SecurityContext.Capabilities != nil {
+
+			adds := container.SecurityContext.Capabilities.Add
 			for _, ad := range adds {
+				if ad == "ALL" {
+					capList = "ALL"
+					vuln = true
+					break
+				}
+
 				for _, c := range dangerCaps {
 					if string(ad) == c {
 						capList += c + " "
@@ -101,7 +114,7 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 			if vuln {
 				th := &threat{
 					Param: fmt.Sprintf("sidecar name: %s | "+
-						"capabilities", config.Name),
+						"capabilities", container.Name),
 					Value:    capList,
 					Type:     "capabilities.add",
 					Describe: "There has a potential container escape in privileged module.",
@@ -111,10 +124,10 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 			}
 		}
 
-		if config.SecurityContext.Privileged != nil && *config.SecurityContext.Privileged {
+		if container.SecurityContext.Privileged != nil && *container.SecurityContext.Privileged {
 			th := &threat{
 				Param: fmt.Sprintf("sidecar name: %s | "+
-					"Privileged", config.Name),
+					"Privileged", container.Name),
 				Value:    "true",
 				Type:     "Sidecar Privileged",
 				Describe: "There has a potential container escape in privileged module.",
@@ -124,10 +137,10 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 			vuln = true
 		}
 
-		if config.SecurityContext.AllowPrivilegeEscalation != nil && *config.SecurityContext.AllowPrivilegeEscalation {
+		if container.SecurityContext.AllowPrivilegeEscalation != nil && *container.SecurityContext.AllowPrivilegeEscalation {
 			th := &threat{
 				Param: fmt.Sprintf("sidecar name: %s | "+
-					"AllowPrivilegeEscalation", config.Name),
+					"AllowPrivilegeEscalation", container.Name),
 				Value:    "true",
 				Type:     "Sidecar Privileged",
 				Describe: "There has a potential container escape in privileged module.",
@@ -142,12 +155,12 @@ func checkPodPrivileged(config v1.Container) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*threat) {
+func (ks KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
 	// Check Pod Env
-	for _, env := range config.Env {
+	for _, env := range container.Env {
 
 		needCheck := false
 
@@ -156,7 +169,7 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 			case env.ValueFrom.SecretKeyRef != nil:
 				secretRef := env.ValueFrom.SecretKeyRef
 				if ok, th := ks.checkSecretFromName(ns, secretRef.Key, secretRef.Name, env.Name); ok {
-					th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+					th.Param = fmt.Sprintf("sidecar name: %s | env", container.Name)
 
 					tlist = append(tlist, th)
 					vuln = true
@@ -167,7 +180,7 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 			case env.ValueFrom.ConfigMapKeyRef != nil:
 				configRef := env.ValueFrom.ConfigMapKeyRef
 				if ok, th := ks.checkConfigFromName(ns, configRef.Name, configRef.Key, env.Name); ok {
-					th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+					th.Param = fmt.Sprintf("sidecar name: %s | env", container.Name)
 
 					tlist = append(tlist, th)
 					vuln = true
@@ -188,10 +201,10 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 			switch checkWeakPassword(env.Value) {
 			case "Weak":
 				th := &threat{
-					Param:    fmt.Sprintf("sidecar name: %s | env", config.Name),
-					Value:    fmt.Sprintf("%s:%s", env.Name, env.Value),
+					Param:    fmt.Sprintf("sidecar name: %s | env", container.Name),
+					Value:    fmt.Sprintf("%s: %s", env.Name, env.Value),
 					Type:     "Sidecar Env",
-					Describe: fmt.Sprintf("Container '%s' has found weak password: '%s'.", config.Name, env.Value),
+					Describe: fmt.Sprintf("Container '%s' has found weak password: '%s'.", container.Name, env.Value),
 					Severity: "high",
 				}
 
@@ -200,11 +213,11 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 
 			case "Medium":
 				th := &threat{
-					Param: fmt.Sprintf("sidecar name: %s | env", config.Name),
-					Value: fmt.Sprintf("%s:%s", env.Name, env.Value),
+					Param: fmt.Sprintf("sidecar name: %s | env", container.Name),
+					Value: fmt.Sprintf("%s: %s", env.Name, env.Value),
 					Type:  "Sidecar Env",
 					Describe: fmt.Sprintf("Container '%s' has found password '%s' "+
-						"need to be reinforeced.", config.Name, env.Value),
+						"need to be reinforeced.", container.Name, env.Value),
 					Severity: "medium",
 				}
 
@@ -213,16 +226,31 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 			}
 		}
 
+		if len(env.Value) > 150 {
+			th := &threat{
+				Param: fmt.Sprintf("sidecar name: %s | env", container.Name),
+				Value: fmt.Sprintf("%s: %s", env.Name, env.Value[:50]),
+				Type:  "Secret",
+				Describe: fmt.Sprintf("Container '%s' has found extraordinary length of content, "+
+					"need to identify whether it is malicious payload.", container.Name),
+				Severity: "medium",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+
+		}
+
 	}
 
 	// Check pod envFrom
-	for _, envFrom := range config.EnvFrom {
+	for _, envFrom := range container.EnvFrom {
 		switch {
 		case envFrom.ConfigMapRef != nil:
 			configRef := envFrom.ConfigMapRef
 			configReg := regexp.MustCompile(`ConfigMap Name: (.*)? Namespace: (.*)`)
 			if ok, th := ks.checkConfigVulnType(ns, configRef.Name, "ConfigMap", configReg); ok {
-				th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+				th.Param = fmt.Sprintf("sidecar name: %s | env", container.Name)
 
 				tlist = append(tlist, th)
 				vuln = true
@@ -232,7 +260,7 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 			configRef := envFrom.SecretRef
 			configReg := regexp.MustCompile(`Secret Name: (.*)? Namespace: (.*)`)
 			if ok, th := ks.checkConfigVulnType(ns, configRef.Name, "Secret", configReg); ok {
-				th.Param = fmt.Sprintf("sidecar name: %s | env", config.Name)
+				th.Param = fmt.Sprintf("sidecar name: %s | env", container.Name)
 
 				tlist = append(tlist, th)
 				vuln = true
@@ -246,14 +274,14 @@ func (ks KScanner) checkSidecarEnv(config v1.Container, ns string) (bool, []*thr
 	return vuln, tlist
 }
 
-func checkResourcesLimits(config v1.Container) (bool, []*threat) {
+func checkResourcesLimits(container v1.Container) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
-	if len(config.Resources.Limits) < 1 {
+	if len(container.Resources.Limits) < 1 {
 		th := &threat{
 			Param: fmt.Sprintf("sidecar name: %s | "+
-				"Resource", config.Name),
+				"Resource", container.Name),
 			Value:     "memory, cpu, ephemeral-storage",
 			Type:      "Sidecar Resource",
 			Describe:  "None of resources is be limited.",
@@ -267,10 +295,10 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 		return vuln, tlist
 	}
 
-	if config.Resources.Limits.Memory().String() == "0" {
+	if container.Resources.Limits.Memory().String() == "0" {
 		th := &threat{
 			Param: fmt.Sprintf("sidecar name: %s | "+
-				"Resource", config.Name),
+				"Resource", container.Name),
 			Value:     "memory",
 			Type:      "Sidecar Resource",
 			Describe:  "Memory usage is not limited.",
@@ -282,10 +310,10 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 		vuln = true
 	}
 
-	if config.Resources.Limits.Cpu().String() == "0" {
+	if container.Resources.Limits.Cpu().String() == "0" {
 		th := &threat{
 			Param: fmt.Sprintf("sidecar name: %s | "+
-				"Resource", config.Name),
+				"Resource", container.Name),
 			Value:     "cpu",
 			Type:      "Sidecar Resource",
 			Describe:  "CPU usage is not limited.",
@@ -301,16 +329,16 @@ func checkResourcesLimits(config v1.Container) (bool, []*threat) {
 }
 
 // checkPodAccountService check the default mount of service account
-func checkPodAccountService(config v1.Container, rv RBACVuln) (bool, []*threat) {
+func checkPodAccountService(container v1.Container, rv RBACVuln) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
-	for _, vc := range config.VolumeMounts {
+	for _, vc := range container.VolumeMounts {
 		if vc.MountPath == "/var/run/secrets/kubernetes.io/serviceaccount" {
 
 			th := &threat{
 				Param: fmt.Sprintf("sidecar name: %s | "+
-					"automountServiceAccountToken", config.Name),
+					"automountServiceAccountToken", container.Name),
 				Value:    "true",
 				Type:     vc.Name,
 				Describe: "Mount service account has a potential sensitive data leakage.",
@@ -373,6 +401,89 @@ func checkPodAnnotation(ans map[string]string) (bool, []*threat) {
 	}
 
 	return vuln, tlist
+}
+
+func (ks KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*threat) {
+	var vuln = false
+	tlist := []*threat{}
+
+	comRex := regexp.MustCompile(`\$(\w+)`)
+
+	for _, com := range container.Command {
+		comMatch := comRex.FindStringSubmatch(com)
+		if len(comMatch) > 1 {
+			val := ks.findEnvValue(container, comMatch[1], ns)
+			com = comRex.ReplaceAllString(com, val)
+		}
+
+		if len(com) > 150 {
+			th := &threat{
+				Param: "Pod command",
+				Value: fmt.Sprintf("command: %s", com[:50]),
+				Type:  "Pod Command",
+				Describe: "Container command has found extraordinary length of content, " +
+					"need to identify whether it is malicious command.",
+				Severity: "medium",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+		}
+	}
+
+	for _, arg := range container.Args {
+
+		comMatch := comRex.FindStringSubmatch(arg)
+		if len(comMatch) > 1 {
+			val := ks.findEnvValue(container, comMatch[1], ns)
+			arg = comRex.ReplaceAllString(arg, val)
+		}
+
+		if len(arg) > 150 {
+			th := &threat{
+				Param: "Pod args",
+				Value: fmt.Sprintf("command: %s", arg[:50]),
+				Type:  "Pod Command",
+				Describe: "Container command arg has found extraordinary length of content, " +
+					"need to identify whether it is malicious command.",
+				Severity: "medium",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
+}
+
+func (ks KScanner) findEnvValue(container v1.Container, name, ns string) string {
+	var value string
+
+	for _, env := range container.Env {
+		if env.Name == name {
+			if env.ValueFrom != nil {
+				switch {
+				case env.ValueFrom.ConfigMapKeyRef != nil:
+					configRef := env.ValueFrom.ConfigMapKeyRef
+					value = ks.findSecretOrConfigMapValue(configRef.Name, "ConfigMap", ns)
+
+				case env.ValueFrom.SecretKeyRef != nil:
+					configRef := env.ValueFrom.SecretKeyRef
+					value = ks.findSecretOrConfigMapValue(configRef.Name, "Secret", ns)
+
+				default:
+					//ignore
+				}
+			} else {
+				value = env.Value
+			}
+
+			break
+		}
+	}
+
+	return value
 }
 
 func (ks KScanner) getRBACVulnType(ns string) RBACVuln {

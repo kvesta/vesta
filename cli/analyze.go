@@ -23,6 +23,9 @@ Examples:
   # analyze by specifying config
   $ vesta analyze k8s --kubeconfig config
 
+  # analyze all the namespace
+  $ vesta analyze k8s -n all
+
   # analyze a special namespace
   $ vesta analyze k8s -n namespace 
 
@@ -55,7 +58,7 @@ Examples:
 		},
 	}
 
-	kubernetesAnalyze.Flags().StringVarP(&nameSpace, "ns", "n", "all", "specific namespace")
+	kubernetesAnalyze.Flags().StringVarP(&nameSpace, "ns", "n", "standard", "specific namespace")
 	kubernetesAnalyze.Flags().StringVar(&kubeconfig, "kubeconfig", "default", "specific configure file")
 	kubernetesAnalyze.Flags().BoolVar(&inside, "inside", false, "running analyze in a pod by using service account token")
 	kubernetesAnalyze.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")

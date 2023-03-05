@@ -141,8 +141,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
 	log.Printf(config.Yellow("Begin DaemonSet analyzing"))
 
+	if ctx.Value("nameSpace") == "all" {
+		namespaceWhileList = []string{}
+	}
+
 	// Check configuration in namespace
-	if ctx.Value("nameSpace") != "all" {
+	if ctx.Value("nameSpace") != "standard" && ctx.Value("nameSpace") != "all" {
 		ns := ctx.Value("nameSpace")
 
 		err = ks.checkRoleBinding(ns.(string))
@@ -193,11 +197,13 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
 				}
 
+				// TODO: remove from the white list, add kube-system namespace checking
 				err = ks.checkConfigMap(ns.Name)
 				if err != nil {
 					log.Printf("check config map failed in namespace: %s, %v", ns.Name, err)
 				}
 
+				// TODO: remove from the white list, add kube-system namespace checking
 				err = ks.checkSecret(ns.Name)
 				if err != nil {
 					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)

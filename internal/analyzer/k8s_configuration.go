@@ -259,9 +259,15 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 				}
 			}
 
+			var containerImages string
+
+			for _, im := range da.Spec.Template.Spec.Containers {
+				containerImages += im.Image
+			}
+
 			th := &threat{
 				Param:    fmt.Sprintf("name: %s | namespace: %s", da.Name, da.Namespace),
-				Value:    "containers",
+				Value:    fmt.Sprintf("images: %s", containerImages),
 				Type:     "DaemonSet",
 				Describe: fmt.Sprintf("Daemonset has set the unsafe pod \"%s\".", p.Name),
 				Severity: severity,
