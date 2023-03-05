@@ -439,6 +439,20 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 				}
 			}
 
+			// Check whether payload is hidden in the secret value
+			if len(v) > 150 && !strings.HasPrefix(v, "-----BEGIN") && !strings.HasPrefix(v, "eyJhb") {
+				th := &threat{
+					Param: fmt.Sprintf("ConfigMap Name: %s Namspace: %s", cf.Name, ns),
+					Value: fmt.Sprintf("%s:%s", k, v[:50]),
+					Type:  "ConfigMap",
+					Describe: "ConfigMap finds extraordinary length of content, " +
+						"need to identify whether it is malicious payload.",
+					Severity: "medium",
+				}
+
+				ks.VulnConfigures = append(ks.VulnConfigures, th)
+			}
+
 		}
 	}
 
@@ -476,7 +490,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 				switch checkWeakPassword(password) {
 				case "Weak":
 					th := &threat{
-						Param:    fmt.Sprintf("Secret Name: %s Namspace: %s", se.Name, ns),
+						Param:    fmt.Sprintf("Secret Name: %s | Namspace: %s", se.Name, ns),
 						Value:    fmt.Sprintf("%s:%s", k, v),
 						Type:     "Secret",
 						Describe: fmt.Sprintf("Secret has found weak password: '%s'.", password),
@@ -487,7 +501,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 
 				case "Medium":
 					th := &threat{
-						Param: fmt.Sprintf("Secret Name: %s Namspace: %s", se.Name, ns),
+						Param: fmt.Sprintf("Secret Name: %s | Namspace: %s", se.Name, ns),
 						Value: fmt.Sprintf("%s:%s", k, v),
 						Type:  "Secret",
 						Describe: fmt.Sprintf("Secret has found password '%s' "+
@@ -498,6 +512,20 @@ func (ks *KScanner) checkSecret(ns string) error {
 					ks.VulnConfigures = append(ks.VulnConfigures, th)
 				}
 
+			}
+
+			// Check whether payload is hidden in the secret value
+			if len(v) > 150 && !strings.HasPrefix(string(v), "-----BEGIN") && !strings.HasPrefix(string(v), "eyJhb") {
+				th := &threat{
+					Param: fmt.Sprintf("Secret Name: %s | Namspace: %s", se.Name, ns),
+					Value: fmt.Sprintf("%s:%s", k, v[:50]),
+					Type:  "Secret",
+					Describe: "Secret finds extraordinary length of content, " +
+						"need to identify whether it is malicious payload.",
+					Severity: "medium",
+				}
+
+				ks.VulnConfigures = append(ks.VulnConfigures, th)
 			}
 
 		}
@@ -525,7 +553,7 @@ func (ks KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *
 			continue
 		}
 
-		vuln, th = findEnvName[[]byte](data, key, envName, "secret")
+		vuln, th = findVulnEnvName[[]byte](data, key, envName, "secret")
 	}
 
 	return vuln, th
@@ -550,13 +578,59 @@ func (ks KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *
 			continue
 		}
 
-		vuln, th = findEnvName[string](data, key, envName, "configmap")
+		vuln, th = findVulnEnvName[string](data, key, envName, "configmap")
 	}
 
 	return vuln, th
 }
 
-func findEnvName[T []byte | string](data map[string]T, key, envName, tp string) (bool, *threat) {
+func (ks KScanner) findSecretOrConfigMapValue(name, com, ns string) string {
+
+	switch com {
+	case "ConfigMap":
+		ses, err := ks.KClient.
+			CoreV1().
+			ConfigMaps(ns).
+			List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return ""
+		}
+
+		for _, se := range ses.Items {
+			data := se.Data
+			for k, v := range data {
+				if k == name {
+					return v
+				}
+			}
+		}
+
+	case "Secret":
+		ses, err := ks.KClient.
+			CoreV1().
+			Secrets(ns).
+			List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			return ""
+		}
+
+		for _, se := range ses.Items {
+			data := se.Data
+			for k, v := range data {
+				if k == name {
+					return string(v)
+				}
+			}
+		}
+	default:
+		// ignore
+
+	}
+
+	return ""
+}
+
+func findVulnEnvName[T []byte | string](data map[string]T, key, envName, tp string) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 

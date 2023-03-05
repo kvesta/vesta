@@ -13,6 +13,7 @@ import (
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
@@ -187,52 +188,14 @@ func (ks *KScanner) checkPod(ns string) error {
 
 	for _, pod := range pods.Items {
 
-		vList := []*threat{}
-
-		for _, v := range pod.Spec.Volumes {
-			if ok, tlist := checkPodVolume(v); ok {
-				vList = append(vList, tlist...)
-			}
-		}
+		vList := ks.podAnalyze(pod.Spec, rv, ns, pod.Name)
 
 		// Check pod annotations
 		if ok, tlist := checkPodAnnotation(pod.Annotations); ok {
 			vList = append(vList, tlist...)
 		}
 
-		for _, sp := range pod.Spec.Containers {
-
-			// Skip some sidecars
-			if sp.Name == "istio-proxy" {
-				// Try to check the istio header `X-Envoy-Peer-Metadata`
-				// reference: https://github.com/istio/istio/issues/17635
-				if ok, tlist := ks.checkIstioHeader(pod.Name, ns, pod.Spec.Containers[0].Name); ok {
-					vList = append(vList, tlist...)
-				}
-
-				continue
-			}
-
-			if ok, tlist := checkPodPrivileged(sp); ok {
-				vList = append(vList, tlist...)
-			}
-
-			if ok, tlist := checkPodAccountService(sp, rv); ok {
-				vList = append(vList, tlist...)
-			}
-
-			if ok, tlist := checkResourcesLimits(sp); ok {
-				vList = append(vList, tlist...)
-			}
-
-			if ok, tlist := ks.checkSidecarEnv(sp, ns); ok {
-				vList = append(vList, tlist...)
-			}
-
-		}
-
 		if len(vList) > 0 {
-
 			sortSeverity(vList)
 			con := &container{
 				ContainerName: pod.Name,
@@ -242,6 +205,98 @@ func (ks *KScanner) checkPod(ns string) error {
 				Threats:       vList,
 			}
 			ks.VulnContainers = append(ks.VulnContainers, con)
+		}
+
+	}
+
+	return nil
+}
+
+func (ks *KScanner) checkDaemonSet(ns string) error {
+	das, err := ks.KClient.
+		AppsV1().
+		DaemonSets(ns).
+		List(context.TODO(), metav1.ListOptions{})
+
+	if err != nil {
+		return err
+	}
+
+	rv := ks.getRBACVulnType(ns)
+
+	for _, da := range das.Items {
+
+		p := v1.Pod{}
+
+		for k, v := range da.Spec.Selector.MatchLabels {
+			daemonPod, err := ks.KClient.
+				CoreV1().
+				Pods(da.Namespace).
+				List(context.TODO(),
+					metav1.ListOptions{
+						LabelSelector: fmt.Sprintf("%s=%s", k, v),
+					})
+
+			if err != nil {
+				continue
+			}
+
+			if len(daemonPod.Items) > 0 {
+				p = daemonPod.Items[0]
+
+				break
+			}
+		}
+
+		vList := ks.podAnalyze(da.Spec.Template.Spec, rv, ns, p.Name)
+
+		if len(vList) > 0 {
+
+			severity := "low"
+			for _, v := range vList {
+				if config.SeverityMap[severity] < config.SeverityMap[v.Severity] {
+					severity = v.Severity
+				}
+			}
+
+			var containerImages string
+
+			for _, im := range da.Spec.Template.Spec.Containers {
+				containerImages += im.Image
+			}
+
+			th := &threat{
+				Param:    fmt.Sprintf("name: %s | namespace: %s", da.Name, da.Namespace),
+				Value:    fmt.Sprintf("images: %s", containerImages),
+				Type:     "DaemonSet",
+				Describe: fmt.Sprintf("Daemonset has set the unsafe pod \"%s\".", p.Name),
+				Severity: severity,
+			}
+
+			ks.VulnConfigures = append(ks.VulnConfigures, th)
+
+			// Check the results whether the daemonset pod has been checked
+			isChecked := false
+			for _, vulnPod := range ks.VulnContainers {
+				if vulnPod.ContainerName == p.Name &&
+					vulnPod.Namepsace == da.Namespace {
+					isChecked = true
+
+					break
+				}
+			}
+
+			if !isChecked && p.Name != "" {
+				con := &container{
+					ContainerName: p.Name,
+					Namepsace:     da.Namespace,
+					Status:        string(p.Status.Phase),
+					NodeName:      p.Spec.NodeName,
+					Threats:       vList,
+				}
+
+				ks.VulnContainers = append(ks.VulnContainers, con)
+			}
 		}
 
 	}

@@ -136,12 +136,17 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	}
 
 	log.Printf(config.Yellow("Begin Pods analyzing"))
-	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
 	log.Printf(config.Yellow("Begin ConfigMap and Secret analyzing"))
 	log.Printf(config.Yellow("Begin RoleBinding analyzing"))
+	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
+	log.Printf(config.Yellow("Begin DaemonSet analyzing"))
+
+	if ctx.Value("nameSpace") == "all" {
+		namespaceWhileList = []string{}
+	}
 
 	// Check configuration in namespace
-	if ctx.Value("nameSpace") != "all" {
+	if ctx.Value("nameSpace") != "standard" && ctx.Value("nameSpace") != "all" {
 		ns := ctx.Value("nameSpace")
 
 		err = ks.checkRoleBinding(ns.(string))
@@ -162,6 +167,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		err := ks.checkPod(ns.(string))
 		if err != nil {
 			log.Printf("check pod failed in namespace: %s, %v", ns.(string), err)
+		}
+
+		err = ks.checkDaemonSet(ns.(string))
+		if err != nil {
+			log.Printf("check daemonset failed in namespace: %s, %v", ns.(string), err)
 		}
 
 		err = ks.checkJobsOrCornJob(ns.(string))
@@ -187,11 +197,13 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
 				}
 
+				// TODO: remove from the white list, add kube-system namespace checking
 				err = ks.checkConfigMap(ns.Name)
 				if err != nil {
 					log.Printf("check config map failed in namespace: %s, %v", ns.Name, err)
 				}
 
+				// TODO: remove from the white list, add kube-system namespace checking
 				err = ks.checkSecret(ns.Name)
 				if err != nil {
 					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
@@ -206,7 +218,11 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 				if err != nil {
 					log.Printf("check job failed in namespace: %s, %v", ns.Name, err)
 				}
+			}
 
+			err = ks.checkDaemonSet(ns.Name)
+			if err != nil {
+				log.Printf("check daemonset failed in namespace: %s, %v", ns.Name, err)
 			}
 		}
 	}

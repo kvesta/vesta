@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vuln-daemonset
+  namespace: kube-system
+  labels:
+    k8s-app: vuln-daemonset-labels
+spec:
+  selector:
+    matchLabels:
+      name: vuln-daemonset-pod
+  template:
+    metadata:
+      labels:
+        name: vuln-daemonset-pod
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: daemonset-pod
+        image: nginx:latest
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          privileged: true
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+      terminationGracePeriodSeconds: 30
+

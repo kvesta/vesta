@@ -22,16 +22,17 @@ var (
 	dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
 		"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
 
-	dangerFullPaths = []string{"/", "/etc", "/proc", "proc/1", "/sys", "/root", "/var/log"}
+	dangerFullPaths = []string{"/", "/etc", "/proc", "/proc/1", "/sys", "/root", "/var/log"}
 
 	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
 
 	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_SYS_MODULE",
-		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE", "CAP_DAC_READ_SEARCH"}
+		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE", "CAP_DAC_READ_SEARCH", "NET_ADMIN"}
 
 	unsafeAnnotations = map[string]AnType{
 		"sidecar.istio.io/proxyImage":          {component: "istio", level: "warning"},
+		"sidecar.istio.io/userVolumeMount":     {component: "istio", level: "warning"},
 		"security.alpha.kubernetes.io/sysctls": {component: "k8s", level: "low"},
 	}
 )
@@ -167,7 +168,7 @@ func checkMountPath(path string) bool {
 }
 
 func sortSeverity(threats []*threat) {
-	sort.Slice(threats, func(i, j int) bool {
+	sort.SliceStable(threats, func(i, j int) bool {
 		return config.SeverityMap[threats[i].Severity] > config.SeverityMap[threats[j].Severity]
 	})
 }
