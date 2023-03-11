@@ -226,18 +226,29 @@ func (ks KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*
 			}
 		}
 
-		if len(env.Value) > 150 {
-			th := &threat{
-				Param: fmt.Sprintf("sidecar name: %s | env", container.Name),
-				Value: fmt.Sprintf("%s: %s", env.Name, env.Value[:50]),
-				Type:  "Secret",
-				Describe: fmt.Sprintf("Container '%s' has found extraordinary length of content, "+
-					"need to identify whether it is malicious payload.", container.Name),
-				Severity: "medium",
-			}
+		detect := maliciousContentCheck(env.Value)
+		th := &threat{
+			Param: fmt.Sprintf("sidecar name: %s | env", container.Name),
+			Value: fmt.Sprintf("%s: %s", env.Name, detect.Plain),
+			Type:  "Sidecar Env",
+		}
+		switch detect.Types {
+		case Confusion:
+			th.Describe = fmt.Sprintf("Container '%s' finds high risk content(score: %.2f out of 1.0), "+
+				"which is a suspect command backdoor. ", container.Name, detect.Score)
+			th.Severity = "high"
 
 			tlist = append(tlist, th)
 			vuln = true
+		case Executable:
+			th.Describe = fmt.Sprintf("An executable format of content is detected in Container '%s', "+
+				"which is a potential backdoor and scanning the vulnerability is highly recommended.", container.Name)
+			th.Severity = "critical"
+
+			tlist = append(tlist, th)
+			vuln = true
+		default:
+			// ignore
 
 		}
 
@@ -409,49 +420,80 @@ func (ks KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*
 
 	comRex := regexp.MustCompile(`\$(\w+)`)
 
-	for _, com := range container.Command {
-		comMatch := comRex.FindStringSubmatch(com)
-		if len(comMatch) > 1 {
-			val := ks.findEnvValue(container, comMatch[1], ns)
-			com = comRex.ReplaceAllString(com, val)
-		}
+	commands := strings.Join(container.Command, " ") + " "
+	commands += strings.Join(container.Args, " ")
 
-		if len(com) > 150 {
-			th := &threat{
-				Param: "Pod command",
-				Value: fmt.Sprintf("command: %s", com[:50]),
-				Type:  "Pod Command",
-				Describe: "Container command has found extraordinary length of content, " +
-					"need to identify whether it is malicious command.",
-				Severity: "medium",
+	comMatch := comRex.FindAllStringSubmatch(commands, -1)
+	if len(comMatch) > 1 {
+		for _, v := range comMatch[1:] {
+			val := ks.findEnvValue(container, v[1], ns)
+
+			detect := maliciousContentCheck(val)
+			switch detect.Types {
+			case Confusion:
+				th := &threat{
+					Param: "Pod command",
+					Value: fmt.Sprintf("command: %s", detect.Plain),
+					Type:  "Pod Command",
+					Describe: fmt.Sprintf("Container command has found high risk environment in '%s'(score: %.2f out of 1.0), "+
+						"considering it as a backdoor.", v[0], detect.Score),
+					Severity: "high",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+
+				return vuln, tlist
+			case Executable:
+				th := &threat{
+					Param: "Pod command",
+					Value: fmt.Sprintf("command: %s", detect.Plain),
+					Type:  "Pod Command",
+					Describe: fmt.Sprintf("Container command has found executable risk environment in '%s', "+
+						"considering it as a backdoor.", v[0]),
+					Severity: "critical",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+
+				return vuln, tlist
+			default:
+				// ignore
 			}
-
-			tlist = append(tlist, th)
-			vuln = true
 		}
 	}
 
-	for _, arg := range container.Args {
-
-		comMatch := comRex.FindStringSubmatch(arg)
-		if len(comMatch) > 1 {
-			val := ks.findEnvValue(container, comMatch[1], ns)
-			arg = comRex.ReplaceAllString(arg, val)
+	detect := maliciousContentCheck(commands)
+	switch detect.Types {
+	case Confusion:
+		th := &threat{
+			Param: "Pod command",
+			Value: fmt.Sprintf("command: %s", detect.Plain),
+			Type:  "Pod Command",
+			Describe: fmt.Sprintf("Pod Command finds high risk content(score: %.2f out of 1.0), "+
+				"considering it as a backdoor.", detect.Score),
+			Severity: "high",
 		}
 
-		if len(arg) > 150 {
-			th := &threat{
-				Param: "Pod args",
-				Value: fmt.Sprintf("command: %s", arg[:50]),
-				Type:  "Pod Command",
-				Describe: "Container command arg has found extraordinary length of content, " +
-					"need to identify whether it is malicious command.",
-				Severity: "medium",
-			}
+		tlist = append(tlist, th)
+		vuln = true
 
-			tlist = append(tlist, th)
-			vuln = true
+	case Executable:
+		th := &threat{
+			Param: "Pod command",
+			Value: fmt.Sprintf("command: %s", detect.Plain),
+			Type:  "Pod Command",
+			Describe: "Container command is detected as a binary, " +
+				"considering it as a backdoor.",
+			Severity: "critical",
 		}
+
+		tlist = append(tlist, th)
+		vuln = true
+
+	default:
+		// ignore
 	}
 
 	return vuln, tlist

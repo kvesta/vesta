@@ -425,10 +425,12 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 
 			link := strings.Split(pruneLayer, " ")[0]
 			switch link {
+			// TODO: check the malicious content in "CMD" and "ENV"
 			case "CMD", "ADD", "ARG", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER", "ENV":
 				continue
 			}
 
+			// TODO: check the malicious content in "RUN"
 			commands := strings.Split(pruneLayer, "&&")
 			for _, cmd := range commands {
 				echoMatch := echoReg.FindStringSubmatch(cmd)

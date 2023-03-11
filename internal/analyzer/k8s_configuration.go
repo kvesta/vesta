@@ -262,7 +262,8 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 			var containerImages string
 
 			for _, im := range da.Spec.Template.Spec.Containers {
-				containerImages += im.Image
+				imageSplit := strings.Split(im.Image, "/")
+				containerImages += strings.Join(imageSplit, "/ ") + " | "
 			}
 
 			th := &threat{

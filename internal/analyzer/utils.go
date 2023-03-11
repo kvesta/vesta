@@ -1,7 +1,10 @@
 package analyzer
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"math"
 	"regexp"
 	"sort"
 	"strings"
@@ -11,12 +14,15 @@ import (
 )
 
 var (
+	baseMatch = regexp.MustCompile(`^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$`)
+
 	passKey = []*regexp.Regexp{
 		regexp.MustCompile(`(?i)pass`),
 		regexp.MustCompile(`(?i)pwd`),
 		regexp.MustCompile(`(?i)token`),
 		regexp.MustCompile(`(?i)secret`),
-		regexp.MustCompile(`(?i)key`),
+		regexp.MustCompile(`(?i)key$`),
+		regexp.MustCompile(`(?i)key[^.]`),
 	}
 
 	dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
@@ -44,6 +50,8 @@ type AnType struct {
 
 func checkWeakPassword(pass string) string {
 	countCase := 0
+
+	pass = string(decodeBase64(pass))
 
 	// Particularly checking the keyword
 	keyWords := []string{"password", "admin", "qwerty", "1q2w3e", "123456"}
@@ -171,4 +179,108 @@ func sortSeverity(threats []*threat) {
 	sort.SliceStable(threats, func(i, j int) bool {
 		return config.SeverityMap[threats[i].Severity] > config.SeverityMap[threats[j].Severity]
 	})
+}
+
+type MalReporter struct {
+	Types MalLevel
+	Score float64
+	Plain string
+}
+
+type MalLevel int8
+
+const (
+	// Unknown item represents the content is normal.
+	Unknown MalLevel = 0
+	// Confusion item represents the content matches many safe rules.
+	Confusion MalLevel = 1
+	// Executable item represents the content is an executable binary.
+	Executable MalLevel = 2
+)
+
+func maliciousContentCheck(command string) MalReporter {
+
+	rep := MalReporter{}
+
+	// Some string is encoded many times
+	sDec := decodeBase64(command)
+
+	switch {
+	case bytes.HasPrefix(sDec, []byte("\x7fELF")), strings.HasPrefix(string(sDec), "\\x7F\\x45\\x4C\\x46"):
+		rep.Types = Executable
+		rep.Plain = "ELF LSB executable binary"
+		rep.Score = 0.9
+
+		return rep
+
+	case bytes.HasPrefix(sDec, []byte("MZ")), strings.HasPrefix(string(sDec), "\\x4d\\x5a"):
+		rep.Types = Executable
+		rep.Plain = "PE32+ executable for MS Windows"
+		rep.Score = 0.9
+
+	default:
+		// ignore
+	}
+
+	commandPlain := string(sDec)
+
+	keySymbolReg := regexp.MustCompile(`[~$&<>*!():=.|/\\+#;]`)
+	SymbolCount := len(keySymbolReg.FindAllString(commandPlain, -1))
+
+	keyFuncs := []string{"syscall", "open", "select", "fork", "proc", "system", "exit",
+		"/dev/tcp/", "/bin/sh", "/bin/bash", "subprocess.", "fsockopen", "TCPSocket", "()"}
+	var funcCount int
+	for _, f := range keyFuncs {
+		funcCount += strings.Count(commandPlain, f) * len(f)
+	}
+
+	replacer := strings.NewReplacer(" ", "", "\n", "", "\t", "")
+	commandLen := len(replacer.Replace(commandPlain))
+
+	score := float64(SymbolCount*3+funcCount) / float64(commandLen)
+	ratio := math.Pow(10, float64(2))
+	score = math.Round(score*ratio) / ratio
+
+	if commandLen < 30 {
+		score = 0.0
+	}
+
+	if score > 0.75 {
+		rep.Types = Confusion
+	} else {
+		rep.Types = Unknown
+	}
+
+	rep.Score = score
+	if len(commandPlain) > 50 {
+		rep.Plain = commandPlain[:50]
+
+		return rep
+	}
+
+	rep.Plain = commandPlain
+
+	return rep
+}
+
+func decodeBase64(content string) []byte {
+	res := []byte(content)
+
+	for i := 0; i < 10; i++ {
+
+		if !baseMatch.Match(res) {
+			break
+		}
+
+		de, err := base64.StdEncoding.DecodeString(string(res))
+
+		if err != nil || len(de) < 1 {
+			res = []byte(content)
+			break
+		}
+
+		res = de
+	}
+
+	return res
 }

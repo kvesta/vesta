@@ -191,22 +191,20 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 				}
 			}
 
+			err = ks.checkConfigMap(ns.Name)
+			if err != nil {
+				log.Printf("check config map failed in namespace: %s, %v", ns.Name, err)
+			}
+
+			err = ks.checkSecret(ns.Name)
+			if err != nil {
+				log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
+			}
+
 			if isNecessary {
 				err = ks.checkRoleBinding(ns.Name)
 				if err != nil {
 					log.Printf("check role binding failed in namespace: %s, %v", ns.Name, err)
-				}
-
-				// TODO: remove from the white list, add kube-system namespace checking
-				err = ks.checkConfigMap(ns.Name)
-				if err != nil {
-					log.Printf("check config map failed in namespace: %s, %v", ns.Name, err)
-				}
-
-				// TODO: remove from the white list, add kube-system namespace checking
-				err = ks.checkSecret(ns.Name)
-				if err != nil {
-					log.Printf("check secret failed in namespace %s, %v", ns.Name, err)
 				}
 
 				err := ks.checkPod(ns.Name)

