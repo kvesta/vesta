@@ -185,7 +185,7 @@ func checkEnvoy() (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
+func (ks *KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 	log.Printf(config.Yellow("Begin Istio analyzing"))
 
 	var vuln = false
@@ -251,7 +251,7 @@ func (ks KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkIstioHeader(podname, ns, cname string) (bool, []*threat) {
+func (ks *KScanner) checkIstioHeader(podname, ns, cname string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
@@ -317,7 +317,7 @@ func (ks KScanner) checkIstioHeader(podname, ns, cname string) (bool, []*threat)
 	return vuln, tlist
 }
 
-func (ks KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
+func (ks *KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
 	log.Printf(config.Yellow("Begin cilium analyzing"))
 
 	var vuln = false
@@ -502,7 +502,7 @@ func checkKubectlProxy() (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkEtcd() (bool, []*threat) {
+func (ks *KScanner) checkEtcd() (bool, []*threat) {
 	log.Printf(config.Yellow("Begin Etcd analyzing"))
 
 	var vuln = false

@@ -556,7 +556,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 	return nil
 }
 
-func (ks KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *threat) {
+func (ks *KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 
@@ -581,7 +581,7 @@ func (ks KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *
 	return vuln, th
 }
 
-func (ks KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *threat) {
+func (ks *KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 
@@ -606,7 +606,7 @@ func (ks KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *
 	return vuln, th
 }
 
-func (ks KScanner) findSecretOrConfigMapValue(name, com, ns string) string {
+func (ks *KScanner) findSecretOrConfigMapValue(name, com, ns string) string {
 
 	switch com {
 	case "ConfigMap":

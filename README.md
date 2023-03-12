@@ -56,6 +56,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Docker env password check | Check weak password in database.                                         | high/medium               |                                                                                             |
 | ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                       |                                                                                             |
 | ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium               |                                                                                             |
+| Pending   | Docker Backdoor           | Docker env command has malicious commands.                               | critical/high             |                                                                                             |
 
 ---
 
@@ -84,7 +85,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Sidecar configurations                                   | Sidecar has some dangerous configurations.                                 | critical/high/ medium/low |                                                                                             |
 | ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                  | 
 | ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/ medium/low |                                                                                             |
-| ✔         | Backdoor                                                 | Backdoor Detection                                                         | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
+| ✔         | Backdoor                                                 | Backdoor Detection                                                         | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
 
 
 

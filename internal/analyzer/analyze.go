@@ -141,7 +141,7 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	log.Printf(config.Yellow("Begin Job and CronJob analyzing"))
 	log.Printf(config.Yellow("Begin DaemonSet analyzing"))
 
-	if ctx.Value("nameSpace") == "all" {
+	if ctx.Value("nameSpace") == "all" || ctx.Value("nameSpace") != "standard" {
 		namespaceWhileList = []string{}
 	}
 

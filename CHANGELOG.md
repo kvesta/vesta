@@ -6,6 +6,7 @@
 ## improvements
 - Add some rules for CAP checking
 - Change the namespace checking of Secret and ConfigMap
+- Improve the rules of `DeamonSet` scanning
 
 # 1.0.5 (2023.2.13)
 ## features

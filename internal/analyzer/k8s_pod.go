@@ -1,16 +1,58 @@
 package analyzer
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"regexp"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/kvesta/vesta/config"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (ks KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName string) []*threat {
+func (ks *KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName string) []*threat {
 	vList := []*threat{}
+
+	for _, nswList := range namespaceWhileList {
+		if ns == nswList {
+			pruned, err := ks.prunePod(ns, podName)
+			if err != nil {
+				break
+			}
+
+			if pruned {
+				return vList
+			}
+
+			pod, err := ks.KClient.
+				CoreV1().
+				Pods(ns).
+				Get(context.TODO(), podName, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+
+			age := time.Since(pod.CreationTimestamp.Time)
+
+			if age.Hours() < 168 {
+				th := &threat{
+					Param: "replaced time",
+					Value: pod.CreationTimestamp.Time.Format("02/01/2006"),
+					Type:  "Pod modify",
+					Describe: fmt.Sprintf("Pod has been modified %.2f hours ageo "+
+						"in crucial namespace: %s", age.Hours(), ns),
+					Severity: "medium",
+				}
+				vList = append(vList, th)
+			}
+
+			break
+		}
+	}
 
 	for _, v := range podSpec.Volumes {
 		if ok, tlist := checkPodVolume(v); ok {
@@ -155,7 +197,7 @@ func checkPodPrivileged(container v1.Container) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*threat) {
+func (ks *KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
@@ -414,7 +456,7 @@ func checkPodAnnotation(ans map[string]string) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*threat) {
+func (ks *KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
@@ -499,7 +541,7 @@ func (ks KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*
 	return vuln, tlist
 }
 
-func (ks KScanner) findEnvValue(container v1.Container, name, ns string) string {
+func (ks *KScanner) findEnvValue(container v1.Container, name, ns string) string {
 	var value string
 
 	for _, env := range container.Env {
@@ -528,7 +570,7 @@ func (ks KScanner) findEnvValue(container v1.Container, name, ns string) string 
 	return value
 }
 
-func (ks KScanner) getRBACVulnType(ns string) RBACVuln {
+func (ks *KScanner) getRBACVulnType(ns string) RBACVuln {
 	rbv := RBACVuln{
 		Severity: "warning",
 	}
@@ -574,7 +616,7 @@ func (ks KScanner) getRBACVulnType(ns string) RBACVuln {
 	return rbv
 }
 
-func (ks KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Regexp) (bool, *threat) {
+func (ks *KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Regexp) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 
@@ -598,4 +640,93 @@ func (ks KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Re
 	}
 
 	return vuln, th
+}
+
+// prunePod assesses whether a pod need to check if namespace of pod in white list
+func (ks *KScanner) prunePod(ns, podName string) (bool, error) {
+	pods, err := ks.KClient.
+		CoreV1().
+		Pods(ns).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	type PodStatus struct {
+		Age      float64
+		Restarts int
+	}
+
+	p := PodStatus{}
+
+	podNumber := len(pods.Items)
+
+	ageWeight := make([]float64, podNumber-1)
+	restartWeight := make([]int, podNumber-1)
+
+	index := 0
+	for _, pod := range pods.Items {
+		age := time.Since(pod.CreationTimestamp.Time)
+		restarts := pod.Status.ContainerStatuses[0].RestartCount
+
+		if pod.Name == podName {
+			p.Age = math.Round(age.Hours())
+			p.Restarts = int(restarts)
+			continue
+		}
+
+		ageWeight[index] = math.Round(age.Hours())
+		restartWeight[index] = int(restarts)
+		index += 1
+	}
+
+	sort.Float64s(ageWeight)
+	sort.Ints(restartWeight)
+	ageDeviation := standardDeviation[float64](ageWeight)
+	restartDeviation := math.Sqrt(standardDeviation[int](restartWeight))
+
+	ageCount := map[float64]int{}
+	restartCount := map[int]int{}
+	for i := 0; i < podNumber-1; i++ {
+		age := ageWeight[i]
+		restarts := restartWeight[i]
+
+		if _, ok := ageCount[age]; ok {
+			ageCount[age] += 1
+		} else {
+			ageCount[age] = 1
+		}
+
+		if _, ok := restartCount[restarts]; ok {
+			restartCount[restarts] += 1
+		} else {
+			restartCount[restarts] = 1
+		}
+	}
+
+	score := 0.0
+
+	for number, count := range ageCount {
+		if math.Abs(p.Age-number) > ageDeviation {
+			score = math.Max(score, float64(count)/float64(podNumber-1))
+		}
+	}
+
+	// compare to the oldest operation
+	score += 0.2 * math.Abs(float64(p.Age)-ageWeight[podNumber-2]) / (ageWeight[podNumber-2] / 960)
+
+	rscore := 0.0
+	for number, count := range restartCount {
+		if math.Abs(float64(p.Restarts-number)) > restartDeviation {
+			rscore = math.Max(rscore, float64(count)/float64(podNumber-1))
+		}
+	}
+
+	score += rscore
+
+	if score < 0.7 {
+		return true, nil
+	}
+
+	return false, nil
 }

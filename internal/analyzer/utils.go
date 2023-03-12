@@ -31,7 +31,7 @@ var (
 	dangerFullPaths = []string{"/", "/etc", "/proc", "/proc/1", "/sys", "/root", "/var/log"}
 
 	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
-		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node"}
+		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node", "openshift-infra"}
 
 	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_SYS_MODULE",
 		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE", "CAP_DAC_READ_SEARCH", "NET_ADMIN"}
@@ -228,7 +228,7 @@ func maliciousContentCheck(command string) MalReporter {
 	SymbolCount := len(keySymbolReg.FindAllString(commandPlain, -1))
 
 	keyFuncs := []string{"syscall", "open", "select", "fork", "proc", "system", "exit",
-		"/dev/tcp/", "/bin/sh", "/bin/bash", "subprocess.", "fsockopen", "TCPSocket", "()"}
+		"/dev/tcp/", "/bin/sh", "/bin/bash", "subprocess.", "fsockopen", "TCPSocket", "()", "->"}
 	var funcCount int
 	for _, f := range keyFuncs {
 		funcCount += strings.Count(commandPlain, f) * len(f)
@@ -283,4 +283,17 @@ func decodeBase64(content string) []byte {
 	}
 
 	return res
+}
+
+func standardDeviation[T float64 | int](num []T) float64 {
+	var sum, mean, sd float64
+	length := len(num)
+	for i := 1; i <= length; i++ {
+		sum += float64(num[i-1])
+	}
+	mean = sum / float64(length)
+	for j := 0; j < length; j++ {
+		sd += math.Pow(float64(num[j])-mean, 2)
+	}
+	return sd / float64(length)
 }
