@@ -440,17 +440,28 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 			}
 
 			// Check whether payload is hidden in the secret value
-			if len(v) > 150 && !strings.HasPrefix(v, "-----BEGIN") && !strings.HasPrefix(v, "eyJhb") {
-				th := &threat{
-					Param: fmt.Sprintf("ConfigMap Name: %s Namspace: %s", cf.Name, ns),
-					Value: fmt.Sprintf("%s:%s", k, v[:50]),
-					Type:  "ConfigMap",
-					Describe: "ConfigMap finds extraordinary length of content, " +
-						"need to identify whether it is malicious payload.",
-					Severity: "medium",
-				}
+			detect := maliciousContentCheck(v)
+			th := &threat{
+				Param: fmt.Sprintf("ConfigMap Name: %s Namspace: %s", cf.Name, ns),
+				Value: fmt.Sprintf("%s:%s", k, detect.Plain),
+				Type:  "ConfigMap",
+			}
+			switch detect.Types {
+			case Confusion:
+				th.Describe = fmt.Sprintf("ConfigMap finds high risk content(score: %.2f out of 1.0), "+
+					"which is a suspect command backdoor. ", detect.Score)
+				th.Severity = "high"
 
 				ks.VulnConfigures = append(ks.VulnConfigures, th)
+			case Executable:
+				th.Describe = "An executable format of content is detected in ConfigMap value, " +
+					"which is a potential backdoor and scanning the vulnerability is highly recommended."
+				th.Severity = "critical"
+
+				ks.VulnConfigures = append(ks.VulnConfigures, th)
+			default:
+				// ignore
+
 			}
 
 		}
@@ -515,17 +526,28 @@ func (ks *KScanner) checkSecret(ns string) error {
 			}
 
 			// Check whether payload is hidden in the secret value
-			if len(v) > 150 && !strings.HasPrefix(string(v), "-----BEGIN") && !strings.HasPrefix(string(v), "eyJhb") {
-				th := &threat{
-					Param: fmt.Sprintf("Secret Name: %s | Namspace: %s", se.Name, ns),
-					Value: fmt.Sprintf("%s:%s", k, v[:50]),
-					Type:  "Secret",
-					Describe: "Secret finds extraordinary length of content, " +
-						"need to identify whether it is malicious payload.",
-					Severity: "medium",
-				}
+			detect := maliciousContentCheck(string(v))
+			th := &threat{
+				Param: fmt.Sprintf("Secret Name: %s Namspace: %s", se.Name, ns),
+				Value: fmt.Sprintf("%s:%s", k, detect.Plain),
+				Type:  "Secret",
+			}
+			switch detect.Types {
+			case Confusion:
+				th.Describe = fmt.Sprintf("Secret finds high risk content(score: %.2f out of 1.0), "+
+					"which is a suspect command backdoor. ", detect.Score)
+				th.Severity = "high"
 
 				ks.VulnConfigures = append(ks.VulnConfigures, th)
+			case Executable:
+				th.Describe = "An executable format of content is detected in Secret value, " +
+					"which is a potential backdoor and scanning the vulnerability is highly recommended."
+				th.Severity = "critical"
+
+				ks.VulnConfigures = append(ks.VulnConfigures, th)
+			default:
+				// ignore
+
 			}
 
 		}
@@ -534,7 +556,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 	return nil
 }
 
-func (ks KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *threat) {
+func (ks *KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 
@@ -559,7 +581,7 @@ func (ks KScanner) checkSecretFromName(ns, key, seName, envName string) (bool, *
 	return vuln, th
 }
 
-func (ks KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *threat) {
+func (ks *KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 
@@ -584,7 +606,7 @@ func (ks KScanner) checkConfigFromName(ns, key, seName, envName string) (bool, *
 	return vuln, th
 }
 
-func (ks KScanner) findSecretOrConfigMapValue(name, com, ns string) string {
+func (ks *KScanner) findSecretOrConfigMapValue(name, com, ns string) string {
 
 	switch com {
 	case "ConfigMap":

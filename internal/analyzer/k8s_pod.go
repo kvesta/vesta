@@ -1,16 +1,58 @@
 package analyzer
 
 import (
+	"context"
 	"fmt"
+	"math"
 	"regexp"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/kvesta/vesta/config"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (ks KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName string) []*threat {
+func (ks *KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName string) []*threat {
 	vList := []*threat{}
+
+	for _, nswList := range namespaceWhileList {
+		if ns == nswList {
+			pruned, err := ks.prunePod(ns, podName)
+			if err != nil {
+				break
+			}
+
+			if pruned {
+				return vList
+			}
+
+			pod, err := ks.KClient.
+				CoreV1().
+				Pods(ns).
+				Get(context.TODO(), podName, metav1.GetOptions{})
+			if err != nil {
+				break
+			}
+
+			age := time.Since(pod.CreationTimestamp.Time)
+
+			if age.Hours() < 168 {
+				th := &threat{
+					Param: "replaced time",
+					Value: pod.CreationTimestamp.Time.Format("02/01/2006"),
+					Type:  "Pod modify",
+					Describe: fmt.Sprintf("Pod has been modified %.2f hours ageo "+
+						"in crucial namespace: %s", age.Hours(), ns),
+					Severity: "medium",
+				}
+				vList = append(vList, th)
+			}
+
+			break
+		}
+	}
 
 	for _, v := range podSpec.Volumes {
 		if ok, tlist := checkPodVolume(v); ok {
@@ -155,7 +197,7 @@ func checkPodPrivileged(container v1.Container) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*threat) {
+func (ks *KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
@@ -226,18 +268,29 @@ func (ks KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []*
 			}
 		}
 
-		if len(env.Value) > 150 {
-			th := &threat{
-				Param: fmt.Sprintf("sidecar name: %s | env", container.Name),
-				Value: fmt.Sprintf("%s: %s", env.Name, env.Value[:50]),
-				Type:  "Secret",
-				Describe: fmt.Sprintf("Container '%s' has found extraordinary length of content, "+
-					"need to identify whether it is malicious payload.", container.Name),
-				Severity: "medium",
-			}
+		detect := maliciousContentCheck(env.Value)
+		th := &threat{
+			Param: fmt.Sprintf("sidecar name: %s | env", container.Name),
+			Value: fmt.Sprintf("%s: %s", env.Name, detect.Plain),
+			Type:  "Sidecar Env",
+		}
+		switch detect.Types {
+		case Confusion:
+			th.Describe = fmt.Sprintf("Container '%s' finds high risk content(score: %.2f out of 1.0), "+
+				"which is a suspect command backdoor. ", container.Name, detect.Score)
+			th.Severity = "high"
 
 			tlist = append(tlist, th)
 			vuln = true
+		case Executable:
+			th.Describe = fmt.Sprintf("An executable format of content is detected in Container '%s', "+
+				"which is a potential backdoor and scanning the vulnerability is highly recommended.", container.Name)
+			th.Severity = "critical"
+
+			tlist = append(tlist, th)
+			vuln = true
+		default:
+			// ignore
 
 		}
 
@@ -403,61 +456,92 @@ func checkPodAnnotation(ans map[string]string) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func (ks KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*threat) {
+func (ks *KScanner) checkPodCommand(container v1.Container, ns string) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
 	comRex := regexp.MustCompile(`\$(\w+)`)
 
-	for _, com := range container.Command {
-		comMatch := comRex.FindStringSubmatch(com)
-		if len(comMatch) > 1 {
-			val := ks.findEnvValue(container, comMatch[1], ns)
-			com = comRex.ReplaceAllString(com, val)
-		}
+	commands := strings.Join(container.Command, " ") + " "
+	commands += strings.Join(container.Args, " ")
 
-		if len(com) > 150 {
-			th := &threat{
-				Param: "Pod command",
-				Value: fmt.Sprintf("command: %s", com[:50]),
-				Type:  "Pod Command",
-				Describe: "Container command has found extraordinary length of content, " +
-					"need to identify whether it is malicious command.",
-				Severity: "medium",
+	comMatch := comRex.FindAllStringSubmatch(commands, -1)
+	if len(comMatch) > 1 {
+		for _, v := range comMatch[1:] {
+			val := ks.findEnvValue(container, v[1], ns)
+
+			detect := maliciousContentCheck(val)
+			switch detect.Types {
+			case Confusion:
+				th := &threat{
+					Param: "Pod command",
+					Value: fmt.Sprintf("command: %s", detect.Plain),
+					Type:  "Pod Command",
+					Describe: fmt.Sprintf("Container command has found high risk environment in '%s'(score: %.2f out of 1.0), "+
+						"considering it as a backdoor.", v[0], detect.Score),
+					Severity: "high",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+
+				return vuln, tlist
+			case Executable:
+				th := &threat{
+					Param: "Pod command",
+					Value: fmt.Sprintf("command: %s", detect.Plain),
+					Type:  "Pod Command",
+					Describe: fmt.Sprintf("Container command has found executable risk environment in '%s', "+
+						"considering it as a backdoor.", v[0]),
+					Severity: "critical",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+
+				return vuln, tlist
+			default:
+				// ignore
 			}
-
-			tlist = append(tlist, th)
-			vuln = true
 		}
 	}
 
-	for _, arg := range container.Args {
-
-		comMatch := comRex.FindStringSubmatch(arg)
-		if len(comMatch) > 1 {
-			val := ks.findEnvValue(container, comMatch[1], ns)
-			arg = comRex.ReplaceAllString(arg, val)
+	detect := maliciousContentCheck(commands)
+	switch detect.Types {
+	case Confusion:
+		th := &threat{
+			Param: "Pod command",
+			Value: fmt.Sprintf("command: %s", detect.Plain),
+			Type:  "Pod Command",
+			Describe: fmt.Sprintf("Pod Command finds high risk content(score: %.2f out of 1.0), "+
+				"considering it as a backdoor.", detect.Score),
+			Severity: "high",
 		}
 
-		if len(arg) > 150 {
-			th := &threat{
-				Param: "Pod args",
-				Value: fmt.Sprintf("command: %s", arg[:50]),
-				Type:  "Pod Command",
-				Describe: "Container command arg has found extraordinary length of content, " +
-					"need to identify whether it is malicious command.",
-				Severity: "medium",
-			}
+		tlist = append(tlist, th)
+		vuln = true
 
-			tlist = append(tlist, th)
-			vuln = true
+	case Executable:
+		th := &threat{
+			Param: "Pod command",
+			Value: fmt.Sprintf("command: %s", detect.Plain),
+			Type:  "Pod Command",
+			Describe: "Container command is detected as a binary, " +
+				"considering it as a backdoor.",
+			Severity: "critical",
 		}
+
+		tlist = append(tlist, th)
+		vuln = true
+
+	default:
+		// ignore
 	}
 
 	return vuln, tlist
 }
 
-func (ks KScanner) findEnvValue(container v1.Container, name, ns string) string {
+func (ks *KScanner) findEnvValue(container v1.Container, name, ns string) string {
 	var value string
 
 	for _, env := range container.Env {
@@ -486,7 +570,7 @@ func (ks KScanner) findEnvValue(container v1.Container, name, ns string) string 
 	return value
 }
 
-func (ks KScanner) getRBACVulnType(ns string) RBACVuln {
+func (ks *KScanner) getRBACVulnType(ns string) RBACVuln {
 	rbv := RBACVuln{
 		Severity: "warning",
 	}
@@ -532,7 +616,7 @@ func (ks KScanner) getRBACVulnType(ns string) RBACVuln {
 	return rbv
 }
 
-func (ks KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Regexp) (bool, *threat) {
+func (ks *KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Regexp) (bool, *threat) {
 	var vuln = false
 	th := &threat{}
 
@@ -556,4 +640,93 @@ func (ks KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Re
 	}
 
 	return vuln, th
+}
+
+// prunePod assesses whether a pod need to check if namespace of pod in white list
+func (ks *KScanner) prunePod(ns, podName string) (bool, error) {
+	pods, err := ks.KClient.
+		CoreV1().
+		Pods(ns).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	type PodStatus struct {
+		Age      float64
+		Restarts int
+	}
+
+	p := PodStatus{}
+
+	podNumber := len(pods.Items)
+
+	ageWeight := make([]float64, podNumber-1)
+	restartWeight := make([]int, podNumber-1)
+
+	index := 0
+	for _, pod := range pods.Items {
+		age := time.Since(pod.CreationTimestamp.Time)
+		restarts := pod.Status.ContainerStatuses[0].RestartCount
+
+		if pod.Name == podName {
+			p.Age = math.Round(age.Hours())
+			p.Restarts = int(restarts)
+			continue
+		}
+
+		ageWeight[index] = math.Round(age.Hours())
+		restartWeight[index] = int(restarts)
+		index += 1
+	}
+
+	sort.Float64s(ageWeight)
+	sort.Ints(restartWeight)
+	ageDeviation := standardDeviation[float64](ageWeight)
+	restartDeviation := math.Sqrt(standardDeviation[int](restartWeight))
+
+	ageCount := map[float64]int{}
+	restartCount := map[int]int{}
+	for i := 0; i < podNumber-1; i++ {
+		age := ageWeight[i]
+		restarts := restartWeight[i]
+
+		if _, ok := ageCount[age]; ok {
+			ageCount[age] += 1
+		} else {
+			ageCount[age] = 1
+		}
+
+		if _, ok := restartCount[restarts]; ok {
+			restartCount[restarts] += 1
+		} else {
+			restartCount[restarts] = 1
+		}
+	}
+
+	score := 0.0
+
+	for number, count := range ageCount {
+		if math.Abs(p.Age-number) > ageDeviation {
+			score = math.Max(score, float64(count)/float64(podNumber-1))
+		}
+	}
+
+	// compare to the oldest operation
+	score += 0.2 * math.Abs(float64(p.Age)-ageWeight[podNumber-2]) / (ageWeight[podNumber-2] / 960)
+
+	rscore := 0.0
+	for number, count := range restartCount {
+		if math.Abs(float64(p.Restarts-number)) > restartDeviation {
+			rscore = math.Max(rscore, float64(count)/float64(podNumber-1))
+		}
+	}
+
+	score += rscore
+
+	if score < 0.7 {
+		return true, nil
+	}
+
+	return false, nil
 }

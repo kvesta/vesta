@@ -108,7 +108,7 @@ func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 		for _, v := range p.Threats {
 
 			nodeName := ""
-			if r.MasterNodes[p.NodeName].IsMaster {
+			if r.MasterNodes[p.NodeName] != nil && r.MasterNodes[p.NodeName].IsMaster {
 				nodeName = fmt.Sprintf("%s (%s)",
 					p.NodeName, config.Red("Master"))
 			} else {
