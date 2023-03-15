@@ -298,6 +298,7 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 
 	log.Printf(config.Yellow("Begin kernel version analyzing"))
 	for cve, nickname := range vulnKernelVersion {
+		var maxVersion string
 		underVuln := false
 
 		rows, err := cli.QueryVulnByCVEID(cve)
@@ -313,8 +314,11 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 				row.MaxVersion = "4.8.3"
 			}
 
-			if compareVersion(kernelVersion, row.MaxVersion, row.MinVersion) {
+			if compareVersion(kernelVersion, row.MaxVersion, row.MinVersion) && row.VulnName == "linux_kernel" {
 				vuln, underVuln = true, true
+				maxVersion = row.MaxVersion
+
+				break
 			}
 		}
 
@@ -323,9 +327,9 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 				Param: "kernel version",
 				Value: kernelVersion,
 				Type:  "K8s version less than v1.24",
-				Describe: fmt.Sprintf("Kernel version is suffering the %s vulnerablility, "+
-					"has a potential container escape.", nickname),
-				Reference: "Upload kernel version or docker-desktop.",
+				Describe: fmt.Sprintf("Kernel version is suffering the %s vulnerablility below the version `%s`, "+
+					"has a potential container escape.", nickname, strings.TrimPrefix(maxVersion, "=")),
+				Reference: "Update kernel version or docker-desktop.",
 				Severity:  "critical",
 			}
 

@@ -43,20 +43,20 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 
 > Docker
 
-| Supported | Check Item                | Description                                                              | Severity                  | Reference                                                                                   |
-|-----------|---------------------------|--------------------------------------------------------------------------|---------------------------|---------------------------------------------------------------------------------------------|
-| ✔         | PrivilegeAllowed          | Privileged module is allowed.                                            | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
-| ✔         | Capabilities              | Dangerous capabilities are opening.                                      | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) | 
-| ✔         | Volume Mount              | Mount dangerous location.                                                | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                |
-| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                                   | critical                  | [Ref](https://github.com/vulhub/vulhub/blob/master/docker/unauthorized-rce/README.md)       |
-| ✔         | Kernel version            | Kernel version is under the escape version.                              | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                       |
-| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41.              | critical/medium           |                                                                                             |
-| ✔         | Pid Module                | Pid Module is `host`.                                                    | high                      |                                                                                             |
-| ✔         | Docker Server version     | Server version is included the vulnerable version                        | critical/high/ medium/low |                                                                                             |
-| ✔         | Docker env password check | Check weak password in database.                                         | high/medium               |                                                                                             |
-| ✔         | Image tag check           | Image is not tagged or `latest`.                                         | low                       |                                                                                             |
-| ✔         | Docker History            | Docker layers have some  dangerous commands.                             | high/medium               |                                                                                             |
-| Pending   | Docker Backdoor           | Docker env command has malicious commands.                               | critical/high             |                                                                                             |
+| Supported | Check Item                | Description                                                 | Severity                  | Reference                                                                                   |
+|-----------|---------------------------|-------------------------------------------------------------|---------------------------|---------------------------------------------------------------------------------------------|
+| ✔         | PrivilegeAllowed          | Privileged module is allowed.                               | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
+| ✔         | Capabilities              | Dangerous capabilities are opening.                         | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) | 
+| ✔         | Volume Mount              | Mount dangerous location.                                   | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                |
+| ✔         | Docker Unauthorized       | 2375 port is opening and unauthorized.                      | critical                  | [Ref](https://github.com/vulhub/vulhub/blob/master/docker/unauthorized-rce/README.md)       |
+| ✔         | Kernel version            | Kernel version is under the escape version.                 | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                       |
+| ✔         | Network Module            | Net Module is `host` and containerd version less than 1.41. | critical/medium           |                                                                                             |
+| ✔         | Pid Module                | Pid Module is `host`.                                       | high                      |                                                                                             |
+| ✔         | Docker Server version     | Server version is included the vulnerable version.          | critical/high/ medium/low |                                                                                             |
+| ✔         | Docker env password check | Check weak password in database.                            | high/medium               |                                                                                             |
+| ✔         | Image tag check           | Image is not tagged or `latest`.                            | low                       |                                                                                             |
+| ✔         | Docker History            | Docker layers have some  dangerous commands.                | high/medium               |                                                                                             |
+| Pending   | Docker Backdoor           | Docker env command has malicious commands.                  | critical/high             |                                                                                             |
 
 ---
 
@@ -85,7 +85,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Sidecar configurations                                   | Sidecar has some dangerous configurations.                                 | critical/high/ medium/low |                                                                                             |
 | ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                  | 
 | ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/ medium/low |                                                                                             |
-| ✔         | Backdoor                                                 | Backdoor Detection                                                         | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
+| ✔         | Backdoor                                                 | Backdoor Detection.                                                        | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                              |
 
 
 

@@ -2,11 +2,15 @@
 ## features
 - Add Kubernetes `DaemonSet` checking
 - Add rootkit and backdoor checking in K8s and Docker
+- Add k8s version checking
 
 ## improvements
 - Add some rules for CAP checking
 - Change the namespace checking of Secret and ConfigMap
 - Improve the rules of `DeamonSet` scanning
+
+## fixed
+- fix the comparison of kernel version
 
 # 1.0.5 (2023.2.13)
 ## features

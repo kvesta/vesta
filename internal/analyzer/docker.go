@@ -286,7 +286,7 @@ func checkNetworkModel(config *types.ContainerJSON, version string) (bool, []*th
 			th := &threat{
 				Param: "network",
 				Value: "host",
-				Describe: "Docker container is run with `--net=host`, " +
+				Describe: "Docker container is running with `--net=host`, " +
 					"which will exposed the network of physical machine.",
 				Severity: "medium",
 			}

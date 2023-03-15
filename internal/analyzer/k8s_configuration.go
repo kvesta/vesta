@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
+	version2 "github.com/hashicorp/go-version"
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/osrelease"
@@ -86,6 +87,11 @@ func (ks *KScanner) dockershimCheck(ctx context.Context) error {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
+	// Check Kubernetes version
+	if ok, tlist := checkK8sVersion(vulnCli, ks.Version); ok {
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
 	return nil
 }
 
@@ -111,6 +117,10 @@ func (ks *KScanner) kernelCheck(ctx context.Context) error {
 		for _, th := range tlist {
 			th.Type = "K8s kernel version"
 		}
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
+	if ok, tlist := checkK8sVersion(vulnCli, ks.Version); ok {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
@@ -417,4 +427,55 @@ func (ks *KScanner) checkCerts() error {
 	}
 
 	return nil
+}
+
+func checkK8sVersion(cli vulnlib.Client, k8sVersion string) (bool, []*threat) {
+	var vuln = false
+
+	tlist := []*threat{}
+
+	k, err := version2.NewVersion(k8sVersion)
+	if err != nil {
+		return vuln, tlist
+	}
+
+	// temporarily skip the openshift version detect
+	minimumVersion, _ := version2.NewVersion("1.18.0")
+
+	if k.Compare(minimumVersion) <= 0 {
+		return vuln, tlist
+	}
+
+	rows, err := cli.QueryVulnByName("kubernetes")
+	if err != nil {
+		log.Printf("faield to search database, error: %v", err)
+		return vuln, tlist
+	}
+
+	for _, row := range rows {
+
+		if compareVersion(k8sVersion, row.MaxVersion, row.MinVersion) {
+
+			// Skip the Jenkins Kubernetes Plugin vulnerability
+			if strings.Contains(row.Description, "Plugin") {
+				continue
+			}
+
+			th := &threat{
+				Param: "kubernetes version",
+				Value: k8sVersion,
+				Type:  "K8s vulnerable version",
+				Describe: fmt.Sprintf("Kubernetes version is suffering the %s vulnerablility "+
+					"under the version %s, need to update.", row.CVEID, strings.TrimPrefix(row.MaxVersion, "=")),
+				Reference: "Update Kubernetes.",
+				Severity:  row.Level,
+			}
+
+			tlist = append(tlist, th)
+
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
 }
