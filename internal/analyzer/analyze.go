@@ -212,15 +212,16 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 					log.Printf("check pod failed in namespace: %s, %v", ns.Name, err)
 				}
 
-				err = ks.checkJobsOrCornJob(ns.Name)
-				if err != nil {
-					log.Printf("check job failed in namespace: %s, %v", ns.Name, err)
-				}
 			}
 
 			err = ks.checkDaemonSet(ns.Name)
 			if err != nil {
 				log.Printf("check daemonset failed in namespace: %s, %v", ns.Name, err)
+			}
+
+			err = ks.checkJobsOrCornJob(ns.Name)
+			if err != nil {
+				log.Printf("check job failed in namespace: %s, %v", ns.Name, err)
 			}
 		}
 	}

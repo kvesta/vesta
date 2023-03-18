@@ -64,7 +64,7 @@ metadata:
   labels:
     app: vulntest2
   annotations:
-    security.alpha.kubernetes.io/sysctls: kernel.shm_rmid_forced=1
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
 spec:
   containers:
     - name: vulntest2

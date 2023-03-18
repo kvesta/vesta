@@ -8,6 +8,8 @@
 - Add some rules for CAP checking
 - Change the namespace checking of Secret and ConfigMap
 - Improve the rules of `DeamonSet` scanning
+- Change the scan rules of `Job` and `CronJob`
+- Optimize the method of annotation checking
 
 ## fixed
 - fix the comparison of kernel version

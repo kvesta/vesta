@@ -37,15 +37,19 @@ var (
 		"CAP_SYS_CHROOT", "SYS_PTRACE", "CAP_BPF", "DAC_OVERRIDE", "CAP_DAC_READ_SEARCH", "NET_ADMIN"}
 
 	unsafeAnnotations = map[string]AnType{
-		"sidecar.istio.io/proxyImage":          {component: "istio", level: "warning"},
-		"sidecar.istio.io/userVolumeMount":     {component: "istio", level: "warning"},
-		"security.alpha.kubernetes.io/sysctls": {component: "k8s", level: "low"},
+		"sidecar.istio.io/proxyImage":                              {component: "istio", level: "warning"},
+		"sidecar.istio.io/userVolumeMount":                         {component: "istio", level: "warning"},
+		"seccomp.security.alpha.kubernetes.io/allowedProfileNames": {component: "PodSecurityPolicy", level: "medium", Values: []string{"*"}},
+		"apparmor.security.beta.kubernetes.io/allowedProfileNames": {component: "PodSecurityPolicy", level: "medium", Values: []string{"*"}},
+		"security.alpha.kubernetes.io/sysctls": {component: "k8s", level: "low",
+			Values: []string{"kernel.shm_rmid_forced=0", "net.core.", "kernel.shm", "kernel.msg", "kernel.sem", "fs.mqueue."}},
 	}
 )
 
 type AnType struct {
 	component string
 	level     string
+	Values    []string
 }
 
 func checkWeakPassword(pass string) string {
