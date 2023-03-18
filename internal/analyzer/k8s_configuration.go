@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
+	version2 "github.com/hashicorp/go-version"
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
@@ -86,6 +86,11 @@ func (ks *KScanner) dockershimCheck(ctx context.Context) error {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
+	// Check Kubernetes version
+	if ok, tlist := checkK8sVersion(vulnCli, ks.Version); ok {
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
 	return nil
 }
 
@@ -111,6 +116,10 @@ func (ks *KScanner) kernelCheck(ctx context.Context) error {
 		for _, th := range tlist {
 			th.Type = "K8s kernel version"
 		}
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
+	if ok, tlist := checkK8sVersion(vulnCli, ks.Version); ok {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
@@ -226,26 +235,7 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 
 	for _, da := range das.Items {
 
-		p := v1.Pod{}
-
-		for k, v := range da.Spec.Selector.MatchLabels {
-			daemonPod, err := ks.KClient.
-				CoreV1().
-				Pods(da.Namespace).
-				List(context.TODO(),
-					metav1.ListOptions{
-						LabelSelector: fmt.Sprintf("%s=%s", k, v),
-					})
-
-			if err != nil {
-				continue
-			}
-
-			if len(daemonPod.Items) > 0 {
-				p = daemonPod.Items[0]
-				break
-			}
-		}
+		p := ks.getPodFromLabels(da.Namespace, da.Spec.Selector.MatchLabels)
 
 		vList := ks.podAnalyze(da.Spec.Template.Spec, rv, ns, p.Name)
 
@@ -281,29 +271,7 @@ func (ks *KScanner) checkDaemonSet(ns string) error {
 			ks.VulnConfigures = append(ks.VulnConfigures, th)
 
 			// Check the results whether the daemonset pod has been checked
-			isChecked := false
-			for _, vulnPod := range ks.VulnContainers {
-				if vulnPod.ContainerName == p.Name &&
-					vulnPod.Namepsace == da.Namespace {
-					isChecked = true
-
-					break
-				}
-			}
-
-			if !isChecked && p.Name != "" {
-				sortSeverity(vList)
-
-				con := &container{
-					ContainerName: p.Name,
-					Namepsace:     da.Namespace,
-					Status:        string(p.Status.Phase),
-					NodeName:      p.Spec.NodeName,
-					Threats:       vList,
-				}
-
-				ks.VulnContainers = append(ks.VulnContainers, con)
-			}
+			ks.addExtraPod(da.Namespace, p, vList)
 		}
 
 	}
@@ -318,6 +286,8 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 		Jobs(ns).
 		List(context.TODO(), metav1.ListOptions{})
 
+	rv := ks.getRBACVulnType(ns)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "could not find the requested resource") {
 			goto cronJob
@@ -326,26 +296,45 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 		return err
 	}
 
-	// TODO: add command checking in job
 	for _, job := range jobs.Items {
-		seccompProfile := job.Spec.Template.Spec.SecurityContext.SeccompProfile
-		selinuxProfile := job.Spec.Template.Spec.SecurityContext.SELinuxOptions
-		if job.Status.Active == 1 &&
-			seccompProfile == nil && selinuxProfile == nil {
-			command := strings.Join(job.Spec.Template.Spec.Containers[0].Command, " ")
-			if len(command) > 50 {
-				command = command[:50] + "..."
-			}
+		for _, con := range job.Spec.Template.Spec.Containers {
+			command := strings.Join(con.Command, " ")
+			detect := maliciousContentCheck(command)
+			switch detect.Types {
+			case Confusion:
+				p := ks.getPodFromLabels(ns, job.Spec.Selector.MatchLabels)
 
-			th := &threat{
-				Type:     "Job",
-				Param:    fmt.Sprintf("Job Name: %s Namespace: %s", job.Name, ns),
-				Value:    fmt.Sprintf("Command: %s", command),
-				Describe: fmt.Sprintf("Active job %s is not setting any security policy.", job.Name),
-				Severity: "low",
-			}
+				vList := ks.podAnalyze(job.Spec.Template.Spec, rv, ns, p.Name)
 
-			ks.VulnConfigures = append(ks.VulnConfigures, th)
+				if len(vList) > 1 {
+					severity := "low"
+					for _, v := range vList {
+						if config.SeverityMap[severity] < config.SeverityMap[v.Severity] {
+							severity = v.Severity
+						}
+					}
+
+					if severity == "low" {
+						return nil
+					}
+
+					th := &threat{
+						Param: fmt.Sprintf("Job Name: %s Namespace: %s", job.Name, ns),
+						Value: fmt.Sprintf("Job pod name: %s", p.Name),
+						Type:  "Job",
+						Describe: fmt.Sprintf("Job Command '%s' finds high risk content(score: %.2f out of 1.0), "+
+							"and has dangerous configurations, considering it as a backdoor.", detect.Plain, detect.Score),
+						Severity: severity,
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
+
+					ks.addExtraPod(ns, p, vList)
+				}
+
+			default:
+				// ignore
+			}
 		}
 	}
 
@@ -359,27 +348,45 @@ cronJob:
 		return err
 	}
 
-	// TODO: add command checking in cronjob
 	for _, cronjob := range cronjobs.Items {
-		seccompProfile := cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.SeccompProfile
-		selinuxProfile := cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.SELinuxOptions
-		if seccompProfile == nil && selinuxProfile == nil {
+		for _, con := range cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers {
+			command := strings.Join(con.Command, " ")
+			detect := maliciousContentCheck(command)
+			switch detect.Types {
+			case Confusion:
+				p := ks.getPodFromLabels(ns, cronjob.Spec.JobTemplate.Spec.Selector.MatchLabels)
 
-			command := strings.Join(cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers[0].Command, " ")
-			if len(command) > 50 {
-				command = command[:50] + "..."
+				vList := ks.podAnalyze(cronjob.Spec.JobTemplate.Spec.Template.Spec, rv, ns, p.Name)
+
+				if len(vList) > 1 {
+					severity := "low"
+					for _, v := range vList {
+						if config.SeverityMap[severity] < config.SeverityMap[v.Severity] {
+							severity = v.Severity
+						}
+					}
+
+					if severity == "low" {
+						return nil
+					}
+
+					th := &threat{
+						Param: fmt.Sprintf("CronJob Name: %s Namespace: %s", cronjob.Name, ns),
+						Value: fmt.Sprintf("CronJob pod name: %s", p.Name),
+						Type:  "CronJob",
+						Describe: fmt.Sprintf("CronJob Command '%s' finds high risk content(score: %.2f out of 1.0), "+
+							"and has dangerous configurations, considering it as a backdoor.", detect.Plain, detect.Score),
+						Severity: severity,
+					}
+
+					ks.VulnConfigures = append(ks.VulnConfigures, th)
+
+					ks.addExtraPod(ns, p, vList)
+				}
+
+			default:
+				// ignore
 			}
-
-			th := &threat{
-				Type: "CronJob",
-				Param: fmt.Sprintf("CronJob Name: %s Namespace: %s "+
-					"Schedule: %s", cronjob.Name, ns, cronjob.Spec.Schedule),
-				Value:    fmt.Sprintf("Command: %s", command),
-				Describe: fmt.Sprintf("Active Cronjob %s is not setting any security policy.", cronjob.Name),
-				Severity: "low",
-			}
-
-			ks.VulnConfigures = append(ks.VulnConfigures, th)
 		}
 	}
 
@@ -417,4 +424,55 @@ func (ks *KScanner) checkCerts() error {
 	}
 
 	return nil
+}
+
+func checkK8sVersion(cli vulnlib.Client, k8sVersion string) (bool, []*threat) {
+	var vuln = false
+
+	tlist := []*threat{}
+
+	k, err := version2.NewVersion(k8sVersion)
+	if err != nil {
+		return vuln, tlist
+	}
+
+	// temporarily skip the openshift version detect
+	minimumVersion, _ := version2.NewVersion("1.18.0")
+
+	if k.Compare(minimumVersion) <= 0 {
+		return vuln, tlist
+	}
+
+	rows, err := cli.QueryVulnByName("kubernetes")
+	if err != nil {
+		log.Printf("faield to search database, error: %v", err)
+		return vuln, tlist
+	}
+
+	for _, row := range rows {
+
+		if compareVersion(k8sVersion, row.MaxVersion, row.MinVersion) {
+
+			// Skip the Jenkins Kubernetes Plugin vulnerability
+			if strings.Contains(row.Description, "Plugin") {
+				continue
+			}
+
+			th := &threat{
+				Param: "kubernetes version",
+				Value: k8sVersion,
+				Type:  "K8s vulnerable version",
+				Describe: fmt.Sprintf("Kubernetes version is suffering the %s vulnerablility "+
+					"under the version %s, need to update.", row.CVEID, strings.TrimPrefix(row.MaxVersion, "=")),
+				Reference: "Update Kubernetes.",
+				Severity:  row.Level,
+			}
+
+			tlist = append(tlist, th)
+
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
 }

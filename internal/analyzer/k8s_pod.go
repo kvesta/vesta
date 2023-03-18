@@ -54,6 +54,32 @@ func (ks *KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName stri
 		}
 	}
 
+	if podSpec.HostPID {
+		th := &threat{
+			Param: "Pod hostPID",
+			Value: "true",
+			Type:  "hostPID",
+			Describe: "Pod is running with `hostPID`, " +
+				"which attackers can see all the processes in physical machine.",
+			Severity: "medium",
+		}
+
+		vList = append(vList, th)
+	}
+
+	if podSpec.HostNetwork {
+		th := &threat{
+			Param: "Pod hostNetwork",
+			Value: "true",
+			Type:  "hostNetwork",
+			Describe: "Pod is running with `hostNetwork`, " +
+				"which will exposed the network of physical machine.",
+			Severity: "medium",
+		}
+
+		vList = append(vList, th)
+	}
+
 	for _, v := range podSpec.Volumes {
 		if ok, tlist := checkPodVolume(v); ok {
 			vList = append(vList, tlist...)
@@ -437,18 +463,38 @@ func checkPodAnnotation(ans map[string]string) (bool, []*threat) {
 	for k, v := range ans {
 		for n, t := range unsafeAnnotations {
 			if k == n {
+				if len(t.Values) > 0 {
+					for _, sv := range t.Values {
+						if strings.Contains(v, sv) {
+							th := &threat{
+								Param: fmt.Sprintf("pod annotation"),
+								Value: fmt.Sprintf("%s: %s", k, v),
+								Type:  "Pod Annotation",
+								Describe: fmt.Sprintf("Pod Annotation has an unsafe config from %s"+
+									" and value is `%s`.", t.component, v),
+								Severity: t.level,
+							}
 
-				th := &threat{
-					Param: fmt.Sprintf("pod annotation"),
-					Value: fmt.Sprintf("%s: %s", k, v),
-					Type:  "Pod Annotation",
-					Describe: fmt.Sprintf("Pod Annotation has some unsafe configs from %s"+
-						" and value is `%s`.", t.component, v),
-					Severity: t.level,
+							tlist = append(tlist, th)
+							vuln = true
+
+							break
+						}
+					}
+				} else {
+					th := &threat{
+						Param: fmt.Sprintf("pod annotation"),
+						Value: fmt.Sprintf("%s: %s", k, v),
+						Type:  "Pod Annotation",
+						Describe: fmt.Sprintf("Pod Annotation detects unsafe annotation name from %s"+
+							" and value is `%s`, need to check.", t.component, v),
+						Severity: t.level,
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
 				}
 
-				tlist = append(tlist, th)
-				vuln = true
 			}
 		}
 	}
@@ -640,6 +686,58 @@ func (ks *KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.R
 	}
 
 	return vuln, th
+}
+
+func (ks *KScanner) getPodFromLabels(ns string, matchLabels map[string]string) v1.Pod {
+	p := v1.Pod{}
+
+	for k, v := range matchLabels {
+		targetPod, err := ks.KClient.
+			CoreV1().
+			Pods(ns).
+			List(context.TODO(),
+				metav1.ListOptions{
+					LabelSelector: fmt.Sprintf("%s=%s", k, v),
+				})
+
+		if err != nil {
+			continue
+		}
+
+		if len(targetPod.Items) > 0 {
+			p = targetPod.Items[0]
+			break
+		}
+	}
+
+	return p
+}
+
+// addExtraPod which in the white list namespace
+func (ks *KScanner) addExtraPod(ns string, p v1.Pod, vList []*threat) {
+	isChecked := false
+	for _, vulnPod := range ks.VulnContainers {
+		if vulnPod.ContainerName == p.Name &&
+			vulnPod.Namepsace == ns {
+			isChecked = true
+
+			break
+		}
+	}
+
+	if !isChecked && p.Name != "" {
+		sortSeverity(vList)
+
+		c := &container{
+			ContainerName: p.Name,
+			Namepsace:     ns,
+			Status:        string(p.Status.Phase),
+			NodeName:      p.Spec.NodeName,
+			Threats:       vList,
+		}
+
+		ks.VulnContainers = append(ks.VulnContainers, c)
+	}
 }
 
 // prunePod assesses whether a pod need to check if namespace of pod in white list
