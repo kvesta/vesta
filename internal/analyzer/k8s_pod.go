@@ -185,7 +185,7 @@ func checkPodPrivileged(container v1.Container) (bool, []*threat) {
 						"capabilities", container.Name),
 					Value:    capList,
 					Type:     "capabilities.add",
-					Describe: "There has a potential container escape in privileged module.",
+					Describe: "There has a potential container escape in dangerous capabilities.",
 					Severity: "critical",
 				}
 				tlist = append(tlist, th)

@@ -268,6 +268,8 @@ func maliciousContentCheck(command string) MalReporter {
 }
 
 func decodeBase64(content string) []byte {
+	normalRegx := regexp.MustCompile(`[\w]`)
+
 	res := []byte(content)
 
 	for i := 0; i < 10; i++ {
@@ -280,6 +282,10 @@ func decodeBase64(content string) []byte {
 
 		if err != nil || len(de) < 1 {
 			res = []byte(content)
+			break
+		}
+
+		if len(normalRegx.FindAllSubmatch(de, -1)) < 1 {
 			break
 		}
 

@@ -232,6 +232,12 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 		log.Printf("check pv and pvc failed, %v", err)
 	}
 
+	// Check PodSecurityPolicy
+	err = ks.checkPodSecurityPolicy()
+	if err != nil {
+		log.Printf("check podSecurityPolicy failed, %v", err)
+	}
+
 	// Check certification expiration
 	err = ks.checkCerts()
 	if err != nil {

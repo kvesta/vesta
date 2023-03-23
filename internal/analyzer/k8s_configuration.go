@@ -221,6 +221,103 @@ func (ks *KScanner) checkPod(ns string) error {
 	return nil
 }
 
+func (ks *KScanner) checkPodSecurityPolicy() error {
+	log.Printf(config.Yellow("Begin PodSecurityPolicy analyzing"))
+
+	psps, err := ks.KClient.
+		PolicyV1beta1().
+		PodSecurityPolicies().
+		List(context.TODO(), metav1.ListOptions{})
+
+	if err != nil {
+		return err
+	}
+
+	for _, psp := range psps.Items {
+
+		if psp.Spec.Privileged {
+			th := &threat{
+				Param: psp.Name,
+				Value: "Privileged",
+				Type:  "PodSecurityPolicy",
+				Describe: "PodSecurityPolicy tolerates the privileged module, " +
+					"which can make the pod has a potential container escape.",
+				Severity: "high",
+			}
+
+			ks.VulnConfigures = append(ks.VulnConfigures, th)
+		}
+
+		capList := ""
+		for _, dcap := range psp.Spec.DefaultAddCapabilities {
+			if dcap == "ALL" {
+				capList = "ALL"
+				break
+			}
+
+			for _, c := range dangerCaps {
+				if string(dcap) == c {
+					capList += c + " "
+				}
+			}
+		}
+
+		if len(capList) > 0 {
+			th := &threat{
+				Param: psp.Name,
+				Value: fmt.Sprintf("defaultAddCapabilities: %s", capList),
+				Type:  "PodSecurityPolicy",
+				Describe: "PodSecurityPolicy tolerates the dangerous capabilities, " +
+					"which can make the pod has a potential container escape.",
+				Severity: "high",
+			}
+
+			ks.VulnConfigures = append(ks.VulnConfigures, th)
+		}
+
+		if psp.Spec.HostPID {
+			th := &threat{
+				Param: psp.Name,
+				Value: "HostPID",
+				Type:  "PodSecurityPolicy",
+				Describe: "PodSecurityPolicy is set the `hostPID`, " +
+					"which attackers can see all the processes in physical machine.",
+				Severity: "medium",
+			}
+
+			ks.VulnConfigures = append(ks.VulnConfigures, th)
+		}
+
+		if psp.Spec.HostNetwork {
+			th := &threat{
+				Param: psp.Name,
+				Value: "HostNetwork",
+				Type:  "PodSecurityPolicy",
+				Describe: "PodSecurityPolicy is set `HostNetwork`, " +
+					"which will exposed the network of physical machine.",
+				Severity: "medium",
+			}
+
+			ks.VulnConfigures = append(ks.VulnConfigures, th)
+		}
+
+		if psp.Spec.RunAsUser.Rule == "RunAsAny" {
+			th := &threat{
+				Param:    psp.Name,
+				Value:    "RunAsUser",
+				Type:     "PodSecurityPolicy",
+				Describe: "Pod shouldn't be run as arbitrary user.",
+				Severity: "low",
+			}
+
+			ks.VulnConfigures = append(ks.VulnConfigures, th)
+		}
+
+	}
+
+	return nil
+}
+
 func (ks *KScanner) checkDaemonSet(ns string) error {
 	das, err := ks.KClient.
 		AppsV1().

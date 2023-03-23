@@ -3,6 +3,7 @@
 - Add Kubernetes `DaemonSet` checking
 - Add rootkit and backdoor checking in K8s and Docker
 - Add k8s version checking
+- Add k8s `PodSecurityPolicy` checking for k8s version under the v1.25
 
 ## improvements
 - Add some rules for CAP checking
@@ -13,6 +14,7 @@
 
 ## fixed
 - fix the comparison of kernel version
+- fix the errors of base64 decode
 
 # 1.0.5 (2023.2.13)
 ## features

@@ -53,6 +53,11 @@ func TestWeakPassword(t *testing.T) {
 			want: "Strong",
 		},
 		{
+			name: "strongConfusionPassword",
+			args: args{p: "ior7LLvMsAujin3Y"},
+			want: "Strong",
+		},
+		{
 			name: "mediumPassword",
 			args: args{p: "plDAYh"},
 			want: "Medium",
