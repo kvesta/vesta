@@ -425,8 +425,43 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 
 			link := strings.Split(pruneLayer, " ")[0]
 			switch link {
-			// TODO: check the malicious content in "CMD" and "ENV"
-			case "CMD", "ADD", "ARG", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER", "ENV":
+			case "CMD", "ADD", "ARG", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER":
+				continue
+			case "ENV":
+				values := strings.Split(pruneLayer, "=")
+				detect := maliciousContentCheck(values[1])
+				switch detect.Types {
+				case Executable:
+					th := &threat{
+						Param: "Image History",
+						Value: fmt.Sprintf("Image name: %s | "+
+							"Image ID: %s", img.Summary.RepoTags[0],
+							strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+						Describe: fmt.Sprintf("Executable value found in ENV: '%s' "+
+							"with the plain text '%s'.", strings.TrimPrefix(values[0], "ENV "), detect.Plain),
+						Severity: "high",
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
+
+				case Confusion:
+					th := &threat{
+						Param: "Image History",
+						Value: fmt.Sprintf("Image name: %s | "+
+							"Image ID: %s", img.Summary.RepoTags[0],
+							strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+						Describe: fmt.Sprintf("Confusion value found in ENV: '%s' "+
+							"with the plain text '%s'.", strings.TrimPrefix(values[0], "ENV "), detect.Plain),
+						Severity: "high",
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
+				default:
+					// ignore
+				}
+
 				continue
 			}
 
