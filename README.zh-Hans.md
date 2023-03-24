@@ -69,7 +69,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Docker env password check | Docker env是否存在弱密码                  | high/medium              |                                                                                             |
 | ✔         | Image tag check           | Image没有被打tag或为默认latest             | low                      |                                                                                             |
 | ✔         | Docker history            | Docker layers 存在不安全的命令             | high/medium              |                                                                                             |
-| Pending   | Docker Backdoor           | Docker env command 存在恶意命令          | critical/high            |                                                                                             |
+| ✔         | Docker Backdoor           | Docker env command 存在恶意命令          | critical/high            |                                                                                             |
 
 
 

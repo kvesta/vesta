@@ -56,7 +56,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Docker env password check | Check weak password in database.                            | high/medium               |                                                                                             |
 | ✔         | Image tag check           | Image is not tagged or `latest`.                            | low                       |                                                                                             |
 | ✔         | Docker History            | Docker layers have some  dangerous commands.                | high/medium               |                                                                                             |
-| Pending   | Docker Backdoor           | Docker env command has malicious commands.                  | critical/high             |                                                                                             |
+| ✔         | Docker Backdoor           | Docker env command has malicious commands.                  | critical/high             |                                                                                             |
 
 ---
 

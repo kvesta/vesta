@@ -228,6 +228,11 @@ func maliciousContentCheck(command string) MalReporter {
 
 	commandPlain := string(sDec)
 
+	if isPath(commandPlain) {
+		rep.Types = Unknown
+		return rep
+	}
+
 	keySymbolReg := regexp.MustCompile(`[~$&<>*!():=.|/\\+#;]`)
 	SymbolCount := len(keySymbolReg.FindAllString(commandPlain, -1))
 
@@ -306,4 +311,17 @@ func standardDeviation[T float64 | int](num []T) float64 {
 		sd += math.Pow(float64(num[j])-mean, 2)
 	}
 	return sd / float64(length)
+}
+
+func isPath(content string) bool {
+	pathRegex := regexp.MustCompile(`(/{0,1}(([\w.\-?]|(\\ ))+/)*([\w.\-?]|(\\ ))+)|/`)
+
+	replacer := strings.NewReplacer(";", "", ":", "")
+	pruneContent := replacer.Replace(content)
+	pathMatch := pathRegex.FindStringSubmatch(pruneContent)
+	if pathMatch[0] == pruneContent {
+		return true
+	}
+
+	return false
 }
