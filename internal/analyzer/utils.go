@@ -319,7 +319,7 @@ func isPath(content string) bool {
 	replacer := strings.NewReplacer(";", "", ":", "")
 	pruneContent := replacer.Replace(content)
 	pathMatch := pathRegex.FindStringSubmatch(pruneContent)
-	if pathMatch[0] == pruneContent {
+	if len(pathMatch) > 0 && pathMatch[0] == pruneContent {
 		return true
 	}
 
