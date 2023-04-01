@@ -448,7 +448,7 @@ func (ks *KScanner) checkConfigMap(ns string) error {
 			}
 			switch detect.Types {
 			case Confusion:
-				th.Describe = fmt.Sprintf("ConfigMap finds high risk content(score: %.2f out of 1.0), "+
+				th.Describe = fmt.Sprintf("ConfigMap finds high risk content(score: %.2f bigger than 0.75), "+
 					"which is a suspect command backdoor. ", detect.Score)
 				th.Severity = "high"
 
@@ -534,7 +534,7 @@ func (ks *KScanner) checkSecret(ns string) error {
 			}
 			switch detect.Types {
 			case Confusion:
-				th.Describe = fmt.Sprintf("Secret finds high risk content(score: %.2f out of 1.0), "+
+				th.Describe = fmt.Sprintf("Secret finds high risk content(score: %.2f bigger than 0.75), "+
 					"which is a suspect command backdoor. ", detect.Score)
 				th.Severity = "high"
 
