@@ -237,7 +237,7 @@ func (ks *KScanner) checkPodSecurityPolicy() error {
 
 		if psp.Spec.Privileged {
 			th := &threat{
-				Param: psp.Name,
+				Param: fmt.Sprintf("Policy Name: %s", psp.Name),
 				Value: "Privileged",
 				Type:  "PodSecurityPolicy",
 				Describe: "PodSecurityPolicy tolerates the privileged module, " +
@@ -264,7 +264,7 @@ func (ks *KScanner) checkPodSecurityPolicy() error {
 
 		if len(capList) > 0 {
 			th := &threat{
-				Param: psp.Name,
+				Param: fmt.Sprintf("Policy Name: %s", psp.Name),
 				Value: fmt.Sprintf("defaultAddCapabilities: %s", capList),
 				Type:  "PodSecurityPolicy",
 				Describe: "PodSecurityPolicy tolerates the dangerous capabilities, " +
@@ -277,7 +277,7 @@ func (ks *KScanner) checkPodSecurityPolicy() error {
 
 		if psp.Spec.HostPID {
 			th := &threat{
-				Param: psp.Name,
+				Param: fmt.Sprintf("Policy Name: %s", psp.Name),
 				Value: "HostPID",
 				Type:  "PodSecurityPolicy",
 				Describe: "PodSecurityPolicy is set the `hostPID`, " +
@@ -290,7 +290,7 @@ func (ks *KScanner) checkPodSecurityPolicy() error {
 
 		if psp.Spec.HostNetwork {
 			th := &threat{
-				Param: psp.Name,
+				Param: fmt.Sprintf("Policy Name: %s", psp.Name),
 				Value: "HostNetwork",
 				Type:  "PodSecurityPolicy",
 				Describe: "PodSecurityPolicy is set `HostNetwork`, " +
@@ -303,7 +303,7 @@ func (ks *KScanner) checkPodSecurityPolicy() error {
 
 		if psp.Spec.RunAsUser.Rule == "RunAsAny" {
 			th := &threat{
-				Param:    psp.Name,
+				Param:    fmt.Sprintf("Policy Name: %s", psp.Name),
 				Value:    "RunAsUser",
 				Type:     "PodSecurityPolicy",
 				Describe: "Pod shouldn't be run as arbitrary user.",
@@ -419,7 +419,7 @@ func (ks *KScanner) checkJobsOrCornJob(ns string) error {
 						Param: fmt.Sprintf("Job Name: %s Namespace: %s", job.Name, ns),
 						Value: fmt.Sprintf("Job pod name: %s", p.Name),
 						Type:  "Job",
-						Describe: fmt.Sprintf("Job Command '%s' finds high risk content(score: %.2f out of 1.0), "+
+						Describe: fmt.Sprintf("Job Command '%s' finds high risk content(score: %.2f bigger than 0.75), "+
 							"and has dangerous configurations, considering it as a backdoor.", detect.Plain, detect.Score),
 						Severity: severity,
 					}
@@ -471,7 +471,7 @@ cronJob:
 						Param: fmt.Sprintf("CronJob Name: %s Namespace: %s", cronjob.Name, ns),
 						Value: fmt.Sprintf("CronJob pod name: %s", p.Name),
 						Type:  "CronJob",
-						Describe: fmt.Sprintf("CronJob Command '%s' finds high risk content(score: %.2f out of 1.0), "+
+						Describe: fmt.Sprintf("CronJob Command '%s' finds high risk content(score: %.2f bigger than 0.75), "+
 							"and has dangerous configurations, considering it as a backdoor.", detect.Plain, detect.Score),
 						Severity: severity,
 					}

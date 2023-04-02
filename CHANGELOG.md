@@ -1,3 +1,7 @@
+# 1.0.7 (2023.4.1)
+## features
+- Add trampoline attacking check
+
 # 1.0.6 (2023.3.2)
 ## features
 - Add Kubernetes `DaemonSet` checking

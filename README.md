@@ -87,6 +87,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Pod annotation                                           | Pod annotation has some unsafe configurations.                             | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                           | 
 | ✔         | DaemonSet                                                | DaemonSet has unsafe configurations.                                       | critical/high/ medium/low |                                                                                                      |
 | ✔         | Backdoor                                                 | Backdoor Detection.                                                        | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                                       |
+| ✔         | Lateral admin movement                                   | Pod specifics a master node.                                               | medium/low                |                                                                                                      |
 
 
 

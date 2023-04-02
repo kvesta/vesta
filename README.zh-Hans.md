@@ -102,6 +102,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                   | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                            |
 | ✔         | DaemonSet                                                | DaemonSet存在不安全配置                         | critical/high/ medium/low |                                                                                                       |
 | ✔         | Backdoor                                                 | 检查k8s中是否有后门                              | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                                        |
+| ✔         | Lateral admin movement                                   | Pod被特意配置到Master节点中                       | medium/low                |                                                                                                       |
 
 
 ## 编译并使用vesta

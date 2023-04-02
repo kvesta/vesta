@@ -2,15 +2,19 @@ package analyzer
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"math"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	version2 "github.com/hashicorp/go-version"
 	"github.com/kvesta/vesta/config"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -324,4 +328,246 @@ func isPath(content string) bool {
 	}
 
 	return false
+}
+
+func (ks *KScanner) findEnvValue(container v1.Container, name, ns string) string {
+	var value string
+
+	for _, env := range container.Env {
+		if env.Name == name {
+			if env.ValueFrom != nil {
+				switch {
+				case env.ValueFrom.ConfigMapKeyRef != nil:
+					configRef := env.ValueFrom.ConfigMapKeyRef
+					value = ks.findSecretOrConfigMapValue(configRef.Name, "ConfigMap", ns)
+
+				case env.ValueFrom.SecretKeyRef != nil:
+					configRef := env.ValueFrom.SecretKeyRef
+					value = ks.findSecretOrConfigMapValue(configRef.Name, "Secret", ns)
+
+				default:
+					//ignore
+				}
+			} else {
+				value = env.Value
+			}
+
+			break
+		}
+	}
+
+	return value
+}
+
+func (ks *KScanner) getRBACVulnType(ns string) RBACVuln {
+	rbv := RBACVuln{
+		Severity: "warning",
+	}
+	clusterNames := []string{}
+	roleNames := []string{}
+
+	getInfo := func(param string) (string, string) {
+		paramSplit := strings.Split(param, "|")
+		bindingName := strings.Split(paramSplit[0], ":")[1]
+		bindingName = strings.TrimSpace(bindingName)
+		nameSpace := strings.Split(paramSplit[len(paramSplit)-2], ":")[1]
+		nameSpace = strings.TrimSpace(nameSpace)
+		return bindingName, nameSpace
+	}
+
+	for _, t := range ks.VulnConfigures {
+
+		switch t.Type {
+		case "ClusterRoleBinding", "RoleBinding":
+			bn, n := getInfo(t.Param)
+			switch {
+			case n != ns && n != "all", t.Severity == "warning":
+				continue
+			case config.SeverityMap[rbv.Severity] <
+				config.SeverityMap[t.Severity]:
+				rbv.Severity = t.Severity
+			}
+
+			if t.Type == "ClusterRoleBinding" {
+				clusterNames = append(clusterNames, bn)
+			} else {
+				roleNames = append(roleNames, bn)
+			}
+
+		default:
+			// ignore
+		}
+	}
+
+	rbv.RoleBinding = strings.Join(roleNames, ", ")
+	rbv.ClusterRoleBinding = strings.Join(clusterNames, ", ")
+
+	return rbv
+}
+
+func (ks *KScanner) checkConfigVulnType(ns, name, ty string, configReg *regexp.Regexp) (bool, *threat) {
+	var vuln = false
+	th := &threat{}
+
+	for _, t := range ks.VulnConfigures {
+
+		if t.Type != ty {
+			continue
+		}
+
+		configMatch := configReg.FindStringSubmatch(t.Param)
+		configName := strings.TrimSpace(configMatch[1])
+		namespace := strings.TrimSpace(configMatch[2])
+		if configName == name && namespace == ns {
+			th = t
+			th.Type = "Sidecar EnvFrom"
+			th.Describe = "Sidecar envFrom " + th.Describe
+
+			vuln = true
+			break
+		}
+	}
+
+	return vuln, th
+}
+
+func (ks *KScanner) getPodFromLabels(ns string, matchLabels map[string]string) v1.Pod {
+	p := v1.Pod{}
+
+	for k, v := range matchLabels {
+		targetPod, err := ks.KClient.
+			CoreV1().
+			Pods(ns).
+			List(context.TODO(),
+				metav1.ListOptions{
+					LabelSelector: fmt.Sprintf("%s=%s", k, v),
+				})
+
+		if err != nil {
+			continue
+		}
+
+		if len(targetPod.Items) > 0 {
+			p = targetPod.Items[0]
+			break
+		}
+	}
+
+	return p
+}
+
+// addExtraPod which in the white list namespace
+func (ks *KScanner) addExtraPod(ns string, p v1.Pod, vList []*threat) {
+	isChecked := false
+	for _, vulnPod := range ks.VulnContainers {
+		if vulnPod.ContainerName == p.Name &&
+			vulnPod.Namepsace == ns {
+			isChecked = true
+
+			break
+		}
+	}
+
+	if !isChecked && p.Name != "" {
+		sortSeverity(vList)
+
+		c := &container{
+			ContainerName: p.Name,
+			Namepsace:     ns,
+			Status:        string(p.Status.Phase),
+			NodeName:      p.Spec.NodeName,
+			Threats:       vList,
+		}
+
+		ks.VulnContainers = append(ks.VulnContainers, c)
+	}
+}
+
+// prunePod assesses whether a pod need to check if namespace of pod in white list
+func (ks *KScanner) prunePod(ns, podName string) (bool, error) {
+	pods, err := ks.KClient.
+		CoreV1().
+		Pods(ns).
+		List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+
+	type PodStatus struct {
+		Age      float64
+		Restarts int
+	}
+
+	p := PodStatus{}
+
+	podNumber := len(pods.Items)
+
+	ageWeight := make([]float64, podNumber-1)
+	restartWeight := make([]int, podNumber-1)
+
+	index := 0
+	for _, pod := range pods.Items {
+		age := time.Since(pod.CreationTimestamp.Time)
+		restarts := pod.Status.ContainerStatuses[0].RestartCount
+
+		if pod.Name == podName {
+			p.Age = math.Round(age.Hours())
+			p.Restarts = int(restarts)
+			continue
+		}
+
+		ageWeight[index] = math.Round(age.Hours())
+		restartWeight[index] = int(restarts)
+		index += 1
+	}
+
+	sort.Float64s(ageWeight)
+	sort.Ints(restartWeight)
+	ageDeviation := standardDeviation[float64](ageWeight)
+	restartDeviation := math.Sqrt(standardDeviation[int](restartWeight))
+
+	ageCount := map[float64]int{}
+	restartCount := map[int]int{}
+	for i := 0; i < podNumber-1; i++ {
+		age := ageWeight[i]
+		restarts := restartWeight[i]
+
+		if _, ok := ageCount[age]; ok {
+			ageCount[age] += 1
+		} else {
+			ageCount[age] = 1
+		}
+
+		if _, ok := restartCount[restarts]; ok {
+			restartCount[restarts] += 1
+		} else {
+			restartCount[restarts] = 1
+		}
+	}
+
+	score := 0.0
+
+	for number, count := range ageCount {
+		if math.Abs(p.Age-number) > ageDeviation {
+			score = math.Max(score, float64(count)/float64(podNumber-1))
+		}
+	}
+
+	// compare to the oldest operation
+	score += 0.2 * math.Abs(float64(p.Age)-ageWeight[podNumber-2]) / (ageWeight[podNumber-2] / 960)
+
+	rscore := 0.0
+	for number, count := range restartCount {
+		if math.Abs(float64(p.Restarts-number)) > restartDeviation {
+			rscore = math.Max(rscore, float64(count)/float64(podNumber-1))
+		}
+	}
+
+	score += rscore
+
+	if score < 0.7 {
+		return true, nil
+	}
+
+	return false, nil
 }
