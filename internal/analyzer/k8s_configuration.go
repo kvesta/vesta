@@ -33,18 +33,16 @@ func (ks *KScanner) getNodeInfor(ctx context.Context) error {
 		rolesInfo := &nodeInfo{
 			IsMaster: false,
 		}
-		roles := []string{}
 		for role, _ := range node.Labels {
 			if strings.HasPrefix(role, "node-role.kubernetes") {
 				roleName := strings.Split(role, "/")[1]
 				if roleName == "master" {
 					rolesInfo.IsMaster = true
 				}
-				roles = append(roles, roleName)
 			}
 		}
 
-		rolesInfo.Role = roles
+		rolesInfo.Role = node.Labels
 		ks.MasterNodes[node.Name] = rolesInfo
 
 	}

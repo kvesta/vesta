@@ -75,7 +75,20 @@ func (ks *KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName stri
 			Value: "true",
 			Type:  "hostNetwork",
 			Describe: "Pod is running with `hostNetwork`, " +
-				"which will exposed the network of physical machine.",
+				"which will expose the network of physical machine.",
+			Severity: "medium",
+		}
+
+		vList = append(vList, th)
+	}
+
+	if podSpec.HostIPC {
+		th := &threat{
+			Param: "Pod hostIPC",
+			Value: "true",
+			Type:  "hostIPC",
+			Describe: "Pod is running with `hostIPC`, " +
+				"which will expose all the data in shared memory segments.",
 			Severity: "medium",
 		}
 
@@ -612,7 +625,24 @@ func (ks *KScanner) checkPodNodeSelector(podSpec v1.PodSpec) (bool, []*threat) {
 		}
 	}
 
-	// TODO: check the nodeSelector of Pod
+	for key, value := range podSpec.NodeSelector {
+		for _, node := range ks.MasterNodes {
+			if rv, ok := node.Role[key]; ok {
+				if value == rv && node.IsMaster {
+					th := &threat{
+						Param:    fmt.Sprintf("nodeselector key: %s", key),
+						Value:    value,
+						Type:     "Pod NodeSelector",
+						Describe: "Pod is compulsively deployed in a master node.",
+						Severity: "low",
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
+				}
+			}
+		}
+	}
 
 	return vuln, tlist
 }

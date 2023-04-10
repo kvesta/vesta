@@ -44,6 +44,6 @@ type KScanner struct {
 }
 
 type nodeInfo struct {
-	Role     []string
+	Role     map[string]string
 	IsMaster bool
 }
