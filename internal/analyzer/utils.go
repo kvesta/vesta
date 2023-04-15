@@ -237,7 +237,7 @@ func maliciousContentCheck(command string) MalReporter {
 		return rep
 	}
 
-	keySymbolReg := regexp.MustCompile(`[~$&<>*!():=.|/\\+#;]`)
+	keySymbolReg := regexp.MustCompile(`[~$&<>*!():=.|\\+#;]`)
 	SymbolCount := len(keySymbolReg.FindAllString(commandPlain, -1))
 
 	keyFuncs := []string{"syscall", "open", "select", "fork", "proc", "system", "exit",
