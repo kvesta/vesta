@@ -465,11 +465,42 @@ func checkHistories(images []*_image.ImageInfo) (bool, []*threat) {
 				continue
 			}
 
-			// TODO: check the malicious content in "RUN"
 			commands := strings.Split(pruneLayer, "&&")
 			for _, cmd := range commands {
+				detectCmd := maliciousContentCheck(strings.TrimSpace(cmd))
+				if detectCmd.Types > Unknown {
+					th := &threat{
+						Param: "Image History",
+						Value: fmt.Sprintf("Image name: %s | "+
+							"Image ID: %s", img.Summary.RepoTags[0],
+							strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+						Describe: fmt.Sprintf("Malicious cmd found in RUN: '%s' "+
+							"with the plain text '%s'.", cmd, detectCmd.Plain),
+						Severity: "high",
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
+				}
+
 				echoMatch := echoReg.FindStringSubmatch(cmd)
 				if len(echoMatch) > 1 {
+					detectEcho := maliciousContentCheck(echoMatch[1])
+					if detectEcho.Types > Unknown {
+						th := &threat{
+							Param: "Image History",
+							Value: fmt.Sprintf("Image name: %s | "+
+								"Image ID: %s", img.Summary.RepoTags[0],
+								strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+							Describe: fmt.Sprintf("Malicious value found in RUN: '%s' "+
+								"with the plain text '%s'.", cmd, detectEcho.Plain),
+							Severity: "high",
+						}
+
+						tlist = append(tlist, th)
+						vuln = true
+					}
+
 					pass := echoPass(echoMatch[1], env)
 					if len(pass) < 1 {
 						continue
