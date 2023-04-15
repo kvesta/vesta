@@ -3,9 +3,7 @@ package vulnscan
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -268,36 +266,35 @@ func compareRpmVersion(rows []*vulnlib.DBRow, cv, ty string, cp []string) ([]*vu
 	return vulns, isVulnerable
 }
 
-func listPythonSitePack(sitePath string) []string {
-	targetPaths := []string{}
-
-	fsys := os.DirFS(sitePath)
-
-	if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
-		switch {
-		case err != nil:
-			return err
-		case d.IsDir():
-			return nil
-		}
-
-		if filepath.Base(path) == "setup.py" || filepath.Base(path) == "__init__.py" {
-			targetPaths = append(targetPaths, path)
-		}
-		return nil
-
-	}); err != nil {
-		return targetPaths
-	}
-
-	return targetPaths
-}
-
 func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python, m *layer.Manifest) error {
 
 	pyVuln := []*vulnComponent{}
 
 	for _, py := range pys {
+
+		// Check the pth file in site-packages
+		// reference: https://github.com/kvesta/vesta/wiki/Backdoor-Detection
+		sitePackagePath := filepath.Join(m.Localpath, py.SitePath)
+		for _, p := range listPythonPth(sitePackagePath) {
+
+			filename := filepath.Join(sitePackagePath, p)
+
+			if sus := match.PyMalwareScan(filename); sus.Types != 0 {
+				vuln := &vulnComponent{
+					Name:              fmt.Sprintf("%s - %s", py.Version, py.SitePath),
+					Level:             "high",
+					Score:             9.5,
+					Type:              "Python",
+					CurrentVersion:    py.Version,
+					VulnerableVersion: "-",
+					Desc: fmt.Sprintf("Malicious package is detected in '%s', "+
+						"%s", strings.TrimPrefix(filename, m.Localpath),
+						sus.OriginPack),
+				}
+
+				pyVuln = append(pyVuln, vuln)
+			}
+		}
 
 		for _, si := range py.SitePacks {
 			// Get setup.py of python package
@@ -306,6 +303,7 @@ func (ps *Scanner) checkPythonModule(ctx context.Context, pys []*packages.Python
 			if py.SitePath == "poetry" {
 				goto checkVersion
 			}
+
 			for _, p := range listPythonSitePack(sites) {
 				filename := filepath.Join(sites, p)
 				if sus := match.PyMalwareScan(filename); sus.Types != 0 {
