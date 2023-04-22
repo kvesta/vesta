@@ -26,3 +26,21 @@ type DBRow struct {
 	Component   string
 	Score       float64
 }
+
+type cpes struct {
+	Name       string
+	MaxVersion string
+	MinVersion string
+	component  string
+}
+
+type vuln struct {
+	cpe         []*cpes
+	score       float64
+	level       string
+	desc        string
+	publishDate string
+	cveID       string
+	reference   string
+	source      string
+}

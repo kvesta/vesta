@@ -2,6 +2,7 @@
 ## features
 - Add trampoline attacking check
 - Add malicious value checking in docker history
+- Add source `OSCS` for malware checking
 
 # 1.0.6 (2023.3.2)
 ## features

@@ -81,6 +81,12 @@ func Fetch(ctx context.Context) error {
 		log.Printf("failed to get cvss data, error: %v", err)
 	}
 
+	// Get OSCS data for poised package
+	err = cli.GetOSCS(ctx)
+	if err != nil {
+		log.Printf("failed to get oscs data, error: %v", err)
+	}
+
 	// Write log
 	err = writeLog(store)
 	if err != nil {
@@ -167,7 +173,7 @@ func checkExpired(path string) bool {
 		return true
 	}
 
-	if expire := today.After(logDate.AddDate(0, 0, 3)); expire {
+	if expire := today.After(logDate.AddDate(0, 0, 1)); expire {
 		return true
 	}
 

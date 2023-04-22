@@ -639,6 +639,8 @@ func (ks *KScanner) checkPodNodeSelector(podSpec v1.PodSpec) (bool, []*threat) {
 
 					tlist = append(tlist, th)
 					vuln = true
+
+					break
 				}
 			}
 		}

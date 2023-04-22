@@ -79,7 +79,7 @@ func (c *Client) GetCvss(ctx context.Context) error {
 		return err
 	}
 
-	log.Printf("Cvss Storing finished")
+	log.Printf("Cvss updating finish")
 
 	return nil
 }
@@ -95,24 +95,6 @@ func store(r io.Reader, filename string) error {
 		return err
 	}
 	return nil
-}
-
-type cpes struct {
-	Name       string
-	MaxVersion string
-	MinVersion string
-	component  string
-}
-
-type vuln struct {
-	cpe         []*cpes
-	score       float64
-	level       string
-	desc        string
-	publishDate string
-	cveID       string
-	reference   string
-	source      string
 }
 
 func (c *Client) cvssToDB() error {
