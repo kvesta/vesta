@@ -60,7 +60,7 @@ Examples:
 			}
 
 			if tarFile == "" && len(tarIO) < 1 {
-				log.Printf("Can not get tarfile. " +
+				log.Printf("Cannot get tarfile. " +
 					"Make sure that you have the right image ID " +
 					"or use -f to get from tar file")
 				return
@@ -97,7 +97,7 @@ Examples:
 			}
 
 			if tarFile == "" && len(tarIO) < 1 {
-				log.Printf("Can not get tarfile. " +
+				log.Printf("Cannot get tarfile. " +
 					"Make sure that you have the right container ID" +
 					"or use -f to get from tar file")
 				return

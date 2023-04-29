@@ -104,7 +104,7 @@ func (ks *KScanner) checkKubernetesList(ctx context.Context) error {
 	ks.Version = version.String()
 
 	// If k8s version less than v1.24, using the docker checking
-	if compareVersion(ks.Version, "1.24", "0.0") {
+	if compareVersion(ks.Version, "1.24", "0.0") && !ctx.Value("inside").(bool) {
 		err = ks.dockershimCheck(ctx)
 		if err != nil {
 			log.Printf("failed to use docker to check, error: %v", err)

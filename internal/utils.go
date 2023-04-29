@@ -115,7 +115,7 @@ func DoInspectInDocker(ctx context.Context) {
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Printf("Can not initialized docker environment, error: %v", err)
+		log.Printf("Cannot initialized docker environment, error: %v", err)
 		return
 	}
 
@@ -128,26 +128,26 @@ func DoInspectInDocker(ctx context.Context) {
 	dockerInps, err := c.GetAllContainers()
 	if err != nil {
 		if strings.Contains(err.Error(), "Is the docker daemon running") {
-			log.Printf("Can not connect to docker service")
+			log.Printf("Cannot connect to docker service")
 			return
 		}
-		log.Printf("Can not get all docker inpector, error: %v", err)
+		log.Printf("Cannot get all docker inpector, error: %v", err)
 		return
 	}
 
 	dockerImages, err := c.GetAllImage()
 	if err != nil {
-		log.Printf("Can not get all docker images, error: %v", err)
+		log.Printf("Cannot get all docker images, error: %v", err)
 	}
 
 	engineVersion, err := c.GetEngineVersion(ctx)
 	if err != nil {
-		log.Printf("Can not get engine version, error: %v", err)
+		log.Printf("Cannot get engine version, error: %v", err)
 	}
 
 	serverVersion, err := c.GetDockerServerVersion(ctx)
 	if err != nil {
-		log.Printf("Can not get server version, error: %v", err)
+		log.Printf("Cannot get server version, error: %v", err)
 	}
 	inspects := &Inpsectors{}
 	scanner := inspects.Scan
@@ -198,13 +198,13 @@ func DoInspectInKubernetes(ctx context.Context) {
 	}
 
 	if err != nil {
-		log.Printf("Can not initialize kubernetes environment, error: %v", err)
+		log.Printf("Cannot initialize kubernetes environment, error: %v", err)
 		return
 	}
 
 	clientset, err := kubernetes.NewForConfig(kconfig)
 	if err != nil {
-		log.Printf("Can not get all kubernetes inpector, error: %v", err)
+		log.Printf("Cannot get all kubernetes inpector, error: %v", err)
 	}
 
 	inspects := &Inpsectors{}

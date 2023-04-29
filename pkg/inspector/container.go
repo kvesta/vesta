@@ -73,7 +73,7 @@ func (da DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {
 		}
 		ins, err := da.DCli.ContainerInspect(ctx, c.ID[:12])
 		if err != nil {
-			log.Printf("%s can not inpsect, error: %v", c.Names, err)
+			log.Printf("%s cannot inpsect, error: %v", c.Names, err)
 		}
 		inps = append(inps, &ins)
 	}

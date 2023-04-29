@@ -159,6 +159,11 @@ Detected 216 vulnerabilities
 
 3. 使用vesta检查Docker的基线配置
 
+也可以在docker中使用
+```bash
+make run.docker
+```
+
 ```bash
 $./vesta analyze docker
 

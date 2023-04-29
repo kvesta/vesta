@@ -175,6 +175,11 @@ Example of docker config scan, start vesta:
 vesta analyze docker
 ```
 
+Or run with dokcer
+```bash
+make run.docker
+```
+
 Output:
 
 ```bash
