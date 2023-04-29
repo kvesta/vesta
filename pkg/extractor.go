@@ -50,7 +50,7 @@ func Walk(tarReader *tar.Reader, path string) error {
 			}
 			_, err = io.Copy(file, tarReader)
 			if err != nil {
-				log.Printf("file %s can not extract: %v", hdr.Name, err)
+				log.Printf("file %s cannot extract: %v", hdr.Name, err)
 			}
 		default:
 			// ignore
@@ -82,7 +82,7 @@ func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, error) {
 			}
 			_, err = io.Copy(file, tarReader)
 			if err != nil {
-				log.Printf("file %s can not extract: %v", hdr.Name, err)
+				log.Printf("file %s cannot extract: %v", hdr.Name, err)
 			}
 
 		}

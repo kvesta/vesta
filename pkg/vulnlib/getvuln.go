@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/kvesta/vesta/config"
@@ -165,7 +166,7 @@ func checkExpired(path string) bool {
 		return true
 	}
 
-	logDate, err := time.Parse("02/01/2006", string(value))
+	logDate, err := time.Parse("02/01/2006", strings.TrimSuffix(string(value), "\x0a"))
 
 	// Check whether a time format
 	if err != nil {

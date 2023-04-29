@@ -32,7 +32,7 @@ var (
 	dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
 		"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
 
-	dangerFullPaths = []string{"/", "/etc", "/proc", "/proc/1", "/sys", "/root", "/var/log"}
+	dangerFullPaths = []string{"/", "/etc", "/proc", "/proc/1", "/sys", "/root", "/var/log", "/c", "/c/Users"}
 
 	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
 		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node", "openshift-infra"}

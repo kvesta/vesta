@@ -1,0 +1,15 @@
+nameOverride: ""
+fullnameOverride: ""
+
+jobs:
+  - name: vesta
+    image:
+      registry: docker.io
+      repository: kvesta/vesta
+      tag: latest
+      pullPolicy: IfNotPresent
+      restartPolicy: OnFailure
+    args:
+      - "analyze"
+      - "k8s"
+      - "--inside"

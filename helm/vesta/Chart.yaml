@@ -1,0 +1,13 @@
+apiVersion: v2
+name: vesta
+description: Vesta helm chart
+type: application
+version: 0.1.0
+appVersion: "1.0.7"
+keywords:
+  - scanner
+  - vesta
+  - vulnerability
+  - k8s
+sources:
+  - https://github.com/kvesta/vesta

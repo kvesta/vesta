@@ -1,0 +1,22 @@
+{{- range $job := .Values.jobs }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ $job.name }}"
+
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ include "vesta.fullname" $ }}
+      containers:
+      - name: {{ $job.name }}
+        image: "{{ $job.image.repository }}:{{ $job.image.tag }}"
+        imagePullPolicy: {{ $job.image.pullPolicy }}
+        args:
+          {{- range $value := $job.args }}
+          - {{ $value}}
+          {{- end }}
+      restartPolicy: {{ $job.image.restartPolicy }}
+
+{{- end }}
