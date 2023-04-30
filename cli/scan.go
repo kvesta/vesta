@@ -15,10 +15,9 @@ import (
 
 func scan() {
 	scanCmd := &cobra.Command{
-		Use: "scan [OPTIONS]",
-		Short: `Container scan
-
-Examples:
+		Use:   "scan [OPTIONS]",
+		Short: `Container scan`,
+		Long: `Examples:
   # Scan a container image
   $ vesta scan image nginx:latest
 
@@ -29,8 +28,7 @@ Examples:
   $ vesta scan container nginx1
 
   # Scan a exported container from a tar archive
-  $ vesta scan container -f nginx.tar
-`}
+  $ vesta scan container -f nginx.tar`}
 
 	imageCheck := &cobra.Command{
 		Use:   "image",
