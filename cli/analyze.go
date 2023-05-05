@@ -10,10 +10,9 @@ import (
 
 func analyze() {
 	analyzeCmd := &cobra.Command{
-		Use: "analyze",
-		Short: `Kubernetes and Docker analyze
-
-Examples:
+		Use:   "analyze",
+		Short: `Kubernetes and Docker analyze`,
+		Long: `Examples:
   # analyze Docker
   $ vesta analyze docker
 
@@ -30,8 +29,7 @@ Examples:
   $ vesta analyze k8s -n namespace 
 
   # analyze in a pod
-  $ vesta analyze k8s --inside
-`}
+  $ vesta analyze k8s --inside`}
 
 	dockerAnalyze := &cobra.Command{
 		Use:   "docker",
