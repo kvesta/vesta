@@ -1,3 +1,7 @@
+# 1.0.8 (2023.6.6)
+## fixed
+- fix the error of compared version
+
 # 1.0.7 (2023.4.1)
 ## features
 - Add trampoline attacking check
