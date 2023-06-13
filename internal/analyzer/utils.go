@@ -128,29 +128,53 @@ func compareVersion(currentVersion, maxVersion, minVersion string) bool {
 	}
 
 	if strings.Contains(maxVersion, "=") {
-		maxv, _ := version2.NewVersion(maxVersion[1:])
+		maxv, err := version2.NewVersion(maxVersion[1:])
+		if err != nil {
+			return false
+		}
+
 		if strings.Contains(minVersion, "=") {
-			minv, _ := version2.NewVersion(minVersion[1:])
+			minv, err := version2.NewVersion(minVersion[1:])
+			if err != nil {
+				return false
+			}
+
 			if k1.Compare(maxv) <= 0 && k1.Compare(minv) >= 0 {
 				return true
 			}
 		} else {
-			minv, _ := version2.NewVersion(minVersion)
+			minv, err := version2.NewVersion(minVersion)
+			if err != nil {
+				return false
+			}
+
 			if k1.Compare(maxv) <= 0 && k1.Compare(minv) > 0 {
 				return true
 			}
 		}
 
 	} else {
-		maxv, _ := version2.NewVersion(maxVersion)
+		maxv, err := version2.NewVersion(maxVersion)
+		if err != nil {
+			return false
+		}
+
 		if strings.Contains(minVersion, "=") {
-			minv, _ := version2.NewVersion(minVersion[1:])
+			minv, err := version2.NewVersion(minVersion[1:])
+			if err != nil {
+				return false
+			}
+
 			if k1.Compare(maxv) < 0 && k1.Compare(minv) >= 0 {
 
 				return true
 			}
 		} else {
-			minv, _ := version2.NewVersion(minVersion)
+			minv, err := version2.NewVersion(minVersion)
+			if err != nil {
+				return false
+			}
+			
 			if k1.Compare(maxv) < 0 && k1.Compare(minv) > 0 {
 				return true
 			}
