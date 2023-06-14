@@ -44,6 +44,7 @@ type KScanner struct {
 }
 
 type nodeInfo struct {
-	Role     map[string]string
-	IsMaster bool
+	Role       map[string]string
+	IsMaster   bool
+	InternalIP string
 }

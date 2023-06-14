@@ -30,8 +30,10 @@ func (ks *KScanner) getNodeInfor(ctx context.Context) error {
 	ks.MasterNodes = make(map[string]*nodeInfo)
 
 	for _, node := range nodes.Items {
+
 		rolesInfo := &nodeInfo{
-			IsMaster: false,
+			IsMaster:   false,
+			InternalIP: node.Status.Addresses[0].Address,
 		}
 		for role, _ := range node.Labels {
 			if strings.HasPrefix(role, "node-role.kubernetes") {
@@ -560,7 +562,7 @@ func checkK8sVersion(cli vulnlib.Client, k8sVersion string) (bool, []*threat) {
 				Describe: fmt.Sprintf("Kubernetes version is suffering the %s vulnerablility "+
 					"under the version %s, need to update.", row.CVEID, strings.TrimPrefix(row.MaxVersion, "=")),
 				Reference: "Update Kubernetes.",
-				Severity:  row.Level,
+				Severity:  strings.ToLower(row.Level),
 			}
 
 			tlist = append(tlist, th)
