@@ -3,15 +3,19 @@ package analyzer
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/pkg/vulnlib"
@@ -49,7 +53,7 @@ func (ks *KScanner) checkCNI() error {
 	}
 
 	// Check kubelet port
-	if ok, tlist := checkKubelet(); ok {
+	if ok, tlist := ks.checkKubelet(); ok {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
@@ -240,7 +244,7 @@ func (ks *KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 				Type:      "Istio",
 				Describe:  description,
 				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
-				Severity:  row.Level,
+				Severity:  strings.ToLower(row.Level),
 			}
 
 			tlist = append(tlist, th)
@@ -371,7 +375,7 @@ func (ks *KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
 				Type:      "Cilium",
 				Describe:  description,
 				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
-				Severity:  row.Level,
+				Severity:  strings.ToLower(row.Level),
 			}
 
 			tlist = append(tlist, th)
@@ -382,7 +386,7 @@ func (ks *KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
 	return vuln, tlist
 }
 
-func checkKubelet() (bool, []*threat) {
+func (ks *KScanner) checkKubelet() (bool, []*threat) {
 	log.Printf(config.Yellow("Begin Kubelet analyzing"))
 
 	var vuln = false
@@ -420,7 +424,71 @@ func checkKubelet() (bool, []*threat) {
 				vuln = true
 			}
 		}
+	}
 
+	// Check 10250 and 10255 unauthorized
+	for nodeName, node := range ks.MasterNodes {
+		if ok, ts := checkKubeletUnauthorized(node.InternalIP); ok {
+			for _, t := range ts {
+				t.Param += fmt.Sprintf(" | Node Name: '%s' | Node Interal IP: %s", nodeName, node.InternalIP)
+			}
+
+			vuln = true
+			tlist = append(tlist, ts...)
+		}
+
+	}
+
+	return vuln, tlist
+}
+
+func checkKubeletUnauthorized(ip string) (bool, []*threat) {
+
+	var vuln = false
+	tlist := []*threat{}
+
+	ports := []int{10255, 10250}
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+
+	for _, port := range ports {
+		url := fmt.Sprintf("https://%s:%d/pods/", ip, port)
+		request, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			continue
+		}
+
+		resp, err := client.Do(request)
+
+		if err != nil {
+			continue
+		}
+
+		content, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			continue
+		}
+
+		if len(content) > 100 && strings.Contains(string(content), "apiVersion") {
+			th := &threat{
+				Param: fmt.Sprintf("Kubelet port: '%d' unauthorized", port),
+				Value: fmt.Sprintf("Unauthorized, check the url: %s", url),
+				Type:  "Kubelet",
+				Describe: fmt.Sprintf("Kubelet port: '%d' unauthorized, "+
+					"which leak all the information to the anonymous.", port),
+				Severity: "high",
+			}
+
+			vuln = true
+			tlist = append(tlist, th)
+		}
+
+		resp.Body.Close()
 	}
 
 	return vuln, tlist
