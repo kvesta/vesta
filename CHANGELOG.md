@@ -1,6 +1,7 @@
 # 1.0.8 (2023.6.6)
 ## improvements
 - Add unauthorized kubelet checking for each node
+- Add support of k3s and k0s
 
 ## fixed
 - fix the error of compared version

@@ -184,10 +184,26 @@ func DoInspectInKubernetes(ctx context.Context) {
 	if ctx.Value("kubeconfig") != "default" {
 		kubeconfig = ctx.Value("kubeconfig").(string)
 	} else if home := homedir.HomeDir(); home != "" {
-		kubeconfig = filepath.Join(home, ".kube", "config")
+		if exists(filepath.Join(home, ".kube", "config")) {
+			kubeconfig = filepath.Join(home, ".kube", "config")
+		} else if exists("/etc/rancher/k3s/k3s.yaml") {
+			// for k3s
+			kubeconfig = "/etc/rancher/k3s/k3s.yaml"
+		} else if exists("/etc/k0s/k0s.yaml") {
+			// for k0s
+			kubeconfig = "/etc/k0s/k0s.yaml"
+		}
+
 	} else {
 		// use original config of kubernetes
-		kubeconfig = "/etc/kubernetes/config/admin.conf"
+		if exists("/etc/kubernetes/config/admin.conf") {
+			kubeconfig = "/etc/kubernetes/config/admin.conf"
+		} else if exists("/etc/rancher/k3s/k3s.yaml") {
+			kubeconfig = "/etc/rancher/k3s/k3s.yaml"
+		} else if exists("/etc/k0s/k0s.yaml") {
+			kubeconfig = "/etc/k0s/k0s.yaml"
+		}
+
 	}
 
 	// use the current context in kubeconfig
