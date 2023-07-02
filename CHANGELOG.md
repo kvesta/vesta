@@ -5,6 +5,7 @@
 
 ## fixed
 - fix the error of compared version
+- fix the error of parameter input in file scan
 
 # 1.0.7 (2023.4.1)
 ## features
