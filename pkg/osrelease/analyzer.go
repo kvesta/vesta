@@ -31,7 +31,7 @@ func KernelParse(kernel string) string {
 // using `docker run` command so that to adapt to docker-desktop
 // kata-container is not taken into account yet
 func GetKernelVersion(ctx context.Context) (string, error) {
-	log.Printf("Geting kernel version")
+	log.Printf("Getting kernel version")
 	var kernel string
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())

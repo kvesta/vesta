@@ -201,8 +201,8 @@ Detected 3 vulnerabilities
 
 ```bash
 2022/11/29 23:15:59 Start analysing
-2022/11/29 23:15:59 Geting docker server version
-2022/11/29 23:15:59 Geting kernel version
+2022/11/29 23:15:59 Getting docker server version
+2022/11/29 23:15:59 Getting kernel version
 
 Detected 4 vulnerabilities
 

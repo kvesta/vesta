@@ -8,20 +8,33 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/kvesta/vesta/config"
-	_image "github.com/kvesta/vesta/pkg/inspector"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (s *Scanner) Analyze(ctx context.Context, inspectors []*types.ContainerJSON, images []*_image.ImageInfo) error {
+func (s *Scanner) Analyze(ctx context.Context) error {
+	dockerInps, err := s.DCli.GetAllContainers()
+	if err != nil {
+		if strings.Contains(err.Error(), "Is the docker daemon running") {
+			log.Printf("Cannot connect to docker service")
+			return err
+		}
+		log.Printf("Cannot get all docker inpector, error: %v", err)
+		return err
+	}
 
-	err := s.checkDockerContext(ctx, images)
+	dockerImages, err := s.DCli.GetAllImage()
+	if err != nil {
+		log.Printf("Cannot get all docker images, error: %v", err)
+	}
+
+	err = s.checkDockerContext(ctx, dockerImages)
 	if err != nil {
 		log.Printf("failed to check docker context, error: %v", err)
 	}
 
 	log.Printf(config.Yellow("Begin container analyzing"))
-	for _, in := range inspectors {
+	for _, in := range dockerInps {
 		err := s.checkDockerList(in)
 		if err != nil {
 			log.Printf("Container %s check error, %v", in.ID[:12], err)
@@ -57,7 +70,7 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 		isVulnerable = true
 	}
 
-	// Check the strength of password
+	// Checking the strength of password
 	if ok, tlist := checkEnvPassword(config); ok {
 		ths = append(ths, tlist...)
 		isVulnerable = true
@@ -74,6 +87,12 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 		isVulnerable = true
 	}
 
+	// Checking whether used the dangerous image
+	if ok, tlist := checkImageUsed(config, s.VulnContainers); ok {
+		ths = append(ths, tlist...)
+		isVulnerable = true
+	}
+
 	if isVulnerable {
 		sortSeverity(ths)
 
@@ -83,6 +102,11 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 
 			Threats: ths,
 		}
+
+		if s.DCli.FindDockerService(con.ContainerName) {
+			con.ContainerID += " | running in Docker Swarm"
+		}
+
 		s.VulnContainers = append(s.VulnContainers, con)
 	}
 

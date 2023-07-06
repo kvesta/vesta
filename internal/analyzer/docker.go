@@ -321,6 +321,36 @@ func checkPid(config *types.ContainerJSON) (bool, []*threat) {
 	return vuln, tlist
 }
 
+func checkImageUsed(config *types.ContainerJSON, vulnContainers []*container) (bool, []*threat) {
+	var vuln = false
+
+	tlist := []*threat{}
+
+	imageMixed := strings.Split(config.Image, ":")
+	imageID := imageMixed[1][:12]
+	for _, v := range vulnContainers {
+		if strings.Contains(v.ContainerName, "Image Configuration") {
+			for _, ids := range v.Threats {
+				if strings.Contains(ids.Value, imageID) {
+					th := &threat{
+						Param:    "Dangerous image",
+						Value:    fmt.Sprintf("Image ID: %s", imageID),
+						Describe: "Docker container used dangerous image.",
+						Severity: ids.Severity,
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
+
+					break
+				}
+			}
+		}
+	}
+
+	return vuln, tlist
+}
+
 func checkDockerUnauthorized() (bool, []*threat) {
 	log.Printf(_config.Yellow("Begin unauthorized analyzing"))
 

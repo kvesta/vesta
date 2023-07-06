@@ -184,9 +184,9 @@ Output:
 
 ```bash
 2022/11/29 23:06:32 Start analysing
-2022/11/29 23:06:32 Geting engine version
-2022/11/29 23:06:32 Geting docker server version
-2022/11/29 23:06:32 Geting kernel version
+2022/11/29 23:06:32 Getting engine version
+2022/11/29 23:06:32 Getting docker server version
+2022/11/29 23:06:32 Getting kernel version
 
 Detected 3 vulnerabilities
 
@@ -226,8 +226,8 @@ Output:
 
 ```bash
 2022/11/29 23:15:59 Start analysing
-2022/11/29 23:15:59 Geting docker server version
-2022/11/29 23:15:59 Geting kernel version
+2022/11/29 23:15:59 Getting docker server version
+2022/11/29 23:15:59 Getting kernel version
 
 Detected 4 vulnerabilities
 

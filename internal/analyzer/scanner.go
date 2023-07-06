@@ -1,11 +1,13 @@
 package analyzer
 
 import (
+	"github.com/kvesta/vesta/pkg/inspector"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type Scanner struct {
+	DCli           inspector.DockerApi
 	VulnContainers []*container
 
 	EngineVersion string
