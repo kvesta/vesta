@@ -13,7 +13,7 @@ import (
 )
 
 func (s *Scanner) Analyze(ctx context.Context) error {
-	dockerInps, err := s.DCli.GetAllContainers()
+	dockerInps, err := s.DApi.GetAllContainers()
 	if err != nil {
 		if strings.Contains(err.Error(), "Is the docker daemon running") {
 			log.Printf("Cannot connect to docker service")
@@ -23,7 +23,7 @@ func (s *Scanner) Analyze(ctx context.Context) error {
 		return err
 	}
 
-	dockerImages, err := s.DCli.GetAllImage()
+	dockerImages, err := s.DApi.GetAllImage()
 	if err != nil {
 		log.Printf("Cannot get all docker images, error: %v", err)
 	}
@@ -103,7 +103,7 @@ func (s *Scanner) checkDockerList(config *types.ContainerJSON) error {
 			Threats: ths,
 		}
 
-		if s.DCli.FindDockerService(con.ContainerName) {
+		if s.DApi.FindDockerService(con.ContainerName) {
 			con.ContainerID += " | running in Docker Swarm"
 		}
 

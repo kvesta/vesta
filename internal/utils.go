@@ -134,7 +134,7 @@ func DoInspectInDocker(ctx context.Context) {
 	inspects := &Inpsectors{}
 
 	scanner := inspects.Scan
-	scanner.DCli = c
+	scanner.DApi = c
 	scanner.EngineVersion = engineVersion
 	scanner.ServerVersion = serverVersion
 	err = scanner.Analyze(ctx)

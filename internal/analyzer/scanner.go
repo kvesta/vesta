@@ -7,7 +7,7 @@ import (
 )
 
 type Scanner struct {
-	DCli           inspector.DockerApi
+	DApi           inspector.DockerApi
 	VulnContainers []*container
 
 	EngineVersion string

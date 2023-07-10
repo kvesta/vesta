@@ -37,6 +37,12 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []*_image.Image
 		log.Printf("failed to get kernel version: %v", err)
 	}
 
+	// Checking the docker swarm
+	err = s.checkSwarm()
+	if err != nil {
+		log.Printf("docker swarm error: %v", err)
+	}
+
 	if ok, tlist := checkKernelVersion(cli, kernelVersion); ok {
 		ct := &container{
 			ContainerID:   "None",
@@ -92,6 +98,239 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []*_image.Image
 	}
 
 	return nil
+}
+
+func checkSwarmLabels(labels map[string]string, name, configType string) (bool, []*threat) {
+	var vuln = false
+	tlist := []*threat{}
+
+	match := false
+
+	for k, v := range labels {
+		for _, p := range passKey {
+			if p.MatchString(k) {
+				match = true
+				break
+			}
+		}
+
+		if match {
+			switch checkWeakPassword(v) {
+			case "Weak":
+				th := &threat{
+					Param:    configType + " Label",
+					Value:    fmt.Sprintf("%s name: %s", configType, name),
+					Describe: fmt.Sprintf("Lables '%s' has weak password: '%s'.", k, v),
+					Severity: "high",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+			case "Medium":
+				th := &threat{
+					Param: configType + " Label",
+					Value: fmt.Sprintf("%s name: %s", configType, name),
+					Describe: fmt.Sprintf("Lables '%s' password '%s' "+
+						"need to be reinforced.", k, v),
+					Severity: "low",
+				}
+
+				tlist = append(tlist, th)
+				vuln = true
+			}
+		}
+	}
+
+	return vuln, tlist
+}
+
+func (s *Scanner) checkSwarmSecrets() error {
+	var vuln = false
+	tlist := []*threat{}
+
+	ses, err := s.DApi.
+		DCli.
+		SecretList(context.Background(), types.SecretListOptions{})
+
+	if err != nil {
+		log.Printf("failed to check docker config")
+		return err
+	}
+
+	// TODO: check the content of the secret
+
+	for _, se := range ses {
+		vuln, tlist = checkSwarmLabels(se.Spec.Labels, se.Spec.Name, "Secret")
+	}
+
+	if vuln {
+		ct := &container{
+			ContainerID:   "None",
+			ContainerName: "Docker Swarm Secret",
+			Threats:       tlist,
+		}
+
+		s.VulnContainers = append(s.VulnContainers, ct)
+	}
+
+	return nil
+}
+
+func (s *Scanner) checkSwarmConfigs() error {
+
+	var vuln = false
+	tlist := []*threat{}
+
+	cons, err := s.DApi.
+		DCli.
+		ConfigList(context.Background(), types.ConfigListOptions{})
+
+	if err != nil {
+		return err
+	}
+
+	for _, con := range cons {
+		configData := string(con.Spec.Data)
+		detect := maliciousContentCheck(configData)
+		switch detect.Types {
+		case Executable:
+			th := &threat{
+				Param: "Config Data",
+				Value: fmt.Sprintf("Config name: %s", con.Spec.Name),
+				Describe: fmt.Sprintf("Malicious value found in config Data "+
+					"with the plain text '%s'.", detect.Plain),
+				Severity: "high",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+
+		case Confusion:
+			th := &threat{
+				Param: "Config Data",
+				Value: fmt.Sprintf("Config name: %s", con.Spec.Name),
+				Describe: fmt.Sprintf("Confusion value found in config Data "+
+					"with the plain text '%s'.", detect.Plain),
+				Severity: "high",
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+
+		default:
+			// ignore
+		}
+
+		vulnLabel, tlistLabel := checkSwarmLabels(con.Spec.Labels, con.Spec.Name, "Config")
+
+		if vulnLabel {
+			vuln = true
+			tlist = append(tlist, tlistLabel...)
+		}
+
+	}
+
+	if vuln {
+		ct := &container{
+			ContainerID:   "None",
+			ContainerName: "Docker Swarm Config",
+			Threats:       tlist,
+		}
+
+		s.VulnContainers = append(s.VulnContainers, ct)
+	}
+
+	return nil
+}
+
+func (s *Scanner) checkDockerService() error {
+
+	var vuln = false
+	tlist := []*threat{}
+
+	sers, err := s.DApi.
+		DCli.
+		ServiceList(context.Background(), types.ServiceListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, se := range sers {
+		// Checking the swarm config
+		for _, c := range se.Spec.TaskTemplate.ContainerSpec.Configs {
+			for _, v := range s.VulnContainers {
+				if strings.Contains(v.ContainerName, "Docker Swarm Config") {
+					for _, t := range v.Threats {
+						if strings.HasSuffix(t.Value, c.ConfigName) {
+							th := &threat{
+								Param:    "Swarm Service",
+								Value:    fmt.Sprintf("Service Name: %s", se.Spec.Name),
+								Describe: fmt.Sprintf("Docker Service is using the unsafe swarm config: '%s'.", c.ConfigName),
+								Severity: t.Severity,
+							}
+
+							tlist = append(tlist, th)
+							vuln = true
+
+							break
+						}
+
+					}
+				}
+
+			}
+		}
+
+		// Checking the swarm secret
+		for _, secret := range se.Spec.TaskTemplate.ContainerSpec.Secrets {
+			for _, v := range s.VulnContainers {
+				if strings.Contains(v.ContainerName, "Docker Swarm Secret") {
+					for _, t := range v.Threats {
+						if strings.HasSuffix(t.Value, secret.File.Name) {
+							th := &threat{
+								Param:    "Swarm Service",
+								Value:    fmt.Sprintf("Service Name: %s", se.Spec.Name),
+								Describe: fmt.Sprintf("Docker Service is using the unsafe swarm secret: '%s'.", secret.File.Name),
+								Severity: t.Severity,
+							}
+
+							tlist = append(tlist, th)
+							vuln = true
+
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if vuln {
+		ct := &container{
+			ContainerID:   "None",
+			ContainerName: "Docker Swarm Service",
+			Threats:       tlist,
+		}
+
+		s.VulnContainers = append(s.VulnContainers, ct)
+	}
+
+	return nil
+}
+
+func (s *Scanner) checkSwarm() error {
+	log.Printf(_config.Yellow("Begin docker swarm analyzing"))
+
+	err := s.checkSwarmConfigs()
+
+	err = s.checkSwarmSecrets()
+
+	err = s.checkDockerService()
+	if err != nil {
+		log.Printf("failed to check docker service")
+	}
+
+	return err
 }
 
 func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {

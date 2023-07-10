@@ -56,20 +56,21 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 
 > Docker检查
 
-| Supported | Check Item                | Description                        | Severity                 | Reference                                                                                   |
-|-----------|---------------------------|------------------------------------|--------------------------|---------------------------------------------------------------------------------------------|
-| ✔         | PrivilegeAllowed          | 危险的特权模式                            | critical                 | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
-| ✔         | Capabilities              | 危险capabilities被设置                  | critical                 | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) | 
-| ✔         | Volume Mount              | 敏感或危险目录被挂载                         | critical                 | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                |
-| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                      | critical                 | [Ref](https://github.com/vulhub/vulhub/blob/master/docker/unauthorized-rce/README.md)       |
-| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                       | critical                 | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                       |
-| ✔         | Network Module            | Net模式为`host`模式或同时在特定containerd版本下  | critical/medium          |                                                                                             |
-| ✔         | Pid Module                | Pid模式被设置为`host`                    | high                     |                                                                                             |
-| ✔         | Docker Server version     | Docker Server版本存在漏洞                | critical/high/medium/low |                                                                                             |
-| ✔         | Docker env password check | Docker env是否存在弱密码                  | high/medium              |                                                                                             |
-| ✔         | Image tag check           | Image没有被打tag或为默认latest             | low                      |                                                                                             |
-| ✔         | Docker history            | Docker layers 存在不安全的命令             | high/medium              |                                                                                             |
-| ✔         | Docker Backdoor           | Docker env command 存在恶意命令          | critical/high            |                                                                                             |
+| Supported | Check Item                | Description                       | Severity                  | Reference                                                                                   |
+|-----------|---------------------------|-----------------------------------|---------------------------|---------------------------------------------------------------------------------------------|
+| ✔         | PrivilegeAllowed          | 危险的特权模式                           | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) |
+| ✔         | Capabilities              | 危险capabilities被设置                 | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References) | 
+| ✔         | Volume Mount              | 敏感或危险目录被挂载                        | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                |
+| ✔         | Docker Unauthorized       | 2375端口打开并且未授权                     | critical                  | [Ref](https://github.com/vulhub/vulhub/blob/master/docker/unauthorized-rce/README.md)       |
+| ✔         | Kernel version            | 当前内核版本存在逃逸漏洞                      | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                       |
+| ✔         | Network Module            | Net模式为`host`模式或同时在特定containerd版本下 | critical/medium           |                                                                                             |
+| ✔         | Pid Module                | Pid模式被设置为`host`                   | high                      |                                                                                             |
+| ✔         | Docker Server version     | Docker Server版本存在漏洞               | critical/high/ medium/low |                                                                                             |
+| ✔         | Docker env password check | Docker env是否存在弱密码                 | high/medium               |                                                                                             |
+| ✔         | Image tag check           | Image没有被打tag或为默认latest            | low                       |                                                                                             |
+| ✔         | Docker history            | Docker layers 存在不安全的命令            | high/medium               |                                                                                             |
+| ✔         | Docker Backdoor           | Docker env command 存在恶意命令         | critical/high             |                                                                                             |
+| ✔         | Docker Swarm              | Docker Swarm存在危险配置信息以及危险的容器检测     | medium/low                |                                                                                             |
 
 
 
