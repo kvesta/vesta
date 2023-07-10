@@ -1,10 +1,15 @@
 # 1.0.8 (2023.6.6)
+## features
+- Add dangerous image used checking in Docker
+- Add Docker Swarm Service checking
+
 ## improvements
 - Add unauthorized kubelet checking for each node
 - Add support of k3s and k0s
 
 ## fixed
 - fix the error of compared version
+- fix the error of parameter input in file scan
 
 # 1.0.7 (2023.4.1)
 ## features

@@ -35,15 +35,15 @@ func scan() {
 		Short: "input from image",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			if len(args) < 1 {
-				fmt.Println("Require at least 1 argument.")
-				os.Exit(1)
-			}
-
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "tarType", "image")
 			ctx = context.WithValue(ctx, "output", outfile)
 			ctx = context.WithValue(ctx, "skip", skipUpdate)
+
+			if len(args) < 1 && tarFile == "" {
+				fmt.Println("Require at least 1 argument.")
+				os.Exit(1)
+			}
 
 			var tarIO []io.ReadCloser
 
@@ -72,15 +72,15 @@ func scan() {
 		Short: "input from inspector",
 		Run: func(cmd *cobra.Command, args []string) {
 
-			if len(args) < 1 {
-				fmt.Println("Require at least 1 argument.")
-				os.Exit(1)
-			}
-
 			ctx := config.Ctx
 			ctx = context.WithValue(ctx, "tarType", "container")
 			ctx = context.WithValue(ctx, "output", outfile)
 			ctx = context.WithValue(ctx, "skip", skipUpdate)
+
+			if len(args) < 1 && tarFile == "" {
+				fmt.Println("Require at least 1 argument.")
+				os.Exit(1)
+			}
 
 			var tarIO []io.ReadCloser
 

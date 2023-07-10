@@ -1,0 +1,5 @@
+services:
+  web:
+    image: vesta-vuln-test:latest
+    build:
+      dockerfile: Dockerfile

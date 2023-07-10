@@ -60,7 +60,7 @@ func (da *DockerApi) GetContainerName(containerID string) ([]io.ReadCloser, erro
 	return containerIo, err
 }
 
-func (da DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {
+func (da *DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {
 	inps := []*types.ContainerJSON{}
 	containers, err := da.DCli.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
@@ -81,8 +81,8 @@ func (da DockerApi) GetAllContainers() ([]*types.ContainerJSON, error) {
 	return inps, nil
 }
 
-func (da DockerApi) GetEngineVersion(ctx context.Context) (string, error) {
-	log.Printf("Geting engine version")
+func (da *DockerApi) GetEngineVersion(ctx context.Context) (string, error) {
+	log.Printf("Getting engine version")
 
 	var version string
 
@@ -100,8 +100,8 @@ func (da DockerApi) GetEngineVersion(ctx context.Context) (string, error) {
 	return version, err
 }
 
-func (da DockerApi) GetDockerServerVersion(ctx context.Context) (string, error) {
-	log.Printf("Geting docker server version")
+func (da *DockerApi) GetDockerServerVersion(ctx context.Context) (string, error) {
+	log.Printf("Getting docker server version")
 
 	var version string
 
@@ -113,4 +113,20 @@ func (da DockerApi) GetDockerServerVersion(ctx context.Context) (string, error) 
 	version = server.Version
 
 	return version, nil
+}
+
+func (da *DockerApi) FindDockerService(name string) bool {
+	sws, err := da.DCli.ServiceList(context.Background(), types.ServiceListOptions{})
+
+	if err != nil {
+		return false
+	}
+
+	for _, swarm := range sws {
+		if strings.HasPrefix(name, swarm.Spec.Name) {
+			return true
+		}
+	}
+
+	return false
 }

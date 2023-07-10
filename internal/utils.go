@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/kvesta/vesta/config"
@@ -123,23 +122,6 @@ func DoInspectInDocker(ctx context.Context) {
 		DCli: cli,
 	}
 
-	defer c.DCli.Close()
-
-	dockerInps, err := c.GetAllContainers()
-	if err != nil {
-		if strings.Contains(err.Error(), "Is the docker daemon running") {
-			log.Printf("Cannot connect to docker service")
-			return
-		}
-		log.Printf("Cannot get all docker inpector, error: %v", err)
-		return
-	}
-
-	dockerImages, err := c.GetAllImage()
-	if err != nil {
-		log.Printf("Cannot get all docker images, error: %v", err)
-	}
-
 	engineVersion, err := c.GetEngineVersion(ctx)
 	if err != nil {
 		log.Printf("Cannot get engine version, error: %v", err)
@@ -150,10 +132,12 @@ func DoInspectInDocker(ctx context.Context) {
 		log.Printf("Cannot get server version, error: %v", err)
 	}
 	inspects := &Inpsectors{}
+
 	scanner := inspects.Scan
+	scanner.DApi = c
 	scanner.EngineVersion = engineVersion
 	scanner.ServerVersion = serverVersion
-	err = scanner.Analyze(ctx, dockerInps, dockerImages)
+	err = scanner.Analyze(ctx)
 
 	if err != nil {
 		log.Printf("Snalyze error %v", err)
