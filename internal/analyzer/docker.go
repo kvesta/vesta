@@ -319,9 +319,21 @@ func (s *Scanner) checkDockerService() error {
 }
 
 func (s *Scanner) checkSwarm() error {
+	
+	_, err := s.DApi.
+		DCli.
+		ServiceList(context.Background(), types.ServiceListOptions{})
+	if err != nil {
+		if strings.Contains(err.Error(), "This node is not a swarm manager") {
+			return nil
+		}
+
+		return err
+	}
+
 	log.Printf(_config.Yellow("Begin docker swarm analyzing"))
 
-	err := s.checkSwarmConfigs()
+	err = s.checkSwarmConfigs()
 
 	err = s.checkSwarmSecrets()
 
