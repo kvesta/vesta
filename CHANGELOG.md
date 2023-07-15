@@ -4,6 +4,9 @@
 - Add Docker Swarm Service checking
 
 ## improvements
+- Annotate the tag of image checking
+
+## improvements
 - Add unauthorized kubelet checking for each node
 - Add support of k3s and k0s
 

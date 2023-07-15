@@ -67,7 +67,6 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Pid Module                | Pid模式被设置为`host`                   | high                      |                                                                                             |
 | ✔         | Docker Server version     | Docker Server版本存在漏洞               | critical/high/ medium/low |                                                                                             |
 | ✔         | Docker env password check | Docker env是否存在弱密码                 | high/medium               |                                                                                             |
-| ✔         | Image tag check           | Image没有被打tag或为默认latest            | low                       |                                                                                             |
 | ✔         | Docker history            | Docker layers 存在不安全的命令            | high/medium               |                                                                                             |
 | ✔         | Docker Backdoor           | Docker env command 存在恶意命令         | critical/high             |                                                                                             |
 | ✔         | Docker Swarm              | Docker Swarm存在危险配置信息以及危险的容器检测     | medium/low                |                                                                                             |

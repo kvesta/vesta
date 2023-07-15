@@ -76,15 +76,18 @@ func (s *Scanner) checkDockerContext(ctx context.Context, images []*_image.Image
 	}
 
 	// Check the repo's tag
-	if ok, tlist := checkImages(images); ok {
-		ct := &container{
-			ContainerID:   "None",
-			ContainerName: "Image Tag",
-			Threats:       tlist,
-		}
+	// We found that it is hard to exploit
+	/*
+		if ok, tlist := checkImages(images); ok {
+			ct := &container{
+				ContainerID:   "None",
+				ContainerName: "Image Tag",
+				Threats:       tlist,
+			}
 
-		s.VulnContainers = append(s.VulnContainers, ct)
-	}
+			s.VulnContainers = append(s.VulnContainers, ct)
+		}
+	*/
 
 	// Check image's history
 	if ok, tlist := checkHistories(images); ok {
@@ -319,7 +322,7 @@ func (s *Scanner) checkDockerService() error {
 }
 
 func (s *Scanner) checkSwarm() error {
-	
+
 	_, err := s.DApi.
 		DCli.
 		ServiceList(context.Background(), types.ServiceListOptions{})
