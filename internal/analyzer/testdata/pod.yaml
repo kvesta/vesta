@@ -20,6 +20,7 @@ spec:
       resources:
         limits:
           cpu: "1"
+          ephemeral-storage: "1Gi"
     - name: sidecartest
       image: mysql:5.6
       ports:

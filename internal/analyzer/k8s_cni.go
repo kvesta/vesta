@@ -322,7 +322,7 @@ func (ks *KScanner) checkIstioHeader(podname, ns, cname string) (bool, []*threat
 }
 
 func (ks *KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
-	log.Printf(config.Yellow("Begin cilium analyzing"))
+	log.Printf(config.Yellow("Begin Cilium analyzing"))
 
 	var vuln = false
 	tlist := []*threat{}

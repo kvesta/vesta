@@ -2,6 +2,7 @@
 ## features
 - Add dangerous image used checking in Docker
 - Add Docker Swarm Service checking
+- Add checking of ephemeral-storage usage
 
 ## improvements
 - Annotate the tag of image checking

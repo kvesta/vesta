@@ -122,7 +122,7 @@ func (ks *KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName stri
 			vList = append(vList, tlist...)
 		}
 
-		if ok, tlist := checkResourcesLimits(sp); ok {
+		if ok, tlist := checkResourcesLimits(sp, podSpec.Volumes); ok {
 			vList = append(vList, tlist...)
 		}
 
@@ -368,7 +368,7 @@ func (ks *KScanner) checkSidecarEnv(container v1.Container, ns string) (bool, []
 	return vuln, tlist
 }
 
-func checkResourcesLimits(container v1.Container) (bool, []*threat) {
+func checkResourcesLimits(container v1.Container, volumes []v1.Volume) (bool, []*threat) {
 	var vuln = false
 	tlist := []*threat{}
 
@@ -417,6 +417,34 @@ func checkResourcesLimits(container v1.Container) (bool, []*threat) {
 
 		tlist = append(tlist, th)
 		vuln = true
+	}
+
+	// Checking the correction of storage limit usage
+	if container.Resources.Limits.StorageEphemeral().String() != "0" {
+		podVolumes := container.VolumeMounts
+		for _, podV := range podVolumes {
+			for _, v := range volumes {
+				if v.HostPath != nil {
+					if podV.Name == v.Name {
+						th := &threat{
+							Param: fmt.Sprintf("sidecar name: %s | "+
+								"Resource", container.Name),
+							Value: "ephemeral-storage",
+							Type:  "Sidecar Resource",
+							Describe: fmt.Sprintf("Ephemeral storage is used but in volumes '%s' with type hostpath, "+
+								"which limitation will not work.", v.Name),
+							Reference: "https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#types-of-ephemeral-volumes",
+							Severity:  "low",
+						}
+
+						tlist = append(tlist, th)
+						vuln = true
+
+						break
+					}
+				}
+			}
+		}
 	}
 
 	return vuln, tlist
