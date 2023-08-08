@@ -8,6 +8,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/kvesta/vesta/pkg/layer"
 
@@ -19,25 +20,35 @@ import (
 // Reference https://manpages.ubuntu.com/manpages/bionic/zh_TW/man5/os-release.5.html
 var paths = []string{"etc/os-release", "etc/centos-release", "etc/photon-release", "usr/lib/os-release"}
 
-func KernelParse(kernel string) string {
+func KernelParse(kernel string) KernelVersion {
 	filter := regexp.MustCompile(`[a-zA-Z]`)
 	begin := filter.FindStringIndex(kernel)[0]
 	value := strings.Split(kernel[begin:], " ")
-	return value[2]
+
+	publishDate := strings.Replace(strings.Join(value[len(value)-5:len(value)], " "), "UTC ", "", -1)
+	publishDate = strings.TrimSpace(publishDate)
+	pd, _ := time.Parse("Jan 2 15:04:05 2006", publishDate)
+
+	k := KernelVersion{
+		Version:   value[2],
+		BuiltDate: pd,
+	}
+
+	return k
 
 }
 
 // GetKernelVersion get kernel version from host machine
 // using `docker run` command so that to adapt to docker-desktop
 // kata-container is not taken into account yet
-func GetKernelVersion(ctx context.Context) (string, error) {
+func GetKernelVersion(ctx context.Context) (KernelVersion, error) {
 	log.Printf("Getting kernel version")
-	var kernel string
+	var kernel KernelVersion
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 
 	if err != nil {
-		return "", err
+		return kernel, err
 	}
 
 	defer cli.Close()
@@ -46,9 +57,9 @@ func GetKernelVersion(ctx context.Context) (string, error) {
 	if err != nil {
 		if strings.Contains(err.Error(), "Is the docker daemon running?") {
 			err = errors.New("docker is not running")
-			return "", err
+			return kernel, err
 		}
-		return "", err
+		return kernel, err
 	}
 
 	var busyboxImage = false
@@ -67,7 +78,7 @@ func GetKernelVersion(ctx context.Context) (string, error) {
 		log.Printf("Pulling busybox:1.34.1 image for kernel checking")
 		reader, err := cli.ImagePull(ctx, "busybox:1.34.1", types.ImagePullOptions{})
 		if err != nil {
-			return "", err
+			return kernel, err
 		}
 		defer reader.Close()
 
@@ -83,10 +94,10 @@ func GetKernelVersion(ctx context.Context) (string, error) {
 	},
 		nil, nil, nil, "kernel-checking")
 	if err != nil {
-		return "", err
+		return kernel, err
 	}
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		return "", err
+		return kernel, err
 	}
 
 	defer func() {
@@ -104,20 +115,20 @@ func GetKernelVersion(ctx context.Context) (string, error) {
 	select {
 	case err = <-errCh:
 		if err != nil {
-			return "", err
+			return kernel, err
 		}
 	case <-statusCh:
 	}
 
 	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
-		return "", err
+		return kernel, err
 	}
 
 	res := strings.Builder{}
 	_, err = io.Copy(&res, out)
 	if err != nil {
-		return "", err
+		return kernel, err
 	}
 
 	kernel = KernelParse(res.String())

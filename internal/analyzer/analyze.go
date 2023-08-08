@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/kvesta/vesta/config"
+	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/vulnlib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -314,7 +316,7 @@ func checkDockerVersion(cli vulnlib.Client, serverVersion string) (bool, []*thre
 // checkKernelVersion check kernel version for whether the kernel version
 // is under the vulnerable version which has a potential container escape
 // such as Dirty Cow,Dirty Pipe
-func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*threat) {
+func checkKernelVersion(cli vulnlib.Client, kernelVersion osrelease.KernelVersion) (bool, []*threat) {
 	var vuln = false
 
 	tlist := []*threat{}
@@ -329,7 +331,7 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 
 	log.Printf(config.Yellow("Begin kernel version analyzing"))
 	for cve, nickname := range vulnKernelVersion {
-		var maxVersion string
+		var maxVersion, publishDate string
 		underVuln := false
 
 		rows, err := cli.QueryVulnByCVEID(cve)
@@ -345,9 +347,10 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 				row.MaxVersion = "4.8.3"
 			}
 
-			if compareVersion(kernelVersion, row.MaxVersion, row.MinVersion) && row.VulnName == "linux_kernel" {
+			if compareVersion(kernelVersion.Version, row.MaxVersion, row.MinVersion) && row.VulnName == "linux_kernel" {
 				vuln, underVuln = true, true
 				maxVersion = row.MaxVersion
+				publishDate = row.PublishDate
 
 				break
 			}
@@ -356,12 +359,23 @@ func checkKernelVersion(cli vulnlib.Client, kernelVersion string) (bool, []*thre
 		if underVuln {
 			th := &threat{
 				Param: "kernel version",
-				Value: kernelVersion,
+				Value: kernelVersion.Version,
 				Type:  "K8s version less than v1.24",
-				Describe: fmt.Sprintf("Kernel version is suffering the %s vulnerablility below the version `%s`, "+
-					"has a potential container escape.", nickname, strings.TrimPrefix(maxVersion, "=")),
+				Describe: fmt.Sprintf("Kernel version is suffering the %s vulnerablility below the version `%s`, ",
+					nickname, strings.TrimPrefix(maxVersion, "=")),
 				Reference: "Update kernel version or docker-desktop.",
 				Severity:  "critical",
+			}
+
+			pb, _ := time.Parse("2006-01-02", publishDate)
+
+			if kernelVersion.BuiltDate.After(pb) {
+				th.Describe += fmt.Sprintf("but it was compiled on %s, "+
+					"which is later than the date of vulnerability on %s.",
+					kernelVersion.BuiltDate.Format("2006-01-02"), publishDate)
+				th.Severity = "low"
+			} else {
+				th.Describe += "which has a potential container escape."
 			}
 
 			tlist = append(tlist, th)
