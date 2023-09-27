@@ -21,9 +21,12 @@ func scan() {
   # Scan a container image
   $ vesta scan image nginx:latest
 
+  # Scan a container image with specific host
+  $ DOCKER_HOST=<DOCKER host> vesta scan image nginx:latest
+
   # Scan a container image from a tar archive
   $ vesta scan image -f python.tar
-  
+ 
   # Scan a running container
   $ vesta scan container nginx1
 

@@ -1,6 +1,10 @@
 # 1.0.9 (2023.8.8)
+## features
+- Add account checking in `/etc/passwd`
+
 ## improvements
 - Add the date of kernel compiling checking in checking of kernel version
+- Add the error output in image saving
 
 # 1.0.8 (2023.6.6)
 ## features

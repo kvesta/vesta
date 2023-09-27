@@ -27,6 +27,9 @@ func GetTarFromID(ctx context.Context, ID string) ([]io.ReadCloser, error) {
 
 	if ctx.Value("tarType") == "image" {
 		tarFile, err = c.GetImageName(ID)
+		if err != nil {
+			log.Printf("get image error: %v", err)
+		}
 	} else {
 		tarFile, err = c.GetContainerName(ID)
 		if err != nil {
