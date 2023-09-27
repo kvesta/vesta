@@ -1,9 +1,11 @@
 package vulnscan
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -62,6 +64,11 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 	err = ps.checkRustPacks(ctx, p.RustPacks)
 	if err != nil {
 		log.Printf("failed to check rust packs")
+	}
+
+	err = ps.checkPassword(ctx, m)
+	if err != nil {
+		log.Printf("failed to check /etc/passwd")
 	}
 
 	return err
@@ -580,6 +587,48 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 	}
 
 	ps.Vulns = append(ps.Vulns, packVuln...)
+
+	return nil
+}
+
+// checkPassword check other user belongs to root in /etc/passwd
+func (ps *Scanner) checkPassword(ctx context.Context, m *layer.Manifest) error {
+
+	passVuln := []*vulnComponent{}
+
+	passFile := filepath.Join(m.Localpath, "etc/passwd")
+	f, err := os.Open(passFile)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+
+	for scanner.Scan() {
+		pass := strings.Split(scanner.Text(), ":")
+		if pass[2] != "0" && pass[3] == "0" && !strings.HasSuffix(pass[6], "/sbin/nologin") {
+			vulnAccount := &vulnComponent{
+				Name:              "Account of /etc/passwd",
+				CurrentVersion:    "-",
+				VulnerableVersion: "-",
+				Type:              "Others",
+				CVEID:             fmt.Sprintf("Suspicious Account: '%s'", pass[0]),
+				Level:             "medium",
+				Score:             6.5,
+				Desc: fmt.Sprintf("Account '%s' in /etc/passwd is not root "+
+					"but in the group of root. Account line: '%s'", pass[0],
+					strings.Join(pass[0:5], ":")+" "+strings.Join(pass[5:7], ":")),
+			}
+
+			passVuln = append(passVuln, vulnAccount)
+
+		}
+
+	}
+
+	ps.Vulns = append(ps.Vulns, passVuln...)
 
 	return nil
 }
