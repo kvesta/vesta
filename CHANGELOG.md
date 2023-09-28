@@ -1,6 +1,7 @@
 # 1.0.9 (2023.8.8)
 ## features
 - Add account checking in `/etc/passwd`
+- Add filesystem scanning
 
 ## improvements
 - Add the date of kernel compiling checking in checking of kernel version

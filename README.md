@@ -28,6 +28,11 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 ## What can vesta check
 
 > Scan
+- Support scanning input
+  - image
+  - container
+  - filesystem
+  - vm (TODO)
 - Scan the vulnerabilities of major package managements
   - apt/apt-get
   - rpm
