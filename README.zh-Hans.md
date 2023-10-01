@@ -41,6 +41,11 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 ## 检查项
 
 > Scan
+- 支持输入的方式
+  - image
+  - container
+  - filesystem
+  - vm (TODO)
 - 扫描通过主流安装方法安装程序的漏洞
   - apt/apt-get
   - rpm

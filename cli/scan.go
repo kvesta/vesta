@@ -31,7 +31,10 @@ func scan() {
   $ vesta scan container nginx1
 
   # Scan a exported container from a tar archive
-  $ vesta scan container -f nginx.tar`}
+  $ vesta scan container -f nginx.tar
+
+  # Scan a filesystem
+  $ vesta scan fs filepath/`}
 
 	imageCheck := &cobra.Command{
 		Use:   "image",
@@ -108,6 +111,25 @@ func scan() {
 		},
 	}
 
+	fileSystemCheck := &cobra.Command{
+		Use:   "fs",
+		Short: "input from path of filesystem",
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx := config.Ctx
+			ctx = context.WithValue(ctx, "tarType", "filesystem")
+			ctx = context.WithValue(ctx, "output", outfile)
+			ctx = context.WithValue(ctx, "skip", skipUpdate)
+
+			if len(args) < 1 {
+				fmt.Println("Require path of filesystem.")
+				os.Exit(1)
+			}
+
+			internal.DoScan(ctx, args[0], nil)
+
+		},
+	}
+
 	imageCheck.Flags().StringVarP(&tarFile, "file", "f", "", "path of tar file")
 	imageCheck.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
 	imageCheck.Flags().BoolVar(&skipUpdate, "skip", false, "skip the updating")
@@ -116,8 +138,12 @@ func scan() {
 	containerCheck.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
 	containerCheck.Flags().BoolVar(&skipUpdate, "skip", false, "skip the updating")
 
+	fileSystemCheck.Flags().BoolVar(&skipUpdate, "skip", false, "skip the updating")
+	fileSystemCheck.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
+
 	scanCmd.AddCommand(imageCheck)
 	scanCmd.AddCommand(containerCheck)
+	scanCmd.AddCommand(fileSystemCheck)
 
 	rootCmd.AddCommand(scanCmd)
 

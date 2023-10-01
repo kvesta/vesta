@@ -11,6 +11,7 @@ import (
 	"github.com/kvesta/vesta/config"
 	"github.com/kvesta/vesta/internal/report"
 	"github.com/kvesta/vesta/pkg/inspector"
+	"github.com/kvesta/vesta/pkg/layer"
 	"github.com/kvesta/vesta/pkg/osrelease"
 	"github.com/kvesta/vesta/pkg/packages"
 	"github.com/kvesta/vesta/pkg/vulnlib"
@@ -26,6 +27,7 @@ import (
 func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 
 	var wg sync.WaitGroup
+	var m *layer.Manifest
 
 	// Get vulnerability database
 	if !ctx.Value("skip").(bool) {
@@ -35,13 +37,22 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		}
 	}
 
-	log.Printf(config.Green("Begin to analyze the layer"))
-	// Extract tar file to local folder
-	m, err := Extract(ctx, tarFile, tarIO)
-	if err != nil {
-		log.Printf("Extract container failed, error: %v\n"+
-			"\tTips: try to use the container scan", err)
-		return
+	if ctx.Value("tarType").(string) != "filesystem" {
+		log.Printf(config.Green("Begin to analyze the layer"))
+
+		// Extract tar file to local folder
+		var err error
+		m, err = Extract(ctx, tarFile, tarIO)
+		if err != nil {
+			log.Printf("Extract container failed, error: %v\n"+
+				"\tTips: try to use the container scan", err)
+			return
+		}
+	} else {
+		// Use path directly
+		m = &layer.Manifest{
+			Localpath: tarFile,
+		}
 	}
 
 	osVersion, err := osrelease.DetectOs(ctx, *m)
@@ -69,6 +80,10 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		log.Printf("scan error %v", err)
 	}
 
+	if ctx.Value("tarType").(string) == "filesystem" {
+		goto rep
+	}
+
 	go func() {
 		wg.Add(1)
 
@@ -94,6 +109,7 @@ func DoScan(ctx context.Context, tarFile string, tarIO []io.ReadCloser) {
 		}
 	}()
 
+rep:
 	err = report.ResolveAnalysisData(ctx, scanner)
 	if err != nil {
 		log.Printf("report error %v", err)
