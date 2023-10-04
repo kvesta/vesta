@@ -109,15 +109,16 @@ make build
 Example of image or container scan, use `-f` to input by a tar file, start vesta:
 
 ```bash
+# Container
 vesta scan image cve-2019-14234_web:latest
 vesta scan image -f example.tar
-```
 
-or 
-
-```bash
+# Image
 vesta scan container <CONTAINER ID>
 vesta scan container -f example.tar
+
+# Filesystem
+vesta scan fs <path_of_filesystem>
 ```
 
 
