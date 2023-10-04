@@ -115,7 +115,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 1. 编译vesta
 - 使用`make build` 进行编译
 - 从[Releases](https://github.com/kvesta/vesta/releases)上下载可执行文件
-2. 使用vesta检查镜像过容器中的漏洞组件版本（使用镜像ID，镜像标签或使用`-f`文件输入均可）
+2. 使用vesta检查镜像过容器中的漏洞组件版本（使用镜像ID，镜像标签，文件系统路径或使用`-f`文件输入均可）
 
 ```bash
 $./vesta scan container -f example.tar
