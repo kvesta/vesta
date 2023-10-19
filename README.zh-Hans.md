@@ -306,3 +306,8 @@ Available Commands:
 Flags:
   -h, --help   help for vesta
 ```
+
+## 相关资料
+
+### KCon 2023 兵器谱入选项目
+- [https://kcon.knownsec.com/index.php?s=bqp&c=category&id=2](https://kcon.knownsec.com/index.php?s=bqp&c=category&id=2)

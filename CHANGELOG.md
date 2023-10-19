@@ -4,6 +4,9 @@
 - Add filesystem scanning
 
 ## improvements
+- Add the counter of each severity 
+
+## improvements
 - Add the date of kernel compiling checking in checking of kernel version
 - Add the error output in image saving
 
