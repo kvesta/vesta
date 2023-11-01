@@ -2,6 +2,11 @@
 ## features
 - Add account checking in `/etc/passwd`
 - Add filesystem scanning
+- Add checking of ingress nginx
+
+## improvements
+- Add the counter of each severity 
+- Add some rules of annotation checking
 
 ## improvements
 - Add the date of kernel compiling checking in checking of kernel version

@@ -16,7 +16,31 @@ import (
 
 // ResolveAnalysisData print the result of image scan
 func ResolveAnalysisData(ctx context.Context, r vulnscan.Scanner) error {
-	fmt.Printf("\nDetected %s vulnerabilities\n\n", config.Yellow(len(r.Vulns)))
+
+	critical, high, medium, low := 0, 0, 0, 0
+
+	for _, c := range r.Vulns {
+		switch strings.ToLower(c.Level) {
+		case "critical":
+			critical += 1
+		case "high":
+			high += 1
+		case "medium":
+			medium += 1
+		case "low":
+			low += 1
+		default:
+			// ignore
+		}
+	}
+
+	fmt.Printf("\nDetected %s vulnerabilities | "+
+		"Critical: %s High: %s Medium: %s Low: %s\n\n",
+		config.Yellow(len(r.Vulns)),
+		config.Red(critical),
+		config.Pink(high),
+		config.Yellow(medium),
+		config.Green(low))
 
 	table := tablewriter.NewWriter(os.Stdout)
 
@@ -61,7 +85,34 @@ func ResolveAnalysisData(ctx context.Context, r vulnscan.Scanner) error {
 
 // ResolveDockerData print the result of analyze by docker
 func ResolveDockerData(ctx context.Context, r analyzer.Scanner) error {
-	fmt.Printf("\nDetected %s vulnerabilities\n\n", config.Yellow(len(r.VulnContainers)))
+
+	critical, high, medium, low := 0, 0, 0, 0
+
+	for _, c := range r.VulnContainers {
+		for _, v := range c.Threats {
+			switch strings.ToLower(v.Severity) {
+			case "critical":
+				critical += 1
+			case "high":
+				high += 1
+			case "medium":
+				medium += 1
+			case "low":
+				low += 1
+			default:
+				// ignore
+			}
+		}
+
+	}
+
+	fmt.Printf("\nDetected %s vulnerabilities | "+
+		"Critical: %s High: %s Medium: %s Low: %s\n\n",
+		config.Yellow(len(r.VulnContainers)),
+		config.Red(critical),
+		config.Pink(high),
+		config.Yellow(medium),
+		config.Green(low))
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"ID", "Container Detail", "Param",
@@ -90,7 +141,37 @@ func ResolveDockerData(ctx context.Context, r analyzer.Scanner) error {
 func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 
 	// Report pod condition
-	fmt.Printf("\nDetected %s vulnerabilities\n\n", config.Yellow(len(r.VulnContainers)+len(r.VulnConfigures)))
+
+	critical, high, medium, low, warning := 0, 0, 0, 0, 0
+
+	for _, c := range r.VulnContainers {
+		for _, v := range c.Threats {
+			switch strings.ToLower(v.Severity) {
+			case "critical":
+				critical += 1
+			case "high":
+				high += 1
+			case "medium":
+				medium += 1
+			case "low":
+				low += 1
+			case "warning":
+				warning += 1
+			default:
+				// ignore
+			}
+		}
+
+	}
+
+	fmt.Printf("\nDetected %s vulnerabilities | "+
+		"Critical: %s High: %s Medium: %s Low: %s Warning: %d\n\n",
+		config.Yellow(len(r.VulnContainers)+len(r.VulnConfigures)),
+		config.Red(critical),
+		config.Pink(high),
+		config.Yellow(medium),
+		config.Green(low),
+		warning)
 
 	if len(r.VulnContainers)+len(r.VulnConfigures) == 0 {
 		return nil

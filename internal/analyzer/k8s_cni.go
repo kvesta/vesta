@@ -52,6 +52,11 @@ func (ks *KScanner) checkCNI() error {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
 	}
 
+	// Check ingress-nginx
+	if ok, tlist := ks.checkIngressNginx(vulnCli); ok {
+		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
+	}
+
 	// Check kubelet port
 	if ok, tlist := ks.checkKubelet(); ok {
 		ks.VulnConfigures = append(ks.VulnConfigures, tlist...)
@@ -240,7 +245,7 @@ func (ks *KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 
 			th := &threat{
 				Param:     "Istio version",
-				Value:     istioVersion,
+				Value:     fmt.Sprintf("%s < %s", istioVersion, row.MaxVersion),
 				Type:      "Istio",
 				Describe:  description,
 				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
@@ -371,8 +376,74 @@ func (ks *KScanner) checkCilium(vulnCli vulnlib.Client) (bool, []*threat) {
 
 			th := &threat{
 				Param:     "Cilium version",
-				Value:     ciliumVersion,
+				Value:     fmt.Sprintf("%s < %s", ciliumVersion, row.MaxVersion),
 				Type:      "Cilium",
+				Describe:  description,
+				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
+				Severity:  strings.ToLower(row.Level),
+			}
+
+			tlist = append(tlist, th)
+			vuln = true
+		}
+	}
+
+	return vuln, tlist
+}
+
+func (ks *KScanner) checkIngressNginx(vulnCli vulnlib.Client) (bool, []*threat) {
+	log.Printf(config.Yellow("Begin Nginx Ingress analyzing"))
+
+	var vuln = false
+	tlist := []*threat{}
+
+	// Get istio deployment
+	dp, err := ks.KClient.
+		AppsV1().
+		Deployments("ingress-nginx").
+		Get(context.Background(), "ingress-nginx-controller", metav1.GetOptions{})
+
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			return vuln, tlist
+		}
+
+		log.Printf("check envoy version failed, %v", err)
+		return vuln, tlist
+	}
+
+	if dp == nil {
+		return vuln, tlist
+	}
+
+	// Check nginx ingress version
+	imageName := dp.Spec.Template.Spec.Containers[0].Image
+	imageRegexp := regexp.MustCompile(`\A(.*?)(?:(:.*?)(@sha256:[0-9a-f]{64})?)?\z`)
+	versionMatch := imageRegexp.FindStringSubmatch(imageName)
+	if len(versionMatch) < 2 {
+		return vuln, tlist
+	}
+
+	nginxIngressVersion := versionMatch[2][1:]
+	rows, err := vulnCli.QueryVulnByName("ingress-nginx")
+	if err != nil {
+		log.Printf("check envoy version failed, %v", err)
+		return vuln, tlist
+	}
+
+	for _, row := range rows {
+		if compareVersion(nginxIngressVersion, row.MaxVersion, row.MinVersion) {
+			var description string
+			if len(row.Description) > 200 {
+				description = fmt.Sprintf("%s ... Reference: %s", row.Description[:100], row.CVEID)
+			} else {
+				description = fmt.Sprintf("%s ... Reference: %s", row.Description[:100], row.CVEID)
+			}
+
+			th := &threat{
+				Param:     "Ingress nginx version",
+				Value:     fmt.Sprintf("%s < %s", nginxIngressVersion, row.MaxVersion),
+				Type:      "Ingress Nginx",
 				Describe:  description,
 				Reference: fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", row.CVEID),
 				Severity:  strings.ToLower(row.Level),
