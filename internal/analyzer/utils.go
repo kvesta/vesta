@@ -29,12 +29,13 @@ var (
 		regexp.MustCompile(`(?i)key[^.]`),
 	}
 
-	dangerPrefixMountPaths = []string{"/etc/crontab", "/private/etc",
-		"/var/run", "/run/containerd", "/sys/fs/cgroup", "/root/.ssh"}
+	dangerPrefixMountPaths = []string{"/etc/crontab", "/var/run", "/run/containerd",
+		"/sys/fs/cgroup", "/root/.ssh"}
 
-	dangerFullPaths = []string{"/", "/etc", "/proc", "/proc/1", "/sys", "/root", "/var/log", "/c", "/c/Users"}
+	dangerFullPaths = []string{"/", "/etc", "/proc", "/proc/1", "/sys", "/root", "/var/log",
+		"/c", "/c/Users", "/private/etc"}
 
-	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public",
+	namespaceWhileList = []string{"istio-system", "kube-system", "kube-public", "ingress-nginx",
 		"kubesphere-router-gateway", "kubesphere-system", "openshift-sdn", "openshift-node", "openshift-infra"}
 
 	dangerCaps = []string{"SYS_ADMIN", "CAP_SYS_ADMIN", "CAP_SYS_PTRACE", "CAP_SYS_MODULE",
@@ -45,6 +46,8 @@ var (
 		"sidecar.istio.io/userVolumeMount":                         {component: "istio", level: "warning"},
 		"seccomp.security.alpha.kubernetes.io/allowedProfileNames": {component: "PodSecurityPolicy", level: "medium", Values: []string{"*"}},
 		"apparmor.security.beta.kubernetes.io/allowedProfileNames": {component: "PodSecurityPolicy", level: "medium", Values: []string{"*"}},
+		"nginx.ingress.kubernetes.io/permanent-redirect":           {component: "nginx ingress", level: "medium", Values: []string{"{", ";", "$", "(", "'", `""`}},
+		"nginx.ingress.kubernetes.io/server-snippet":               {component: "nginx ingress", level: "medium", Values: []string{"serviceaccount/token"}},
 		"security.alpha.kubernetes.io/sysctls": {component: "k8s", level: "low",
 			Values: []string{"kernel.shm_rmid_forced=0", "net.core.", "kernel.shm", "kernel.msg", "kernel.sem", "fs.mqueue."}},
 	}
@@ -174,7 +177,7 @@ func compareVersion(currentVersion, maxVersion, minVersion string) bool {
 			if err != nil {
 				return false
 			}
-			
+
 			if k1.Compare(maxv) < 0 && k1.Compare(minv) > 0 {
 				return true
 			}
