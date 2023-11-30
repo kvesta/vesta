@@ -18,7 +18,6 @@ import (
 
 	"github.com/docker/docker/client"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -206,11 +205,21 @@ func DoInspectInKubernetes(ctx context.Context) {
 
 	}
 
-	// use the current context in kubeconfig
-	if ctx.Value("inside").(bool) {
-		kconfig, err = rest.InClusterConfig()
+	// Set the server host if exist
+	if host := ctx.Value("server").(string); host != "" {
+		kconfig, err = clientcmd.BuildConfigFromFlags(host, kubeconfig)
 	} else {
 		kconfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+	}
+
+	// Set the insecure method
+	if ctx.Value("insecure").(bool) {
+		kconfig.Insecure = true
+	}
+
+	// Authenticate with token
+	if BearerToken := ctx.Value("token").(string); BearerToken != "" {
+		kconfig.BearerToken = BearerToken
 	}
 
 	if err != nil {

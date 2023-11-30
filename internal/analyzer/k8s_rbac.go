@@ -488,6 +488,20 @@ func (ks *KScanner) checkSecret(ns string) error {
 		for k, v := range data {
 			needCheck := false
 
+			if k == ".dockerconfigjson" {
+				th := &threat{
+					Param: fmt.Sprintf("Secret Name: %s | Namspace: %s", se.Name, ns),
+					Value: fmt.Sprintf("%s:%s", k, string(v[:50])),
+					Type:  "Secret",
+					Describe: "Secret has found account info .dockerconfigjson " +
+						"in this service account.",
+					Severity: "low",
+				}
+
+				ks.VulnConfigures = append(ks.VulnConfigures, th)
+				continue
+			}
+
 			for _, p := range passKey {
 				if p.MatchString(k) {
 					needCheck = true
