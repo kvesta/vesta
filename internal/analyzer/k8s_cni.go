@@ -220,7 +220,7 @@ func (ks *KScanner) checkIstio(vulnCli vulnlib.Client) (bool, []*threat) {
 
 	// Check istio version
 	imageName := dp.Spec.Template.Spec.Containers[0].Image
-	versionRegex := regexp.MustCompile(`(\d+\.)?(\d+\.)?(\*|\d+)$`)
+	versionRegex := regexp.MustCompile(`(\d+\.)?(\d+\.)?(\*|\d+)`)
 	versionMatch := versionRegex.FindStringSubmatch(imageName)
 	if len(versionMatch) < 2 {
 		return vuln, tlist

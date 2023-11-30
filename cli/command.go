@@ -18,13 +18,15 @@ var (
                Tutorial is available at https://github.com/kvesta/vesta`,
 	}
 
-	tarFile    string
-	nameSpace  string
-	kubeconfig string
-	outfile    string
-	updateall  bool
-	skipUpdate bool
-	inside     bool
+	tarFile     string
+	nameSpace   string
+	kubeconfig  string
+	bearerToken string
+	serverHost  string
+	outfile     string
+	updateall   bool
+	skipUpdate  bool
+	insecure    bool
 )
 
 func Execute() error {

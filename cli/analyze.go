@@ -22,14 +22,14 @@ func analyze() {
   # analyze by specifying config
   $ vesta analyze k8s --kubeconfig config
 
+  # analyze by specifying token
+  $ vesta analyze k8s --token <token> --server <SEVER HOST> --insecure
+
   # analyze all the namespace
   $ vesta analyze k8s -n all
 
   # analyze a special namespace
-  $ vesta analyze k8s -n namespace 
-
-  # analyze in a pod
-  $ vesta analyze k8s --inside`}
+  $ vesta analyze k8s -n namespace`}
 
 	dockerAnalyze := &cobra.Command{
 		Use:   "docker",
@@ -50,7 +50,9 @@ func analyze() {
 			ctx = context.WithValue(ctx, "nameSpace", nameSpace)
 			ctx = context.WithValue(ctx, "kubeconfig", kubeconfig)
 			ctx = context.WithValue(ctx, "output", outfile)
-			ctx = context.WithValue(ctx, "inside", inside)
+			ctx = context.WithValue(ctx, "token", bearerToken)
+			ctx = context.WithValue(ctx, "server", serverHost)
+			ctx = context.WithValue(ctx, "insecure", insecure)
 
 			internal.DoInspectInKubernetes(ctx)
 		},
@@ -58,8 +60,10 @@ func analyze() {
 
 	kubernetesAnalyze.Flags().StringVarP(&nameSpace, "ns", "n", "standard", "specific namespace")
 	kubernetesAnalyze.Flags().StringVar(&kubeconfig, "kubeconfig", "default", "specific configure file")
-	kubernetesAnalyze.Flags().BoolVar(&inside, "inside", false, "running analyze in a pod by using service account token")
+	kubernetesAnalyze.Flags().BoolVar(&insecure, "insecure", false, "skip verify the tls certificate")
 	kubernetesAnalyze.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
+	kubernetesAnalyze.Flags().StringVar(&bearerToken, "token", "", "k8s authentication token")
+	kubernetesAnalyze.Flags().StringVar(&serverHost, "server", "", "k8s server host")
 
 	dockerAnalyze.Flags().StringVarP(&outfile, "output", "o", "output", "output file location")
 
