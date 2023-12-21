@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/kvesta/vesta/config"
+	"github.com/kvesta/vesta/internal/analyzer"
 	"github.com/kvesta/vesta/pkg/layer"
 	"github.com/kvesta/vesta/pkg/match"
 	"github.com/kvesta/vesta/pkg/packages"
@@ -71,19 +72,42 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check /etc/passwd")
 	}
 
+	// Check the image history if exist
+	if ok, tlist := analyzer.CheckHistories(m.Histories); ok {
+		historyVuln := []*vulnComponent{}
+		for _, t := range tlist {
+			vuln := &vulnComponent{
+				Name:              t.Param,
+				Level:             t.Severity,
+				CVEID:             "-",
+				Desc:              t.Describe,
+				Score:             0.0,
+				CurrentVersion:    "-",
+				Type:              "Docker Histories",
+				VulnerableVersion: "-",
+			}
+
+			historyVuln = append(historyVuln, vuln)
+		}
+
+		sortSeverity(historyVuln)
+		ps.Vulns = append(ps.Vulns, historyVuln...)
+
+	}
+
 	return err
 }
 
 func getInfo(row *vulnlib.DBRow, version, packType string) *vulnComponent {
-	vuln := &vulnComponent{}
-
-	vuln.Level = row.Level
-	vuln.CVEID = row.CVEID
-	vuln.Desc = row.Description
-	vuln.PublishDate = row.PublishDate
-	vuln.Score = row.Score
-	vuln.CurrentVersion = version
-	vuln.Type = packType
+	vuln := &vulnComponent{
+		Level:          row.Level,
+		CVEID:          row.CVEID,
+		Desc:           row.Description,
+		PublishDate:    row.PublishDate,
+		Score:          row.Score,
+		CurrentVersion: version,
+		Type:           packType,
+	}
 
 	if strings.HasPrefix(row.MaxVersion, "=") {
 		vuln.VulnerableVersion = "<=" + row.MaxVersion[1:]

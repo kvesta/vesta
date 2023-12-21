@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 func exists(path string) bool {
@@ -60,19 +61,28 @@ func Walk(tarReader *tar.Reader, path string) error {
 }
 
 // AnalyzeTarLayer get manifest.json and layer.tar from tar file
-func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, error) {
-	var manifest string
+func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, string, error) {
+	var manifest, histories string
+
+	imageIdReg := regexp.MustCompile(`^[0-9a-fA-F]{64}\.json$`)
 
 	for hdr, err := tarReader.Next(); err != io.EOF; hdr, err = tarReader.Next() {
 		if err != nil {
-			return manifest, err
+			return manifest, histories, err
 		}
 
 		if hdr.Name == "manifest.json" {
 			b, err := ioutil.ReadAll(tarReader)
 			manifest = string(b)
 			if err != nil {
-				return manifest, err
+				return manifest, histories, err
+			}
+		} else if imageIdReg.MatchString(hdr.Name) {
+			// Get the image histories
+			b, err := ioutil.ReadAll(tarReader)
+			histories = string(b)
+			if err != nil {
+				return manifest, histories, err
 			}
 		} else if filepath.Base(hdr.Name) == "layer.tar" {
 			layerFile := filepath.Join(tempPath, filepath.Dir(hdr.Name)+".tar")
@@ -86,12 +96,13 @@ func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, error) {
 			}
 
 		}
+
 	}
 
 	if manifest == "" {
 		err := errors.New("manifest not found")
-		return manifest, err
+		return manifest, histories, err
 	}
 
-	return manifest, nil
+	return manifest, histories, nil
 }

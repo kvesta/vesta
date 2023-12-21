@@ -5,12 +5,14 @@
 - Add checking of ingress nginx
 - Add BearerToken for authentication
 - Add insecure and server flags in k8s analysis
+- Add environment checking in docker images
 
 ## improvements
 - Add the counter of each severity 
 - Add some rules of annotation checking
 - Delete the inside flag due to duplicate
 - Add `.dockerconfigjson` in secret checking
+- Add Docker Histories environment checking
 
 ## improvements
 - Add the date of kernel compiling checking in checking of kernel version
