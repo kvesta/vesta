@@ -5,16 +5,20 @@
 - Add checking of ingress nginx
 - Add BearerToken for authentication
 - Add insecure and server flags in k8s analysis
+- Add environment checking in docker images
 
 ## improvements
 - Add the counter of each severity 
 - Add some rules of annotation checking
 - Delete the inside flag due to duplicate
 - Add `.dockerconfigjson` in secret checking
-
-## improvements
+- Add Docker Histories environment checking
 - Add the date of kernel compiling checking in checking of kernel version
 - Add the error output in image saving
+
+## fixed
+- Fix the out of range in container extract
+
 
 # 1.0.8 (2023.6.6)
 ## features

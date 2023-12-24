@@ -8,7 +8,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/kvesta/vesta/pkg"
+	_image "github.com/kvesta/vesta/pkg/inspector"
 	"github.com/tidwall/gjson"
 )
 
@@ -20,7 +23,7 @@ func md5Stamp() string {
 
 func (m *Manifest) GetLayers(ctx context.Context, tarReader *tar.Reader, tempPath string) error {
 
-	manifest, err := pkg.AnalyzeTarLayer(tarReader, tempPath)
+	manifest, histories, err := pkg.AnalyzeTarLayer(tarReader, tempPath)
 	if err != nil {
 		return err
 	}
@@ -47,6 +50,32 @@ func (m *Manifest) GetLayers(ctx context.Context, tarReader *tar.Reader, tempPat
 			Hash:       layer.(string)[:64],
 			Annotation: "",
 		})
+	}
+
+	historyParse := gjson.Get(histories, "history").Value()
+	m.Histories = []*_image.ImageInfo{
+		{
+			Summary: types.ImageSummary{
+				ID:       value["Config"].(string)[:64],
+				RepoTags: []string{m.Name},
+			},
+			History: []image.HistoryResponseItem{},
+		},
+	}
+	for _, history := range historyParse.([]interface{}) {
+		mapHistory := history.(map[string]interface{})
+
+		pd, _ := time.Parse(time.RFC3339, mapHistory["created"].(string))
+		h := image.HistoryResponseItem{
+			Created:   pd.Unix(),
+			CreatedBy: mapHistory["created_by"].(string),
+		}
+
+		if mapHistory["comment"] != nil {
+			h.Comment = mapHistory["comment"].(string)
+		}
+
+		m.Histories[0].History = append(m.Histories[0].History, h)
 	}
 
 	return nil
