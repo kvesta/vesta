@@ -63,12 +63,14 @@ func Extract(ctx context.Context, tarPath string, tarIO []io.ReadCloser) (*layer
 		}
 
 		// Get mount path
-		for _, mio := range tarIO[1:] {
-			tarReader = tar.NewReader(mio)
-			err = pkg.Walk(tarReader, tempPath)
-			if err != nil {
-				log.Printf("decompress mount path failed, error: %v", err)
-				continue
+		if len(tarIO) > 1 {
+			for _, mio := range tarIO[1:] {
+				tarReader = tar.NewReader(mio)
+				err = pkg.Walk(tarReader, tempPath)
+				if err != nil {
+					log.Printf("decompress mount path failed, error: %v", err)
+					continue
+				}
 			}
 		}
 
