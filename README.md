@@ -45,6 +45,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
   - Golang(Go binary)
   - PHP(Composer, major frameworks: laravel, thinkphp, wordpress, wordpress plugins etc)
   - Rust(Rust binary)
+  - Others(Others vulnerable which will cause a potential container escape and check suspicious poison image)
 
 > Docker
 
@@ -62,6 +63,7 @@ Vesta is a flexible toolkit which can run on physical machines in different type
 | ✔         | Docker History            | Docker layers and environment have some  dangerous commands.           | high/medium               |                                                                                             |
 | ✔         | Docker Backdoor           | Docker env command has malicious commands.                             | critical/high             |                                                                                             |
 | ✔         | Docker Swarm              | Docker swarm has dangerous config or secrets or containers are unsafe. | medium/low                |                                                                                             |
+| ✔         | Docker supply chain       | Docker supply chain has vulnerable configurations                      | critical/high/ medium     | [Ref](https://github.com/kvesta/vesta/wiki/Docker-supply-chain-Checking-References)         |
 
 ---
 

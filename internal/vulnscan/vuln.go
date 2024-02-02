@@ -67,6 +67,11 @@ func (ps *Scanner) Scan(ctx context.Context, m *layer.Manifest, p *packages.Pack
 		log.Printf("failed to check rust packs")
 	}
 
+	err = ps.getOthers(ctx, p.Others)
+	if err != nil {
+		log.Printf("failed to get others packages")
+	}
+
 	err = ps.checkPassword(ctx, m)
 	if err != nil {
 		log.Printf("failed to check /etc/passwd")
@@ -611,6 +616,30 @@ func (ps *Scanner) checkPackageVersion(ctx context.Context, packs []*packages.Pa
 	}
 
 	ps.Vulns = append(ps.Vulns, packVuln...)
+
+	return nil
+}
+
+// getOthers into the database of the vulnerabilities
+func (ps *Scanner) getOthers(ctx context.Context, others []*packages.Other) error {
+	othersVuln := []*vulnComponent{}
+	for _, oth := range others {
+		othVuln := &vulnComponent{
+			Name:              oth.Name,
+			CurrentVersion:    "-",
+			VulnerableVersion: "-",
+			Type:              "Others",
+			CVEID:             oth.Title,
+			Level:             oth.Level,
+			Score:             oth.Score,
+			Desc:              oth.Desc,
+		}
+
+		othersVuln = append(othersVuln, othVuln)
+	}
+
+	sortSeverity(othersVuln)
+	ps.Vulns = append(ps.Vulns, othersVuln...)
 
 	return nil
 }

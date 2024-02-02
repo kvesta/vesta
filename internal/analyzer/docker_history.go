@@ -42,8 +42,26 @@ func CheckHistories(images []*_image.ImageInfo) (bool, []*threat) {
 
 			link := strings.Split(pruneLayer, " ")[0]
 			switch link {
-			case "CMD", "ADD", "ARG", "LABEL", "WORKDIR", "COPY", "EXPOSE", "ENTRYPOINT", "USER":
+			case "CMD", "ADD", "ARG", "LABEL", "COPY", "EXPOSE", "ENTRYPOINT", "USER":
 				continue
+			case "WORKDIR":
+				// Check CVE-2024-21626
+				values := strings.Split(pruneLayer, " ")
+				if cveRuncRegex.MatchString(values[1]) {
+					th := &threat{
+						Param: "Image History",
+						Value: fmt.Sprintf("Image name: %s | "+
+							"Image ID: %s", img.Summary.RepoTags[0],
+							strings.TrimPrefix(img.Summary.ID, "sha256:")[:12]),
+						Describe: "Detected malicious image based on CVE-2024-21626, " +
+							"which has a link of /proc/self/fd.",
+						Severity: "high",
+					}
+
+					tlist = append(tlist, th)
+					vuln = true
+				}
+
 			case "ENV":
 				values := strings.Split(pruneLayer, "=")
 				detect := maliciousContentCheck(values[1])

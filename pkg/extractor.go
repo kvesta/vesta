@@ -53,6 +53,14 @@ func Walk(tarReader *tar.Reader, path string) error {
 			if err != nil {
 				log.Printf("file %s cannot extract: %v", hdr.Name, err)
 			}
+		case tar.TypeSymlink:
+			linkName := filepath.Join(path, hdr.Linkname)
+
+			err = os.Symlink(linkName, extractFile)
+			if err != nil {
+				continue
+			}
+
 		default:
 			// ignore
 		}

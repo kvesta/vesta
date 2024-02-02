@@ -49,6 +49,7 @@ func (da *DockerApi) GetContainerName(containerID string) ([]io.ReadCloser, erro
 			}
 
 			cp, stats, err := da.DCli.CopyFromContainer(ctx, containerID, mnt.Destination)
+			// Skip the large file
 			if err != nil || stats.Size > 1073741824 {
 				continue
 			}

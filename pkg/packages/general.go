@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -152,6 +153,35 @@ func (s *Packages) Traverse(ctx context.Context) error {
 		}
 		mode := in.Mode()
 
+		// Check the link file
+		if mode&os.ModeSymlink != 0 {
+			filename := filepath.Join(m.Localpath, path)
+			targetPath, err := os.Readlink(filename)
+			if err != nil {
+				return err
+			}
+
+			targetPath = strings.Replace(targetPath, m.Localpath, "", -1)
+
+			// Check CVE-2024-21626
+			// Reference: https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv
+			runcRegex := regexp.MustCompile(`(?i)/proc/self/fd`)
+			if runcRegex.MatchString(targetPath) {
+				oth := &Other{
+					Name:  "Malicious file link",
+					Title: "CVE-2024-21626",
+					Score: 7.5,
+					Level: "high",
+					Desc: fmt.Sprintf("File '%s' has been linked to the directory of proc fd: '%s', "+
+						"which has a potential container escape.", path, targetPath),
+				}
+				s.Others = append(s.Others, oth)
+			}
+
+			return nil
+		}
+
+		// Check the executable file
 		if mode.IsRegular() && mode.Perm()&0555 != 0 {
 			filename := filepath.Join(m.Localpath, path)
 			f, err := os.Open(filename)

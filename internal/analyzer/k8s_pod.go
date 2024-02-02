@@ -134,6 +134,21 @@ func (ks *KScanner) podAnalyze(podSpec v1.PodSpec, rv RBACVuln, ns, podName stri
 			vList = append(vList, tlist...)
 		}
 
+		// Check CVE-2024-21626
+		if cveRuncRegex.MatchString(sp.WorkingDir) {
+			th := &threat{
+				Param: "Pod WorkDIR",
+				Value: fmt.Sprintf("WORKDIR: %s", sp.WorkingDir),
+				Type:  "Suspect malicious pod",
+				Describe: fmt.Sprintf("Pod has malicious configuration, it's WORKDIR is '%s',"+
+					" which has a potential container escape, refer to CVE-2024-21626.", sp.WorkingDir),
+				Reference: "https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv",
+				Severity:  "high",
+			}
+
+			vList = append(vList, th)
+		}
+
 	}
 
 	return vList
