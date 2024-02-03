@@ -17,6 +17,8 @@ type Packages struct {
 	JavaPacks   []*JAVA    `json:"java_packs"`
 	PHPPacks    []*PHP     `json:"php_packs"`
 	RustPacks   []*Rust    `json:"rust_packs"`
+
+	Others []*Other `json:"others"`
 }
 
 type Package struct {
@@ -24,4 +26,12 @@ type Package struct {
 	Name         string `json:"name"`
 	Version      string `json:"version"`
 	Architecture string `json:"architecture"`
+}
+
+type Other struct {
+	Name  string  `json:"name"`
+	Title string  `json:"title"`
+	Score float64 `json:"score"`
+	Level string  `json:"level"`
+	Desc  string  `json:"description"`
 }

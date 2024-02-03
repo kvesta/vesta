@@ -1,3 +1,8 @@
+# 1.0.10 (2024.2.2)
+## features
+- Add checking of `CVE-2024-21626`
+
+
 # 1.0.9 (2023.8.8)
 ## features
 - Add account checking in `/etc/passwd`

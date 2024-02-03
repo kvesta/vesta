@@ -58,6 +58,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
   - Golang(Go binary)
   - PHP(Composer, 以及主流的PHP框架: laravel, thinkphp, wordpress, wordpress插件等)
   - Rust(Rust binary)
+  - Others(其他可能造成容器逃逸的文件，或潜在的投毒镜像)
 
 > Docker检查
 
@@ -75,6 +76,7 @@ vesta同时也是一个灵活，方便的工具，能够在各种系统上运行
 | ✔         | Docker history            | Docker layers 存在不安全的命令            | high/medium               |                                                                                             |
 | ✔         | Docker Backdoor           | Docker env command 存在恶意命令         | critical/high             |                                                                                             |
 | ✔         | Docker Swarm              | Docker Swarm存在危险配置信息以及危险的容器检测     | medium/low                |                                                                                             |
+| ✔         | Docker supply chain       | Docker的相关组建存在危险的配置                | critical/high/ medium     | [Ref](https://github.com/kvesta/vesta/wiki/Docker-supply-chain-Checking-References)         |
 
 
 

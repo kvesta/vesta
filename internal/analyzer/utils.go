@@ -29,6 +29,9 @@ var (
 		regexp.MustCompile(`(?i)key[^.]`),
 	}
 
+	// Reference: https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv
+	cveRuncRegex = regexp.MustCompile(`(?i)/proc/self/fd`)
+
 	dangerPrefixMountPaths = []string{"/etc/crontab", "/var/run", "/run/containerd",
 		"/sys/fs/cgroup", "/root/.ssh"}
 
