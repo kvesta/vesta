@@ -350,14 +350,19 @@ func (s *Scanner) checkSwarm() error {
 func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
 
 	var vuln = false
-	var capList string
 
 	tlist := []*threat{}
 
+	capList, highestSeverity := "", "medium"
+
 	for _, capadd := range config.HostConfig.CapAdd {
-		for _, c := range dangerCaps {
+		for c, s := range dangerCaps {
 			if capadd == c {
 				capList += capadd + " "
+				if _config.SeverityMap[s] > _config.SeverityMap[highestSeverity] {
+					highestSeverity = s
+				}
+
 				vuln = true
 			}
 		}
@@ -372,12 +377,13 @@ func checkPrivileged(config *types.ContainerJSON) (bool, []*threat) {
 			tlist = append(tlist, th)
 		}
 	}
+
 	if vuln {
 		th := &threat{
 			Param:    "CapAdd",
 			Value:    capList,
 			Describe: "There has a potential container escape in privileged module.",
-			Severity: "critical",
+			Severity: highestSeverity,
 		}
 		tlist = append(tlist, th)
 	}

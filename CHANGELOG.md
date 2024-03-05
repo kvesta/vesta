@@ -2,6 +2,8 @@
 ## features
 - Add checking of `CVE-2024-21626`
 
+## improvements
+- Add the severity of each Linux capabilities
 
 # 1.0.9 (2023.8.8)
 ## features

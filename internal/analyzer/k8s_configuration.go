@@ -255,7 +255,7 @@ func (ks *KScanner) checkPodSecurityPolicy() error {
 				break
 			}
 
-			for _, c := range dangerCaps {
+			for c, _ := range dangerCaps {
 				if string(dcap) == c {
 					capList += c + " "
 				}
