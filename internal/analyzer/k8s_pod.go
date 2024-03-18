@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kvesta/vesta/config"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -190,20 +192,26 @@ func checkPodPrivileged(container v1.Container) (bool, []*threat) {
 		// check capabilities of pod
 		// Ignore the checking of cap_drop refer to:
 		// https://stackoverflow.com/questions/63162665/docker-compose-order-of-cap-drop-and-cap-add
-		capList := ""
+		capList, highestSeverity := "", "medium"
 		if container.SecurityContext.Capabilities != nil {
 
 			adds := container.SecurityContext.Capabilities.Add
 			for _, ad := range adds {
 				if ad == "ALL" {
 					capList = "ALL"
+					highestSeverity = "critical"
+
 					vuln = true
 					break
 				}
 
-				for _, c := range dangerCaps {
+				for c, s := range dangerCaps {
 					if string(ad) == c {
 						capList += c + " "
+						if config.SeverityMap[s] > config.SeverityMap[highestSeverity] {
+							highestSeverity = s
+						}
+
 						vuln = true
 					}
 				}
@@ -216,7 +224,7 @@ func checkPodPrivileged(container v1.Container) (bool, []*threat) {
 					Value:    capList,
 					Type:     "capabilities.add",
 					Describe: "There has a potential container escape in dangerous capabilities.",
-					Severity: "critical",
+					Severity: highestSeverity,
 				}
 				tlist = append(tlist, th)
 			}
