@@ -1,6 +1,7 @@
 # 1.0.10 (2024.2.2)
 ## features
 - Add checking of `CVE-2024-21626`
+- Add checking of `CVE-2024-3094` liblzma.so backdoor
 
 ## improvements
 - Add the severity of each Linux capabilities
