@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io/fs"
@@ -181,6 +182,23 @@ func (s *Packages) Traverse(ctx context.Context) error {
 			return nil
 		}
 
+		// Check the liblzma library backdoor
+		// https://www.openwall.com/lists/oss-security/2024/03/29/4
+		if strings.Contains(path, "liblzma.so") {
+			filename := filepath.Join(m.Localpath, path)
+			if checkLiblzma(filename) {
+				oth := &Other{
+					Name:  "liblzma.so backdoor",
+					Title: "CVE-2024-3094",
+					Score: 9.5,
+					Level: "critical",
+					Desc: fmt.Sprintf("File '%s' is a susupicious backdoor "+
+						"becuase the malicious code was discovered in the upstream tarballs of xz.", path),
+				}
+				s.Others = append(s.Others, oth)
+			}
+		}
+
 		// Check the executable file
 		if mode.IsRegular() && mode.Perm()&0555 != 0 {
 			filename := filepath.Join(m.Localpath, path)
@@ -264,4 +282,28 @@ func getHTMLType(path string) string {
 	}
 
 	return ""
+}
+
+// checkLiblzma check the liblzma library backdoor
+func checkLiblzma(path string) bool {
+	file, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	signature := "f30f1efa554889f54c89ce5389fb81e7000000804883ec28488954241848894c2410"
+
+	content := ""
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		content += fmt.Sprintf("%02x", line)
+	}
+
+	if strings.Contains(content, signature) {
+		return true
+	}
+
+	return false
 }
