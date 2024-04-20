@@ -22,6 +22,7 @@ func (s *Packages) getRpmPacks(ctx context.Context) error {
 		if err != nil {
 			continue
 		}
+		defer db.Close()
 
 		pkgList, err := db.ListPackages()
 		if err != nil {
