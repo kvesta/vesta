@@ -1,3 +1,7 @@
+# 1.0.11 (2024.7.22)
+## improvements
+- Add adaptive scanning for image scanning after Docker Version 25.0.0
+
 # 1.0.10 (2024.2.2)
 ## features
 - Add checking of `CVE-2024-21626`

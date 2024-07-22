@@ -6,6 +6,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -46,10 +49,21 @@ func (m *Manifest) GetLayers(ctx context.Context, tarReader *tar.Reader, tempPat
 
 	layers := value["Layers"].([]interface{})
 	for _, layer := range layers {
+		// Adapter for the new docker image format after Docker Version 25.0.0
+		layer = strings.Replace(layer.(string), "blobs/sha256/", "", 1)
 		m.Layers = append(m.Layers, &Layer{
 			Hash:       layer.(string)[:64],
 			Annotation: "",
 		})
+	}
+
+	// Re-read the history from the manifest.json for the new docker image format
+	if strings.HasPrefix(value["Config"].(string), "blobs/sha256/") {
+		b, err := os.ReadFile(filepath.Join(tempPath, filepath.Base(value["Config"].(string))+".tar"))
+		histories = string(b)
+		if err != nil {
+			return err
+		}
 	}
 
 	historyParse := gjson.Get(histories, "history").Value()

@@ -4,11 +4,11 @@ import (
 	"archive/tar"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 func exists(path string) bool {
@@ -80,14 +80,14 @@ func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, string, er
 		}
 
 		if hdr.Name == "manifest.json" {
-			b, err := ioutil.ReadAll(tarReader)
+			b, err := io.ReadAll(tarReader)
 			manifest = string(b)
 			if err != nil {
 				return manifest, histories, err
 			}
 		} else if imageIdReg.MatchString(hdr.Name) {
 			// Get the image histories
-			b, err := ioutil.ReadAll(tarReader)
+			b, err := io.ReadAll(tarReader)
 			histories = string(b)
 			if err != nil {
 				return manifest, histories, err
@@ -102,7 +102,17 @@ func AnalyzeTarLayer(tarReader *tar.Reader, tempPath string) (string, string, er
 			if err != nil {
 				log.Printf("file %s cannot extract: %v", hdr.Name, err)
 			}
-
+		} else if strings.HasPrefix(hdr.Name, "blobs/sha256/") && len(hdr.Name) > 15 {
+			// Adapt for the new docker image format after Docker Version 25.0.0
+			layerFile := filepath.Join(tempPath, filepath.Base(hdr.Name)[:64]+".tar")
+			file, err := os.OpenFile(layerFile, os.O_CREATE|os.O_RDWR, os.FileMode(hdr.Mode))
+			if err != nil {
+				continue
+			}
+			_, err = io.Copy(file, tarReader)
+			if err != nil {
+				log.Printf("file %s cannot extract: %v", hdr.Name, err)
+			}
 		}
 
 	}
