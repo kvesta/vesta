@@ -654,11 +654,15 @@ func (ks *KScanner) checkEtcd() (bool, []*threat) {
 
 	configs := map[string]bool{"client-cert-auth": false,
 		"peer-client-cert-auth": false}
+	
+	hasEtcd := false
 
 	for _, pod := range pods.Items {
 		if !strings.Contains(pod.Name, "etcd") {
 			continue
 		}
+
+		hasEtcd = true
 
 		commands := pod.Spec.Containers[0].Command
 		for _, command := range commands {
@@ -673,7 +677,7 @@ func (ks *KScanner) checkEtcd() (bool, []*threat) {
 
 	}
 
-	if !configs["client-cert-auth"] {
+	if !configs["client-cert-auth"] && hasEtcd {
 
 		th := &threat{
 			Param: "Etcd configuration",
@@ -693,7 +697,7 @@ func (ks *KScanner) checkEtcd() (bool, []*threat) {
 
 		tlist = append(tlist, th)
 		vuln = true
-	} else if !configs["peer-client-cert-auth"] {
+	} else if !configs["peer-client-cert-auth"] && hasEtcd {
 		th := &threat{
 			Param: "Etcd configuration",
 			Value: "--peer-client-cert-auth",
