@@ -2,6 +2,11 @@
 ## improvements
 - Add adaptive scanning for image scanning after Docker Version 25.0.0
 
+## fixed
+- Fixed the empty value of inside ctx
+- Check the length in pod container 
+- Fixed the circumstance of when ETCD is not in kube-system
+
 # 1.0.10 (2024.2.2)
 ## features
 - Add checking of `CVE-2024-21626`

@@ -180,6 +180,15 @@ func DoInspectInKubernetes(ctx context.Context) {
 	var kconfig *restclient.Config
 	var err error
 
+	const tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+	// Checking whether inside a pod
+	if _, err := os.Stat(tokenFile); os.IsNotExist(err) {
+		ctx = context.WithValue(ctx, "inside", false)
+	} else {
+		ctx = context.WithValue(ctx, "inside", true)
+	}
+
 	if ctx.Value("kubeconfig") != "default" {
 		kubeconfig = ctx.Value("kubeconfig").(string)
 	} else if home := homedir.HomeDir(); home != "" {

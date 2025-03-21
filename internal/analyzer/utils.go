@@ -542,6 +542,10 @@ func (ks *KScanner) prunePod(ns, podName string) (bool, error) {
 
 	index := 0
 	for _, pod := range pods.Items {
+		if len(pod.Status.ContainerStatuses) < 1 {
+			continue
+		}
+
 		age := time.Since(pod.CreationTimestamp.Time)
 		restarts := pod.Status.ContainerStatuses[0].RestartCount
 
