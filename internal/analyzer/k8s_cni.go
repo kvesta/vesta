@@ -454,6 +454,55 @@ func (ks *KScanner) checkIngressNginx(vulnCli vulnlib.Client) (bool, []*threat) 
 		}
 	}
 
+	// Temporary hardcoded vulnerability comparison before re-integrating CVE database
+	if compareVersion(nginxIngressVersion, "v1.12.1", "v1.12.0") || compareVersion(nginxIngressVersion, "v1.11.5", "0.0") {
+		th := &threat{
+			Param:   "Nginx Ingress Controller RCE",
+			Value:   fmt.Sprintf("%s < v1.12.1 or %s < v1.11.5", nginxIngressVersion, nginxIngressVersion),
+			Type:    "Ingress Nginx",
+			Severity: "critical",
+			Describe: "NGINX Ingress Controller version is vulnerable to CVE-2025-1974, " +
+				"which can be exploited to gain remote code execution.",
+			Reference: "https://www.wiz.io/blog/ingress-nginx-kubernetes-vulnerabilities",
+		}
+
+		vuln = true
+
+		// Analyze ingress-nginx-controller's args to check if controller.admissionWebhooks.enabled is set to false
+		// Find the ingress-nginx-controller container in the deployment
+		hasValidating, admissionWebhooksDisabled := false, false
+		for _, container := range dp.Spec.Template.Spec.Containers {
+			if container.Name == "controller" || strings.Contains(container.Name, "ingress-nginx-controller") {
+				for _, arg := range container.Args {
+					if strings.HasPrefix(arg, "--controller.admissionWebhooks.enabled=") {
+						val := strings.TrimPrefix(arg, "--controller.admissionWebhooks.enabled=")
+						if val == "false" {
+							admissionWebhooksDisabled = true
+							th.Severity = "low"
+							th.Describe = "The controller.admissionWebhooks.enabled argument is set to false in the ingress-nginx-controller container, which mitigates CVE-2025-1974 risk."
+						}
+					}
+
+					if strings.Contains(arg, "--validating-webhook") {
+						hasValidating = true
+					}
+				}
+			}
+			if admissionWebhooksDisabled {
+				break
+			}
+		}		
+		
+		if !hasValidating {
+			vuln = false
+		}
+
+		if vuln {
+			tlist = append(tlist, th)
+		}
+		
+	}
+
 	return vuln, tlist
 }
 

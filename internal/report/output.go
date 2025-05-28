@@ -164,6 +164,25 @@ func ResolveKuberData(ctx context.Context, r analyzer.KScanner) error {
 
 	}
 
+	for _, v := range r.VulnConfigures {
+		switch strings.ToLower(v.Severity) {
+		case "critical":
+			critical += 1
+		case "high":
+			high += 1
+		case "medium":
+			medium += 1
+		case "low":
+			low += 1
+		case "warning":
+			warning += 1
+		default:
+			// ignore
+		}
+		
+
+	}
+
 	fmt.Printf("\nDetected %s vulnerabilities | "+
 		"Critical: %s High: %s Medium: %s Low: %s Warning: %d\n\n",
 		config.Yellow(len(r.VulnContainers)+len(r.VulnConfigures)),
